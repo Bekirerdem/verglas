@@ -4,6 +4,8 @@ pragma solidity 0.8.25;
 import {VerglasAccount} from "./VerglasAccount.sol";
 import {ValidationRegistry} from "./ValidationRegistry.sol";
 import {Groth16Verifier} from "./Groth16Verifier.sol";
+import {AttestationPacket} from "./AttestationPacket.sol";
+import {ITeleporterMessenger, TeleporterMessageInput, TeleporterFeeInfo} from "./interfaces/ITeleporterMessenger.sol";
 
 /// @title VerglasHub — the trustless validator behind Verglas attestations
 /// @notice The Hub cannot vouch for anyone by choice: a validation response can
@@ -29,8 +31,13 @@ contract VerglasHub {
 
     string public constant TAG = "verglas:policy-compliance";
 
+    /// @dev Gas the destination Gate needs to decode and store a packet;
+    ///      generous headroom over the ~130K a cold-storage receive costs.
+    uint256 public constant CARRY_GAS_LIMIT = 250_000;
+
     ValidationRegistry public immutable registry;
     Groth16Verifier public immutable verifier;
+    ITeleporterMessenger public immutable teleporter;
 
     mapping(uint256 => address) public accountOf;
     mapping(address => Checkpoint) public checkpoints;
@@ -40,6 +47,9 @@ contract VerglasHub {
     event AttestationIssued(
         uint256 indexed agentId, bytes32 indexed requestHash, uint256 finalCommitment, uint256 txCount
     );
+    event AttestationCarried(
+        uint256 indexed agentId, bytes32 indexed destinationBlockchainID, address gate, bytes32 messageID
+    );
 
     error NotAccountOwner();
     error NoBoundAccount();
@@ -48,10 +58,12 @@ contract VerglasHub {
     error BadTxCount();
     error BadPolicyBinding();
     error InvalidProof();
+    error NoAttestation();
 
-    constructor(ValidationRegistry registry_, Groth16Verifier verifier_) {
+    constructor(ValidationRegistry registry_, Groth16Verifier verifier_, ITeleporterMessenger teleporter_) {
         registry = registry_;
         verifier = verifier_;
+        teleporter = teleporter_;
     }
 
     /// @notice Links an agent identity (ERC-8004 agentId) to its VerglasAccount.
@@ -88,6 +100,40 @@ contract VerglasHub {
 
         registry.validationResponse(requestHash, 100, responseURI, responseHash, TAG);
         emit AttestationIssued(agentId, requestHash, provenCommitment, provenCount);
+    }
+
+    /// @notice Carries the agent's latest attestation to a VerglasGate on another
+    ///         Avalanche L1 via ICM. Permissionless: the attestation is objective
+    ///         and already public, so anyone may pay to move it.
+    function carryAttestation(uint256 agentId, bytes32 destinationBlockchainID, address gate)
+        external
+        returns (bytes32 messageID)
+    {
+        Attestation storage att = latestAttestation[agentId];
+        if (att.issuedAt == 0) revert NoAttestation();
+
+        bytes memory packet = abi.encode(
+            AttestationPacket({
+                agentId: agentId,
+                requestHash: att.requestHash,
+                finalCommitment: att.finalCommitment,
+                txCount: att.txCount,
+                score: att.score,
+                issuedAt: att.issuedAt
+            })
+        );
+
+        messageID = teleporter.sendCrossChainMessage(
+            TeleporterMessageInput({
+                destinationBlockchainID: destinationBlockchainID,
+                destinationAddress: gate,
+                feeInfo: TeleporterFeeInfo({feeTokenAddress: address(0), amount: 0}),
+                requiredGasLimit: CARRY_GAS_LIMIT,
+                allowedRelayerAddresses: new address[](0),
+                message: packet
+            })
+        );
+        emit AttestationCarried(agentId, destinationBlockchainID, gate, messageID);
     }
 
     /// @dev Binds the proof's public inputs to the live account state and verifies

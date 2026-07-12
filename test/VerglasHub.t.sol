@@ -5,7 +5,11 @@ import {Test} from "forge-std/Test.sol";
 import {VerglasAccount} from "../src/VerglasAccount.sol";
 import {ValidationRegistry, IIdentityRegistry} from "../src/ValidationRegistry.sol";
 import {VerglasHub} from "../src/VerglasHub.sol";
+import {VerglasGate} from "../src/VerglasGate.sol";
 import {Groth16Verifier} from "../src/Groth16Verifier.sol";
+import {AttestationPacket} from "../src/AttestationPacket.sol";
+import {ITeleporterMessenger} from "../src/interfaces/ITeleporterMessenger.sol";
+import {MockTeleporterMessenger} from "./mocks/MockTeleporterMessenger.sol";
 
 contract MockToken {
     mapping(address => uint256) public balanceOf;
@@ -45,6 +49,7 @@ contract VerglasHubTest is Test {
     Groth16Verifier internal verifier;
     MockToken internal token;
     MockIdentity internal identity;
+    MockTeleporterMessenger internal teleporter;
 
     address internal owner = makeAddr("owner");
     address internal agent = makeAddr("agent");
@@ -83,7 +88,8 @@ contract VerglasHubTest is Test {
         identity = new MockIdentity();
         verifier = new Groth16Verifier();
         registry = new ValidationRegistry(identity);
-        hub = new VerglasHub(registry, verifier);
+        teleporter = new MockTeleporterMessenger();
+        hub = new VerglasHub(registry, verifier, ITeleporterMessenger(address(teleporter)));
 
         address[] memory wl = new address[](2);
         wl[0] = dexA;
@@ -191,5 +197,49 @@ contract VerglasHubTest is Test {
         vm.prank(agent);
         vm.expectRevert(ValidationRegistry.NotAgentOwner.selector);
         registry.validationRequest(address(hub), AGENT_ID, "uri", keccak256("other"));
+    }
+
+    function test_RevertWhen_CarryWithoutAttestation() public {
+        vm.expectRevert(VerglasHub.NoAttestation.selector);
+        hub.carryAttestation(AGENT_ID, keccak256("dispatch"), makeAddr("gate"));
+    }
+
+    function test_CarrySendsAttestationPacket() public {
+        _replaySpends();
+        hub.submitProof(AGENT_ID, REQUEST_HASH, pA, pB, pC, _publicSignals(), "ipfs://response", keccak256("resp"));
+
+        bytes32 destChain = keccak256("dispatch");
+        address gate = makeAddr("gate");
+        hub.carryAttestation(AGENT_ID, destChain, gate);
+
+        assertEq(teleporter.lastDestinationBlockchainID(), destChain);
+        assertEq(teleporter.lastDestinationAddress(), gate);
+        assertEq(teleporter.lastRequiredGasLimit(), hub.CARRY_GAS_LIMIT());
+
+        AttestationPacket memory packet = abi.decode(teleporter.lastMessage(), (AttestationPacket));
+        assertEq(packet.agentId, AGENT_ID);
+        assertEq(packet.requestHash, REQUEST_HASH);
+        assertEq(packet.finalCommitment, FINAL_COMMITMENT);
+        assertEq(packet.txCount, 3);
+        assertEq(packet.score, 100);
+        assertEq(packet.issuedAt, uint64(block.timestamp));
+    }
+
+    /// @notice The M1 end-to-end story in one test: prove on C-Chain, stamp the
+    ///         registry, carry the attestation over ICM, pass the gate on the
+    ///         second chain.
+    function test_FullPipeline_ProofToGateClearance() public {
+        _replaySpends();
+        hub.submitProof(AGENT_ID, REQUEST_HASH, pA, pB, pC, _publicSignals(), "ipfs://response", keccak256("resp"));
+
+        bytes32 hubChain = keccak256("c-chain");
+        VerglasGate gate = new VerglasGate(address(teleporter), hubChain, address(hub), 100, 7 days);
+
+        hub.carryAttestation(AGENT_ID, keccak256("dispatch"), address(gate));
+        teleporter.deliverLast(address(gate), hubChain, address(hub));
+
+        assertTrue(gate.isCleared(AGENT_ID));
+        vm.warp(block.timestamp + 7 days + 1);
+        assertFalse(gate.isCleared(AGENT_ID));
     }
 }
