@@ -38,4 +38,6 @@ export const FUJI_DEPLOYMENT = {
   devIdentity: "0x332fc886dd6ab933c89a1149e7D938a6B4214a01",
   gateOnDispatch: "0xD09c7baE6A2eE0E1E1C9443EF2a2791d8a97dc36",
   agentId: 1599n,
+  /** C-Chain block of the deployment — the earliest block worth scanning for events. */
+  deployBlock: 0x3651fb3n,
 } as const;
