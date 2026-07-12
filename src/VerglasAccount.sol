@@ -72,7 +72,9 @@ contract VerglasAccount {
         uint256 totalBudget_,
         address[] memory whitelist_
     ) {
-        if (owner_ == address(0) || agent_ == address(0) || token_ == address(0)) revert ZeroAddress();
+        if (owner_ == address(0) || agent_ == address(0) || token_ == address(0)) {
+            revert ZeroAddress();
+        }
         if (whitelist_.length == 0 || whitelist_.length > MAX_WHITELIST) revert BadWhitelistLength();
         // Amounts are bounded by perTxLimit, so keeping the limit below the field
         // keeps every Poseidon input in range.

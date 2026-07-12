@@ -21,6 +21,11 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: v1.7.1
+
+      - name: Install node deps (poseidon-solidity)
+        run: npm ci
 
       - name: Show Forge version
         run: forge --version

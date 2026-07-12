@@ -1,66 +1,31 @@
-## Foundry
+# Verglas
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+**The trust fabric between Avalanche L1s — agents change chains, their trust travels with them.**
 
-Foundry consists of:
+> *verglas (n.) — a thin, clear, hard coating of ice. Clear as glass, hard as ice.*
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+Avalanche is not one chain; it is a federation of sovereign L1s. An agent that earns trust
+on one chain is a stranger on every other. Verglas fixes that:
 
-## Documentation
+- **VerglasAccount** — a bounded spend account: the owner sets the rules *in the contract*
+  (per-tx limit, whitelist, total budget, kill-switch), the agent spends inside them, and
+  every spend is folded into a Poseidon hash chain.
+- **Verglas Hub** *(C-Chain)* — verifies a weekly ZK proof ("every spend obeyed the policy —
+  without revealing a single transaction") and writes the attestation to the ERC-8004
+  Validation Registry.
+- **Verglas Gate** *(any L1)* — an ICM receiver: admits external agents only with a valid
+  Verglas attestation. Prove once on C-Chain, pass every gate in the federation.
 
-https://book.getfoundry.sh/
+*Kite walls trust in. Verglas lets it travel.*
 
-## Usage
+## Status
 
-### Build
+M1 (Fuji) — in progress. `VerglasAccount` + tests ✅ · circuit #1 (policy compliance) · Hub +
+Validation Registry deploy · Gate + ICM E2E → KeeperHub "Agents Onchain" demo.
 
-```shell
-$ forge build
-```
+## Development
 
-### Test
-
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+```bash
+npm ci          # poseidon-solidity
+forge test
 ```
