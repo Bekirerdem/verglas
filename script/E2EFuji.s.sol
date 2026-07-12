@@ -5,13 +5,16 @@ import {Script, console} from "forge-std/Script.sol";
 import {VerglasAccount} from "../src/VerglasAccount.sol";
 import {VerglasHub} from "../src/VerglasHub.sol";
 
-/// @notice The live M1 demo in one run: three real spends on Fuji C-Chain,
+/// @notice The C-Chain half of the live M1 demo: three real spends on Fuji,
 ///         a Groth16 policy-compliance proof verified on-chain, the registry
-///         stamped, and the attestation carried to Dispatch over ICM.
+///         stamped. The ICM carry is a separate `cast send` because Foundry's
+///         local EVM cannot execute the Warp precompile Teleporter writes to:
+///           cast send $HUB "carryAttestation(uint256,bytes32,address)" \
+///             1599 <dispatch-blockchain-id> $GATE --rpc-url fuji-c
 ///         After the relayer delivers, check on Dispatch:
 ///           cast call $GATE "isCleared(uint256)(bool)" 1599 --rpc-url dispatch
-/// @dev Run: ACCOUNT_ADDRESS=<acc> HUB_ADDRESS=<hub> GATE_ADDRESS=<gate> \
-///          forge script script/E2EFuji.s.sol --rpc-url fuji-c --broadcast
+/// @dev Run: ACCOUNT_ADDRESS=<acc> HUB_ADDRESS=<hub> \
+///          forge script script/E2EFuji.s.sol --tc E2EFuji --rpc-url fuji-c --broadcast
 ///      Proof constants come from scripts/prove.js for the fixed window
 ///      (0xA1,100e6)(0xB2,50e6)(0xA1,25e6) — the chain is deterministic, so
 ///      the same proof binds to any fresh account with the same policy.
@@ -55,7 +58,6 @@ contract E2EFuji is Script {
     function run() external {
         VerglasAccount account = VerglasAccount(vm.envAddress("ACCOUNT_ADDRESS"));
         VerglasHub hub = VerglasHub(vm.envAddress("HUB_ADDRESS"));
-        address gate = vm.envAddress("GATE_ADDRESS");
 
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         account.spend(address(0xA1), 100e6);
@@ -71,10 +73,9 @@ contract E2EFuji is Script {
             "https://github.com/Bekirerdem/verglas",
             keccak256("verglas-window-1-response")
         );
-        bytes32 messageID = hub.carryAttestation(AGENT_ID, DISPATCH_BLOCKCHAIN_ID, gate);
         vm.stopBroadcast();
 
-        console.log("ICM messageID:");
-        console.logBytes32(messageID);
+        console.log("Window proven and stamped. Carry next (see @notice):");
+        console.logBytes32(DISPATCH_BLOCKCHAIN_ID);
     }
 }
