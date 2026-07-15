@@ -54,22 +54,27 @@ export interface DashboardData {
 const client = VerglasClient.fuji();
 const D = FUJI_DEPLOYMENT;
 
-/** Recent-window scan: public RPCs cap eth_getLogs ranges, so chunk. */
-const SCAN_WINDOW = 19_000n;
+/** Full-history scan from the deploy block: public RPCs cap eth_getLogs
+    ranges (~2048 blocks), so chunk and run in bounded parallel batches.
+    Fine at M1 scale; an indexer replaces this in M2. */
 const CHUNK = 2_000n;
+const PARALLEL = 12;
 
 async function scanLogs<T>(
   chain: PublicClient,
   fetchChunk: (fromBlock: bigint, toBlock: bigint) => Promise<T[]>,
 ): Promise<T[]> {
   const head = await chain.getBlockNumber();
-  const from = D.deployBlock > head - SCAN_WINDOW ? D.deployBlock : head - SCAN_WINDOW;
-  const jobs: Promise<T[]>[] = [];
-  for (let b = from; b <= head; b += CHUNK) {
-    const to = b + CHUNK - 1n < head ? b + CHUNK - 1n : head;
-    jobs.push(fetchChunk(b, to));
+  const ranges: Array<[bigint, bigint]> = [];
+  for (let b = D.deployBlock; b <= head; b += CHUNK) {
+    ranges.push([b, b + CHUNK - 1n < head ? b + CHUNK - 1n : head]);
   }
-  return (await Promise.all(jobs)).flat();
+  const out: T[] = [];
+  for (let i = 0; i < ranges.length; i += PARALLEL) {
+    const part = await Promise.all(ranges.slice(i, i + PARALLEL).map(([f, t]) => fetchChunk(f, t)));
+    out.push(...part.flat());
+  }
+  return out;
 }
 
 const blockTimeCache = new Map<bigint, Promise<bigint>>();
