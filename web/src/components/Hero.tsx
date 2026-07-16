@@ -20,11 +20,7 @@ export function Hero({
     <header className="hero">
       <div className="topbar">
         <div className="brand">
-          <svg className="mark" viewBox="0 0 100 100" aria-hidden="true">
-            <path d="M22 24 L44 78 L50 63" fill="none" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" className="mark-ice" />
-            <path d="M78 24 L56 78 L50 63" fill="none" strokeWidth="10" strokeLinecap="round" strokeLinejoin="round" className="mark-red" />
-            <line x1="30" y1="34" x2="42" y2="31" strokeWidth="3" className="mark-shine" />
-          </svg>
+          <img className="mark" src="/icon-192.png" alt="" aria-hidden="true" />
           <span className="logotype">
             VERGLAS<sup>ICM</sup>
           </span>

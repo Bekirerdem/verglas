@@ -109,13 +109,10 @@ a { color: inherit; }
   display: flex; align-items: center; gap: 12px; padding: 16px 4vw;
   border-right: 1px solid var(--edge);
 }
-.hero .brand .mark { width: 30px; height: 30px; }
-.mark .mark-ice { stroke: var(--text); }
-.mark .mark-red { stroke: var(--accent); }
-.mark .mark-shine { stroke: var(--text); opacity: 0.55; }
+.hero .brand .mark { width: 34px; height: 34px; object-fit: contain; }
 .hero .brand .logotype {
-  font-family: "Syncopate", var(--font-display);
-  font-weight: 700; letter-spacing: 4px; font-size: 14px;
+  font-family: "BioRhyme", var(--font-display);
+  font-weight: 800; letter-spacing: 3px; font-size: 14px;
 }
 .hero .brand sup { font-family: var(--font-mono); font-size: 8px; letter-spacing: 2px; color: var(--accent); margin-left: 6px; font-weight: 400; }
 .hero .navlinks { display: flex; align-items: center; gap: 32px; margin: 0 auto; padding: 0 3vw; }
