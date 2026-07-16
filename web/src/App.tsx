@@ -3,7 +3,8 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { fetchDashboard, type DashboardData } from "./lib/data";
 import { Hero } from "./components/Hero";
-import { TwoWays } from "./components/TwoWays";
+import { ProofStrip } from "./components/ProofStrip";
+import { Accordion } from "./components/Accordion";
 import { Papers } from "./components/Papers";
 import { CrossingBand } from "./components/CrossingBand";
 import { Ledger } from "./components/Ledger";
@@ -99,20 +100,13 @@ export default function App() {
         <>
           <Hero data={data} />
           <main>
-            <div className="rail">
-              <span>
-                C-CHAIN <b>· HUB</b>
-              </span>
-              <span>→</span>
-              <span>
-                ICM <b>· TRANSPORT</b>
-              </span>
-              <span>→</span>
-              <span>
-                DISPATCH <b>· GATE</b>
-              </span>
+            <ProofStrip />
+            <Accordion />
+            <div className="ice-band will-reveal">
+              <span>ONE PROOF</span>
+              <span className="arrow">→</span>
+              <span>EVERY AVALANCHE L1</span>
             </div>
-            <TwoWays />
             <Papers data={data} />
             <CrossingBand data={data} />
             <Ledger data={data} />
