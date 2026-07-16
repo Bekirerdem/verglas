@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { fetchDashboard, type DashboardData } from "./lib/data";
+import { I18nProvider, useI18n } from "./lib/i18n";
 import { Hero } from "./components/Hero";
 import { ProofStrip } from "./components/ProofStrip";
 import { Accordion } from "./components/Accordion";
@@ -15,10 +16,21 @@ gsap.registerPlugin(ScrollTrigger);
 
 const REFRESH_MS = 45_000;
 
-export default function App() {
+function Page() {
+  const { t, lang } = useI18n();
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<string>(() => {
+    const saved = localStorage.getItem("verglas-theme");
+    if (saved === "light" || saved === "dark") return saved;
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  });
   const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("verglas-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     let alive = true;
@@ -69,8 +81,6 @@ export default function App() {
           });
         });
       };
-      // Background tabs freeze rAF, which would leave the tweens stuck on
-      // their invisible "from" state — wait for visibility instead.
       if (document.visibilityState === "visible") {
         play();
       } else {
@@ -87,25 +97,38 @@ export default function App() {
     return () => ctx.revert();
   }, [hasData]);
 
+  // language switch re-renders text; make sure revealed items stay visible
+  useEffect(() => {
+    if (hasData) gsap.set(".will-reveal", { opacity: 1, clearProps: "transform" });
+  }, [lang, hasData]);
+
   return (
     <div ref={rootRef}>
       <div className="rails" aria-hidden="true">
-        <i /><i /><i /><i /><i />
+        <i />
+        <i />
+        <i />
+        <i />
+        <i />
       </div>
       <div className="grain" aria-hidden="true" />
-      {error && !data && <div className="err">RPC error: {error} — retrying shortly.</div>}
-      {!data && !error && <div className="loading">READING THE BORDER…</div>}
+      {error && !data && (
+        <div className="err">
+          RPC: {error} {t("err_retry")}
+        </div>
+      )}
+      {!data && !error && <div className="loading">{t("loading")}</div>}
 
       {data && (
         <>
-          <Hero data={data} />
+          <Hero data={data} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
           <main>
             <ProofStrip />
             <Accordion />
             <div className="ice-band will-reveal">
-              <span>ONE PROOF</span>
+              <span>{t("band_1")}</span>
               <span className="arrow">→</span>
-              <span>EVERY AVALANCHE L1</span>
+              <span>{t("band_2")}</span>
             </div>
             <Papers data={data} />
             <CrossingBand data={data} />
@@ -116,5 +139,13 @@ export default function App() {
         </>
       )}
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <I18nProvider>
+      <Page />
+    </I18nProvider>
   );
 }

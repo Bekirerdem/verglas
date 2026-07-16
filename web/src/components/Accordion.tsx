@@ -1,76 +1,48 @@
 import { useState } from "react";
+import { useI18n, type TKey } from "../lib/i18n";
+import { TEXTURE_VIDEO, REDUCED } from "../lib/media";
 
-const PANELS = [
-  {
-    num: "01",
-    tag: "STANDARD",
-    title: ["OPEN,", "NOT OWNED"],
-    body:
-      "Identity and validation live on ERC-8004 registries anyone can read and any explorer can index. No permission to integrate, no platform to marry.",
-    foot: "[ ERC-8004 · OPEN SOURCE ]",
-  },
-  {
-    num: "02",
-    tag: "REPUTATION",
-    title: ["PROOF,", "NOT PROMISE"],
-    body:
-      "A trust score here is a Groth16 proof verified on-chain — the contract refuses to stamp anything it can't verify. Not a roadmap slide.",
-    foot: "[ GROTH16 · VERIFIED ON-CHAIN ]",
-  },
-  {
-    num: "03",
-    tag: "REACH",
-    title: ["TRAVELS,", "NOT WALLED"],
-    body:
-      "Attestations cross to any Avalanche L1 over native Interchain Messaging. No bridge, no re-onboarding, no citizenship test per chain.",
-    foot: "[ ICM · EVERY L1 ]",
-  },
-  {
-    num: "04",
-    tag: "USAGE",
-    title: ["REAL WORK,", "NOT FARMING"],
-    body:
-      "The first resident of the vault is a corporate treasurer: real money, owner-set rules, weekly proof receipts. Usage you can audit, not airdrop volume.",
-    foot: "[ VERGLAS TREASURER · NEXT ]",
-  },
-];
+const KEYS = ["acc1", "acc2", "acc3", "acc4"] as const;
+const NUMS = ["01", "02", "03", "04"];
 
-/** avax/business signature module: one wide open panel, the rest collapsed
-    as vertical strips. Click to switch. */
+/** avax/business signature module: one wide open panel with a living ice
+    texture flowing inside, the rest collapsed as vertical strips. */
 export function Accordion() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(0);
-  const p = PANELS[open];
+  const k = KEYS[open];
 
   return (
     <section className="acc" id="why">
       <div className="acc-head will-reveal">
         <h2>
-          There are two ways to make an agent trusted:
-          <span className="dim"> build a wall around it — </span>
-          <em>or hand it papers every border accepts.</em>
+          {t("acc_head_1")}
+          <span className="dim">{t("acc_head_2")}</span>
+          <em>{t("acc_head_3")}</em>
         </h2>
       </div>
 
       <div className="acc-row will-reveal">
-        <div className="acc-open" key={p.num}>
-          <div className="acc-num">{p.num}</div>
+        <div className="acc-open" key={k}>
+          {!REDUCED() && <video className="panel-video" src={TEXTURE_VIDEO} autoPlay muted loop playsInline />}
+          <div className="acc-num">{NUMS[open]}</div>
           <div className="acc-body">
             <h3>
-              {p.title[0]}
+              {t(`${k}_t1` as TKey)}
               <br />
-              <span className="hl">{p.title[1]}</span>
+              <span className="hl">{t(`${k}_t2` as TKey)}</span>
             </h3>
             <div className="acc-side">
-              <p>{p.body}</p>
-              <div className="acc-foot">{p.foot}</div>
+              <p>{t(`${k}_body` as TKey)}</p>
+              <div className="acc-foot">{t(`${k}_foot` as TKey)}</div>
             </div>
           </div>
         </div>
-        {PANELS.map((panel, i) =>
+        {KEYS.map((key, i) =>
           i === open ? null : (
-            <button key={panel.num} className="acc-strip" onClick={() => setOpen(i)} aria-label={`Open panel ${panel.num}`}>
-              <span className="snum">{panel.num}</span>
-              <span className="stag">{panel.tag}</span>
+            <button key={key} className="acc-strip" onClick={() => setOpen(i)} aria-label={`Panel ${NUMS[i]}`}>
+              <span className="snum">{NUMS[i]}</span>
+              <span className="stag">{t(`${key}_tag` as TKey)}</span>
             </button>
           ),
         )}

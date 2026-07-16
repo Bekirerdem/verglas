@@ -1,12 +1,15 @@
 import { FUJI_DEPLOYMENT } from "@verglas/sdk";
+import { useI18n } from "../lib/i18n";
 
-/** S6 — back to night: the type wall and the operator's on-ramp. */
+/** S7 — the type wall and the operator's on-ramp. */
 export function FooterWall() {
+  const { t } = useI18n();
   return (
     <footer className="foot">
       <p className="invite">
-        Running an Avalanche L1? Put a gate on your border — <b>one view call</b> tells you whether
-        an agent holds a fresh, sufficient attestation.
+        {t("foot_invite_1")}
+        <b>{t("foot_invite_b")}</b>
+        {t("foot_invite_2")}
       </p>
 
       <a className="wall" href="https://github.com/Bekirerdem/verglas" target="_blank" rel="noreferrer">
@@ -15,14 +18,11 @@ export function FooterWall() {
 
       <div className="cols">
         <div className="col">
-          <p className="chead">○ OPEN BY DESIGN</p>
-          <p>
-            ERC-8004 registries, Groth16 verified on-chain, ICM for transport. No walled identity,
-            no custodian — clear as glass, hard as ice.
-          </p>
+          <p className="chead">{t("foot_open_h")}</p>
+          <p>{t("foot_open_p")}</p>
         </div>
         <div className="col">
-          <p className="chead">◎ FOR L1 OPERATORS</p>
+          <p className="chead">{t("foot_ops_h")}</p>
           <pre>
             <span className="hl">import</span> {"{ VerglasClient }"} <span className="hl">from</span>{" "}
             "@verglas/sdk";{"\n"}
@@ -32,7 +32,7 @@ export function FooterWall() {
           </pre>
         </div>
         <div className="col">
-          <p className="chead">◍ THE DEPLOYMENT</p>
+          <p className="chead">{t("foot_dep_h")}</p>
           <pre>
             HUB &nbsp;{FUJI_DEPLOYMENT.hub.slice(0, 20)}…{"\n"}
             GATE {FUJI_DEPLOYMENT.gateOnDispatch.slice(0, 20)}…{"\n"}
@@ -42,7 +42,7 @@ export function FooterWall() {
       </div>
 
       <div className="legal">
-        <span>© VERGLAS 2026 · BUILT ON AVALANCHE</span>
+        <span>{t("foot_legal")}</span>
         <span className="links">
           <a href="https://github.com/Bekirerdem/verglas" target="_blank" rel="noreferrer">
             GITHUB

@@ -1,21 +1,22 @@
 import { FUJI_DEPLOYMENT } from "@verglas/sdk";
 import type { DashboardData } from "../lib/data";
 import { short, usd, utcDate } from "../lib/format";
+import { useI18n } from "../lib/i18n";
 
-/** S5 — THE LEDGER. The archive room: every stamp, every folded spend.
-    Lusty-grade functional data on daylight. */
+/** S5 — THE LEDGER: the archive room, lusty-grade functional data. */
 export function Ledger({ data }: { data: DashboardData }) {
+  const { t } = useI18n();
   return (
     <section className="ledger" id="ledger">
       <p className="lhead">
-        04 · THE LEDGER <i>[ LIVE · FUJI TESTNET ]</i>
+        {t("ledger_lede")} <i>{t("ledger_lede_tag")}</i>
       </p>
       <h3 className="will-reveal">
-        every stamp is a proof, <em>not a self-report.</em>
+        {t("ledger_h_1")} <em>{t("ledger_h_2")}</em>
       </h3>
 
       {data.stamps.length === 0 ? (
-        <p className="empty-note">No attestations yet — the first proof window is still open.</p>
+        <p className="empty-note">{t("ledger_empty_stamps")}</p>
       ) : (
         <div className="stamp-row">
           {data.stamps.map((s) => (
@@ -25,10 +26,10 @@ export function Ledger({ data }: { data: DashboardData }) {
                 <span className="of">SCORE</span>
               </div>
               <div className="smeta">
-                <div className="t">ATTESTED · POLICY COMPLIANCE</div>
-                agent #{FUJI_DEPLOYMENT.agentId.toString()}
+                <div className="t">{t("ledger_stamp_t")}</div>
+                {t("ledger_agent")} #{FUJI_DEPLOYMENT.agentId.toString()}
                 {data.attestation?.requestHash === s.requestHash
-                  ? ` · window of ${data.attestation.txCount.toString()} spends`
+                  ? ` · ${t("ledger_window_of")} ${data.attestation.txCount.toString()} ${t("ledger_spends")}`
                   : ""}
                 <br />
                 <span className="hash">{short(s.requestHash, 12, 8)}</span>
@@ -40,18 +41,18 @@ export function Ledger({ data }: { data: DashboardData }) {
       )}
 
       {data.spends.length === 0 ? (
-        <p className="empty-note">No spends in the recent scan window.</p>
+        <p className="empty-note">{t("ledger_empty_spends")}</p>
       ) : (
         <div className="table-scroll">
           <table className="spends">
             <thead>
               <tr>
                 <th>#</th>
-                <th>TO</th>
-                <th>AMOUNT</th>
-                <th>FOLDED COMMITMENT</th>
-                <th>WHEN</th>
-                <th>TX</th>
+                <th>{t("th_to")}</th>
+                <th>{t("th_amount")}</th>
+                <th>{t("th_commit")}</th>
+                <th>{t("th_when")}</th>
+                <th>{t("th_tx")}</th>
               </tr>
             </thead>
             <tbody>

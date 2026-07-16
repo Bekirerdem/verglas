@@ -1,10 +1,13 @@
 import { FUJI_DEPLOYMENT } from "@verglas/sdk";
 import type { DashboardData } from "../lib/data";
 import { short, usd, utcDate } from "../lib/format";
+import { useI18n, type TKey } from "../lib/i18n";
 
-/** S3 — THE PAPERS. How an attestation gets pressed: numbered steps on the
-    left, the living document (real chain data) pinned on the right. */
+const STEPS = ["step1", "step2", "step3", "step4"] as const;
+
+/** S3 — THE PAPERS: numbered press line + the living document (real data). */
 export function Papers({ data }: { data: DashboardData }) {
+  const { t } = useI18n();
   const { account, attestation, balance } = data;
   const spentPct = account.totalBudget === 0n ? 0 : Number((account.totalSpent * 100n) / account.totalBudget);
 
@@ -12,61 +15,22 @@ export function Papers({ data }: { data: DashboardData }) {
     <section className="papers">
       <div>
         <p className="lede">
-          02 · THE PAPERS <i>[ POSEIDON · GROTH16 · ERC-8004 ]</i>
+          {t("papers_lede")} <i>{t("papers_lede_tag")}</i>
         </p>
         <h3 className="will-reveal">
-          rules in the contract, <em>proof in the math.</em>
+          {t("papers_h_1")} <em>{t("papers_h_2")}</em>
         </h3>
 
-        <div className="step will-reveal">
-          <div className="num">01 · BOUND</div>
-          <div>
-            <h4>the vault is the leash</h4>
-            <p className="stag">[ WHITELIST · PER-TX LIMIT · BUDGET · FREEZE ]</p>
-            <p>
-              the agent's only door to the funds is <b>spend()</b> — every rule is checked
-              on-chain, and the owner can freeze the account at any moment. no promise, no policy
-              PDF; a contract.
-            </p>
+        {STEPS.map((s) => (
+          <div className="step will-reveal" key={s}>
+            <div className="num">{t(`${s}_num` as TKey)}</div>
+            <div>
+              <h4>{t(`${s}_t` as TKey)}</h4>
+              <p className="stag">{t(`${s}_tag` as TKey)}</p>
+              <p>{t(`${s}_p` as TKey)}</p>
+            </div>
           </div>
-        </div>
-
-        <div className="step will-reveal">
-          <div className="num">02 · FOLDED</div>
-          <div>
-            <h4>every spend freezes into the chain</h4>
-            <p className="stag">[ POSEIDON HASH CHAIN ]</p>
-            <p>
-              each transfer folds into a running commitment — like snow packing into ice. the
-              history can't be rewritten, cherry-picked or hidden.
-            </p>
-          </div>
-        </div>
-
-        <div className="step will-reveal">
-          <div className="num">03 · PROVEN</div>
-          <div>
-            <h4>prove the window, reveal nothing</h4>
-            <p className="stag">[ GROTH16 · 86K CONSTRAINTS · VERIFIED ON-CHAIN ]</p>
-            <p>
-              a zero-knowledge proof shows <b>every destination was whitelisted and every amount
-              under the limit</b> — without exposing a single transaction. the hub verifies it
-              on-chain; no valid proof, no stamp.
-            </p>
-          </div>
-        </div>
-
-        <div className="step will-reveal">
-          <div className="num">04 · STAMPED</div>
-          <div>
-            <h4>the registry takes the stamp</h4>
-            <p className="stag">[ ERC-8004 VALIDATION REGISTRY ]</p>
-            <p>
-              the attestation lands in an open registry any explorer can index — and from there,
-              it's ready to travel.
-            </p>
-          </div>
-        </div>
+        ))}
       </div>
 
       <div className="doc-col">
@@ -75,40 +39,48 @@ export function Papers({ data }: { data: DashboardData }) {
             <span className="score">{attestation ? attestation.score : "—"}</span>
             <span className="of">SCORE</span>
           </div>
-          <p className="dlabel">ATTESTATION · POLICY COMPLIANCE</p>
-          <p className="dtitle">Agent #{FUJI_DEPLOYMENT.agentId.toString()}</p>
+          <p className="dlabel">{t("doc_label")}</p>
+          <p className="dtitle">
+            {t("doc_agent")} #{FUJI_DEPLOYMENT.agentId.toString()}
+          </p>
           <div className="drow">
-            <span>WINDOW</span>
-            <span className="v">{attestation ? `${attestation.txCount.toString()} spends` : "open"}</span>
+            <span>{t("doc_window")}</span>
+            <span className="v">
+              {attestation ? `${attestation.txCount.toString()} ${t("doc_spends")}` : t("doc_window_open")}
+            </span>
           </div>
           <div className="drow">
-            <span>REQUEST</span>
+            <span>{t("doc_request")}</span>
             <span className="v">{attestation ? short(attestation.requestHash, 12, 8) : "—"}</span>
           </div>
           <div className="drow">
-            <span>ISSUED</span>
+            <span>{t("doc_issued")}</span>
             <span className="v">{attestation ? utcDate(attestation.issuedAt) : "—"}</span>
           </div>
           <div className="drow">
-            <span>VERIFIER</span>
-            <span className="v">Groth16 · on-chain</span>
+            <span>{t("doc_verifier")}</span>
+            <span className="v">{t("doc_verifier_v")}</span>
           </div>
         </div>
 
         <div className="vault-strip will-reveal">
           <div className="vhead">
-            <span>VAULT · {short(FUJI_DEPLOYMENT.account)}</span>
-            <span className={`state${account.frozen ? " frozen" : ""}`}>{account.frozen ? "FROZEN" : "ACTIVE"}</span>
+            <span>
+              {t("vault_label")} · {short(FUJI_DEPLOYMENT.account)}
+            </span>
+            <span className={`state${account.frozen ? " frozen" : ""}`}>
+              {account.frozen ? t("vault_frozen") : t("vault_active")}
+            </span>
           </div>
           <div className="vbar">
             <i style={{ width: `${spentPct}%` }} />
           </div>
           <div className="vnums">
             <span>
-              spent <b>{usd(account.totalSpent)}</b> / {usd(account.totalBudget)}
+              {t("vault_spent")} <b>{usd(account.totalSpent)}</b> / {usd(account.totalBudget)}
             </span>
             <span>
-              balance <b>{usd(balance)} vUSD</b>
+              {t("vault_balance")} <b>{usd(balance)} vUSD</b>
             </span>
           </div>
         </div>

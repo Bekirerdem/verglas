@@ -1,13 +1,17 @@
+import { useI18n } from "../lib/i18n";
+
 /** S6 — the V2 teaser: the treasurer moves into the vault. */
 export function NextBand() {
+  const { t } = useI18n();
   return (
     <section className="next-band">
-      <p className="ntag">NEXT AT THE CHECKPOINT · M2</p>
+      <p className="ntag">{t("next_tag")}</p>
       <h3 className="will-reveal">
-        An autonomous corporate treasurer moves into the vault — <b>Verglas Treasurer</b>: FX-timed
-        supplier payments, owner's brake, weekly proof receipts.
+        {t("next_1")}
+        <b>{t("next_b")}</b>
+        {t("next_2")}
       </h3>
-      <p className="nsub">[ PYTH USD/TRY · BOUNDED SPEND · WEEKLY ZK RECEIPTS · FUJI ]</p>
+      <p className="nsub">{t("next_sub")}</p>
     </section>
   );
 }
