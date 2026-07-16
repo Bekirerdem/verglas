@@ -10,14 +10,6 @@ export function Hero({ data }: { data: DashboardData }) {
 
   return (
     <header className="hero">
-      <svg className="lines" aria-hidden="true" preserveAspectRatio="none" viewBox="0 0 100 100">
-        <line x1="-5" y1="72" x2="105" y2="30" />
-        <line x1="-5" y1="38" x2="105" y2="66" />
-        <line x1="-5" y1="88" x2="105" y2="52" />
-        <circle cx="50" cy="47" r="17" />
-        <circle cx="50" cy="47" r="27" />
-      </svg>
-
       <div className="topbar">
         <div className="brand">
           VERGLAS<sup>ICM</sup>
