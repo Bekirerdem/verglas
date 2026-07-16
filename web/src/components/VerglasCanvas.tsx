@@ -17,6 +17,10 @@ const JITTER = 34;
 const NEIGHBORS = 3;
 const DROP_SPEED = 22; // px/frame ≈ 1300px/s
 const NEIGHBOR_DELAY = 42; // ms between cell chain reactions
+const MAX_DROPS = 7;
+const SPAWN_MS = 750; // steady freezing rain — the sheet never sleeps
+const AUTO_SWEEP_MS = 7000; // ambient glass shine travelling the sheet
+const REFREEZE_AFTER = 3000; // an impact re-ignites already-frozen cells
 
 export function VerglasCanvas({ theme }: { theme: string }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -38,7 +42,9 @@ export function VerglasCanvas({ theme }: { theme: string }) {
     const queue: { edge: number; at: number }[] = [];
     const mouse = { x: -9999, y: -9999 };
     let sweepStart = -1;
+    let sweepRed = false;
     let lastSpawn = 0;
+    let lastAutoSweep = 0;
     let bootDone = false;
 
     const build = () => {
@@ -142,6 +148,7 @@ export function VerglasCanvas({ theme }: { theme: string }) {
     };
     const onSweep = () => {
       sweepStart = performance.now();
+      sweepRed = true;
     };
     window.addEventListener("pointermove", onMove, { passive: true });
     window.addEventListener("verglas-sweep", onSweep);
@@ -159,19 +166,26 @@ export function VerglasCanvas({ theme }: { theme: string }) {
       const railK = Math.min(1, Math.max(0, (progress - 0.12) / 0.23));
       const calm = progress > 0.9 ? 0.55 : 1;
 
-      // activate queued freeze edges
+      // activate queued freeze edges (re-ignite old ice: every impact flashes)
       for (let i = queue.length - 1; i >= 0; i--) {
         if (queue[i].at <= now) {
           const e = edges[queue[i].edge];
-          if (e.born === 0) e.born = now;
+          if (e.born === 0 || now - e.born > REFREEZE_AFTER) e.born = now;
           queue.splice(i, 1);
         }
       }
 
-      // ambient rain (sparse) after boot
-      if (!reduced && bootDone && now - lastSpawn > 2200 && drops.length < 3) {
+      // steady freezing rain — the storm never stops
+      if (!reduced && bootDone && now - lastSpawn > SPAWN_MS && drops.length < MAX_DROPS) {
         lastSpawn = now;
         spawnDrop();
+      }
+
+      // ambient glass shine sweeping the sheet on its own rhythm
+      if (!reduced && bootDone && sweepStart < 0 && now - lastAutoSweep > AUTO_SWEEP_MS) {
+        lastAutoSweep = now;
+        sweepStart = now;
+        sweepRed = false;
       }
       const lineBase = dark ? "220, 236, 255" : "22, 32, 50";
       for (let i = drops.length - 1; i >= 0; i--) {
@@ -208,12 +222,18 @@ export function VerglasCanvas({ theme }: { theme: string }) {
       });
 
       const settle = dark ? 0.3 : 0.22;
-      edges.forEach((e) => {
+      edges.forEach((e, ei) => {
         if (e.born === 0) return;
         const age = now - e.born;
         // snap: bright at impact, settle into the sheet
         const flash = age < 800 ? 1 - (age / 800) * 0.65 : 0.35;
         let alpha = Math.min(1, age / 120) * flash * (settle / 0.35);
+        // the sheet breathes: slow per-edge shimmer, phase-offset so the
+        // whole glaze glimmers like ice under moving light
+        alpha += Math.sin(now / 1600 + ei * 0.7) * 0.05 + 0.02;
+        // random crack-sparkle: brief twinkles across the surface
+        const tw = Math.sin(now / 230 + ei * 3.1);
+        if (tw > 0.997) alpha += 0.35;
         if (e.horizontal) alpha *= 1 - railK * 0.92;
         else alpha *= 1 + railK * 0.7;
         const pa = pts[e.a];
@@ -223,7 +243,8 @@ export function VerglasCanvas({ theme }: { theme: string }) {
         const my = (pa.y + pb.y) / 2;
         const md = Math.hypot(mx - mouse.x, my - mouse.y);
         if (md < 320) alpha += (1 - md / 320) * (dark ? 0.22 : 0.16);
-        if (sweepY >= 0 && Math.abs(my - sweepY) < 120 && !e.horizontal) alpha += 0.4;
+        const inSweep = sweepY >= 0 && Math.abs(my - sweepY) < 130;
+        if (inSweep) alpha += sweepRed ? (e.horizontal ? 0.1 : 0.45) : 0.28;
         glows.forEach((g) => {
           const gd = Math.hypot(mx - g.x, my - g.y);
           if (gd < 200) alpha += (1 - gd / 200) * 0.3;
@@ -231,7 +252,7 @@ export function VerglasCanvas({ theme }: { theme: string }) {
         alpha *= calm;
         if (alpha <= 0.004) return;
         ctx.strokeStyle =
-          sweepY >= 0 && Math.abs(my - sweepY) < 120 && !e.horizontal
+          inSweep && sweepRed && !e.horizontal
             ? `rgba(232, 65, 66, ${Math.min(0.6, alpha)})`
             : `rgba(${lineBase}, ${Math.min(0.55, alpha)})`;
         ctx.lineWidth = e.horizontal ? 1 : 1 + railK * 0.7;
