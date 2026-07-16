@@ -20,11 +20,12 @@ async function main() {
   const dexA = BigInt("0x00000000000000000000000000000000000000A1");
   const dexB = BigInt("0x00000000000000000000000000000000000000B2");
   const whitelist = [dexA, dexB, 0n, 0n, 0n, 0n, 0n, 0n];
-  const perTxLimit = 200_000_000n; // 200e6
+  // Live Fuji v2 window: real-USDC amounts sized for Circle faucet limits.
+  const perTxLimit = 5_000_000n; // 5 USDC
   const spends = [
-    { to: dexA, amount: 100_000_000n },
-    { to: dexB, amount: 50_000_000n },
-    { to: dexA, amount: 25_000_000n },
+    { to: dexA, amount: 3_000_000n },
+    { to: dexB, amount: 2_000_000n },
+    { to: dexA, amount: 1_000_000n },
   ];
 
   // Fold the chain: leaf = Poseidon(to, amount); c = Poseidon(c_prev, leaf)
