@@ -72,6 +72,13 @@ function Page() {
           { opacity: 0, y: 34 },
           { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09, delay: 0.1 },
         );
+        // hero copy drifts up as you leave — depth against the fixed ice
+        gsap.to(".hero-block", {
+          yPercent: -22,
+          opacity: 0.4,
+          ease: "none",
+          scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
+        });
         gsap.utils.toArray<HTMLElement>(".will-reveal").forEach((el) => {
           gsap.to(el, {
             opacity: 1,

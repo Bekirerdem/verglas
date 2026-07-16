@@ -105,11 +105,18 @@ a { color: inherit; }
   border-bottom: 1px solid var(--edge);
 }
 .hero .brand {
-  font-weight: 800; font-stretch: 115%; letter-spacing: 6px; font-size: 15px;
-  display: flex; align-items: center; padding: 18px 4vw;
+  display: flex; align-items: center; gap: 12px; padding: 16px 4vw;
   border-right: 1px solid var(--edge);
 }
-.hero .brand sup { font-family: var(--font-mono); font-size: 9px; letter-spacing: 2px; color: var(--accent); margin-left: 6px; }
+.hero .brand .mark { width: 30px; height: 30px; }
+.mark .mark-ice { stroke: var(--text); }
+.mark .mark-red { stroke: var(--accent); }
+.mark .mark-shine { stroke: var(--text); opacity: 0.55; }
+.hero .brand .logotype {
+  font-family: "Syncopate", var(--font-display);
+  font-weight: 700; letter-spacing: 4px; font-size: 14px;
+}
+.hero .brand sup { font-family: var(--font-mono); font-size: 8px; letter-spacing: 2px; color: var(--accent); margin-left: 6px; font-weight: 400; }
 .hero .navlinks { display: flex; align-items: center; gap: 32px; margin: 0 auto; padding: 0 3vw; }
 .hero .navlinks a { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2.4px; color: var(--muted); text-decoration: none; }
 .hero .navlinks a:hover { color: var(--accent); }
@@ -255,6 +262,9 @@ a { color: inherit; }
 .acc-strip:hover { border-color: var(--accent); color: var(--accent); }
 .acc-strip .snum { font-family: var(--font-mono); font-size: 13px; letter-spacing: 1px; }
 .acc-strip .stag { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 2.4px; writing-mode: vertical-rl; }
+.acc-progress { position: relative; display: flex; gap: 8px; margin-top: 8px; }
+.acc-progress i { height: 3px; flex: 1; border-radius: 2px; background: var(--edge); transition: background 0.3s; }
+.acc-progress i.on { background: var(--accent); }
 @media (max-width: 720px) {
   .acc-row { flex-direction: column; min-height: 0; }
   .acc-strip { width: 100%; flex-direction: row; padding: 16px 22px; }
@@ -363,13 +373,33 @@ a { color: inherit; }
 .route .terminus .trole { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: 1.8px; color: var(--faint); margin-top: 4px; }
 .route .path { position: relative; height: 2px; background: var(--edge); }
 .route .path .plabel { position: absolute; left: 50%; top: -32px; transform: translateX(-50%); font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.6px; color: var(--faint); white-space: nowrap; }
-.route .path .flow {
-  position: absolute; top: -3px; width: 8px; height: 8px; border-radius: 50%;
-  background: var(--accent); box-shadow: 0 0 12px var(--accent);
-  animation: travel 3.4s linear infinite;
+
+/* the scroll-carried attestation: YOU move it across the border */
+.route .path .traveller {
+  position: absolute; top: 50%; left: 0%;
+  width: 44px; height: 44px; margin: -22px 0 0 -22px;
+  border-radius: 10px; transform: rotate(-6deg);
+  background: linear-gradient(155deg, var(--stamp-amber-hi), var(--stamp-amber) 60%, var(--stamp-amber-lo));
+  color: var(--stamp-ink);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 13px; font-weight: 700;
+  box-shadow: 0 6px 22px rgba(240, 180, 41, 0.4);
+  z-index: 2;
 }
-.route .path .flow:nth-child(3) { animation-delay: 1.7s; }
-@keyframes travel { from { left: 0%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } to { left: calc(100% - 8px); opacity: 0; } }
+.gate-side { position: relative; }
+.gate-side .arrived-chip {
+  margin-top: 12px;
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1.8px;
+  color: var(--ok); border: 1px solid var(--ok); border-radius: 999px;
+  padding: 6px 14px; display: inline-block;
+  opacity: 0; transform: translateY(6px); transition: opacity 0.35s, transform 0.35s;
+}
+.crossing-inner.arrived .gate-side .arrived-chip { opacity: 1; transform: none; }
+.crossing-inner.arrived .gate-side .glyph {
+  border-color: var(--ok); color: var(--ok);
+  box-shadow: 0 0 26px rgba(79, 208, 140, 0.35);
+  transition: box-shadow 0.35s, border-color 0.35s, color 0.35s;
+}
 
 .evidence { margin-top: 7vh; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
 .evidence .ecard {
