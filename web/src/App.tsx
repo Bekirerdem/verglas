@@ -3,6 +3,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { fetchDashboard, type DashboardData } from "./lib/data";
 import { I18nProvider, useI18n } from "./lib/i18n";
+import { VerglasCanvas } from "./components/VerglasCanvas";
 import { Hero } from "./components/Hero";
 import { ProofStrip } from "./components/ProofStrip";
 import { Accordion } from "./components/Accordion";
@@ -102,15 +103,26 @@ function Page() {
     if (hasData) gsap.set(".will-reveal", { opacity: 1, clearProps: "transform" });
   }, [lang, hasData]);
 
+  // the red band fires a light sweep down the ice rails when it enters view
+  useEffect(() => {
+    if (!hasData) return;
+    const band = document.querySelector(".ice-band");
+    if (!band) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => {
+          if (en.isIntersecting) window.dispatchEvent(new Event("verglas-sweep"));
+        });
+      },
+      { threshold: 0.6 },
+    );
+    io.observe(band);
+    return () => io.disconnect();
+  }, [hasData]);
+
   return (
     <div ref={rootRef}>
-      <div className="rails" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-        <i />
-        <i />
-      </div>
+      <VerglasCanvas theme={theme} />
       <div className="grain" aria-hidden="true" />
       {error && !data && (
         <div className="err">

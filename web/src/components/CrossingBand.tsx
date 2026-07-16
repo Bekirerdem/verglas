@@ -1,7 +1,6 @@
 import type { DashboardData } from "../lib/data";
 import { short } from "../lib/format";
 import { useI18n } from "../lib/i18n";
-import { TEXTURE_VIDEO, REDUCED } from "../lib/media";
 
 /** First live crossing, kept as permanent evidence. */
 const FIRST_CROSSING = {
@@ -19,7 +18,6 @@ export function CrossingBand({ data }: { data: DashboardData }) {
   return (
     <section className="crossing-band" id="crossing">
       <div className="crossing-inner will-reveal">
-        {!REDUCED() && <video className="band-video" src={TEXTURE_VIDEO} autoPlay muted loop playsInline />}
         <div className="chead">
           <span>
             {t("cross_head")} <b>{t("cross_head_tag")}</b>

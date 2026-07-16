@@ -21,7 +21,7 @@ export function Ledger({ data }: { data: DashboardData }) {
         <div className="stamp-row">
           {data.stamps.map((s) => (
             <div className="stamp-card will-reveal" key={s.requestHash}>
-              <div className="seal" aria-hidden="true">
+              <div className="seal" aria-hidden="true" data-ice-glow>
                 <span className="score">{s.score}</span>
                 <span className="of">SCORE</span>
               </div>

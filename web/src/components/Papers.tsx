@@ -35,7 +35,7 @@ export function Papers({ data }: { data: DashboardData }) {
 
       <div className="doc-col">
         <div className="document will-reveal">
-          <div className="doc-stamp" aria-hidden="true">
+          <div className="doc-stamp" aria-hidden="true" data-ice-glow>
             <span className="score">{attestation ? attestation.score : "—"}</span>
             <span className="of">SCORE</span>
           </div>

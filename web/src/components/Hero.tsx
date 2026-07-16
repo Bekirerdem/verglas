@@ -2,7 +2,6 @@ import { FUJI_DEPLOYMENT } from "@verglas/sdk";
 import type { DashboardData } from "../lib/data";
 import { remaining } from "../lib/format";
 import { useI18n } from "../lib/i18n";
-import { HERO_VIDEO, HERO_POSTER, REDUCED } from "../lib/media";
 
 export function Hero({
   data,
@@ -19,12 +18,6 @@ export function Hero({
 
   return (
     <header className="hero">
-      {REDUCED() ? (
-        <img className="hero-video" src={HERO_POSTER} alt="" aria-hidden="true" />
-      ) : (
-        <video className="hero-video" src={HERO_VIDEO} poster={HERO_POSTER} autoPlay muted loop playsInline />
-      )}
-
       <div className="topbar">
         <div className="brand">
           VERGLAS<sup>ICM</sup>
@@ -80,7 +73,7 @@ export function Hero({
         </div>
       </div>
 
-      <div className="stampmark hero-anim" aria-hidden="true">
+      <div className="stampmark hero-anim" aria-hidden="true" data-ice-glow>
         <span className="score">100</span>
         <span className="of">SCORE</span>
       </div>

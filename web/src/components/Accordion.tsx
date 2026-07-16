@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useI18n, type TKey } from "../lib/i18n";
-import { TEXTURE_VIDEO, REDUCED } from "../lib/media";
 
 const KEYS = ["acc1", "acc2", "acc3", "acc4"] as const;
 const NUMS = ["01", "02", "03", "04"];
@@ -24,7 +23,6 @@ export function Accordion() {
 
       <div className="acc-row will-reveal">
         <div className="acc-open" key={k}>
-          {!REDUCED() && <video className="panel-video" src={TEXTURE_VIDEO} autoPlay muted loop playsInline />}
           <div className="acc-num">{NUMS[open]}</div>
           <div className="acc-body">
             <h3>
