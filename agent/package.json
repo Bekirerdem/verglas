@@ -1,0 +1,15 @@
+{
+  "name": "@verglas/agent",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Verglas Treasurer keeper: FX-timing strategy (Hazinedar reborn) + Pyth/Hermes + payFX",
+  "scripts": {
+    "test": "node --test",
+    "backtest": "node src/backtest/run.ts",
+    "tick": "node --env-file=../.env src/tick.ts"
+  },
+  "dependencies": {
+    "viem": "^2.55.1"
+  }
+}
