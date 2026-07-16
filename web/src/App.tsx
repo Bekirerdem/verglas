@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { fetchDashboard, type DashboardData } from "./lib/data";
+import { fetchDashboard, fetchTreasurer, type DashboardData, type TreasurerData } from "./lib/data";
 import { I18nProvider, useI18n } from "./lib/i18n";
 import { Hero } from "./components/Hero";
 import { ProofStrip } from "./components/ProofStrip";
@@ -9,7 +9,7 @@ import { Accordion } from "./components/Accordion";
 import { Papers } from "./components/Papers";
 import { CrossingBand } from "./components/CrossingBand";
 import { Ledger } from "./components/Ledger";
-import { NextBand } from "./components/NextBand";
+import { Treasurer } from "./components/Treasurer";
 import { FooterWall } from "./components/FooterWall";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -19,6 +19,7 @@ const REFRESH_MS = 45_000;
 function Page() {
   const { t, lang } = useI18n();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [treasurer, setTreasurer] = useState<TreasurerData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<string>(() => {
     const saved = localStorage.getItem("verglas-theme");
@@ -34,7 +35,7 @@ function Page() {
 
   useEffect(() => {
     let alive = true;
-    const load = () =>
+    const load = () => {
       fetchDashboard().then(
         (d) => {
           if (alive) {
@@ -46,6 +47,15 @@ function Page() {
           if (alive) setError(e instanceof Error ? e.message : String(e));
         },
       );
+      // The treasurer panel degrades to a loading note on its own — a V2 read
+      // failure must never take the V1 dashboard down with it.
+      fetchTreasurer().then(
+        (v) => {
+          if (alive) setTreasurer(v);
+        },
+        () => {},
+      );
+    };
     load();
     const timer = setInterval(load, REFRESH_MS);
     return () => {
@@ -133,7 +143,7 @@ function Page() {
             <Papers data={data} />
             <CrossingBand data={data} />
             <Ledger data={data} />
-            <NextBand />
+            <Treasurer data={treasurer} />
           </main>
           <FooterWall />
         </>

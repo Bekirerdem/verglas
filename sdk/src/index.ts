@@ -1,5 +1,20 @@
-export { fujiC, dispatch, BLOCKCHAIN_IDS, TELEPORTER_ADDRESS, FUJI_DEPLOYMENT } from "./chains.js";
-export { verglasAccountAbi, verglasHubAbi, validationRegistryAbi, verglasGateAbi } from "./abi.js";
+export {
+  fujiC,
+  dispatch,
+  BLOCKCHAIN_IDS,
+  TELEPORTER_ADDRESS,
+  IDENTITY_REGISTRY_ADDRESS,
+  FUJI_DEPLOYMENT,
+  TREASURER_DEPLOYMENT,
+} from "./chains.js";
+export {
+  verglasAccountAbi,
+  verglasHubAbi,
+  validationRegistryAbi,
+  verglasGateAbi,
+  verglasTreasurerAbi,
+  pythAbi,
+} from "./abi.js";
 export {
   VerglasClient,
   type VerglasAddresses,

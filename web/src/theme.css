@@ -456,22 +456,38 @@ a { color: inherit; }
 .empty-note { color: var(--faint); font-family: var(--font-serif); font-style: italic; }
 .table-scroll { overflow-x: auto; }
 
-/* ================= S6 — NEXT: THE TREASURER ================= */
-.next-band {
+/* ================= S6 — THE TREASURER (live V2 panel) ================= */
+.treasurer {
   border-block: 1px solid var(--edge);
   background: var(--card);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   padding: 10vh 6vw;
-  text-align: center;
 }
-.next-band .ntag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 3px; color: var(--accent); margin-bottom: 20px; }
-.next-band h3 {
+.treasurer .lhead { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 3px; color: var(--accent); margin-bottom: 20px; }
+.treasurer .lhead i { color: var(--faint); font-style: normal; margin-left: 12px; }
+.treasurer h3 {
   font-family: var(--font-serif); font-style: italic; font-weight: 500;
-  font-size: clamp(26px, 3.4vw, 44px); letter-spacing: -0.3px; max-width: 34ch; margin: 0 auto;
+  font-size: clamp(26px, 3.4vw, 44px); letter-spacing: -0.3px; max-width: 40ch; margin: 0 0 6vh;
 }
-.next-band h3 b { font-family: var(--font-display); font-style: normal; font-weight: 800; font-stretch: 70%; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
-.next-band .nsub { margin-top: 20px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 2.2px; color: var(--faint); }
+.treasurer h3 em { font-family: var(--font-display); font-style: normal; font-weight: 800; font-stretch: 70%; text-transform: uppercase; color: var(--accent); letter-spacing: 0.5px; }
+.tgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 5vh; }
+.tpanel { border: 1px solid var(--edge); background: var(--bg2); padding: 22px 20px; }
+.tpanel .ptag { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.4px; color: var(--faint); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 16px; }
+.plabel { font-size: 9px; letter-spacing: 1.6px; padding: 2px 7px; border: 1px solid var(--edge); border-radius: 3px; white-space: nowrap; }
+.plabel.real { color: var(--ok, #4ade80); border-color: currentColor; }
+.plabel.hist { color: var(--muted); border-color: currentColor; }
+.plabel.demo { color: var(--amber, #f0b429); border-color: currentColor; }
+.tbig { font-family: var(--font-display); font-weight: 800; font-stretch: 75%; font-size: clamp(24px, 2.4vw, 34px); line-height: 1.05; display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.tbig .tsub { font-family: var(--font-mono); font-weight: 400; font-size: 10px; letter-spacing: 1.8px; color: var(--faint); text-transform: uppercase; }
+.tbar { height: 4px; background: var(--edge); margin-bottom: 12px; }
+.tbar .tfill { height: 100%; background: var(--accent); transition: width 0.6s ease; }
+.trow { display: flex; flex-wrap: wrap; gap: 8px 18px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.trow b { color: var(--text); font-weight: 600; }
+.trow .ok { color: var(--ok, #4ade80); }
+.trow .warn { color: var(--accent); }
+.tsec { margin-top: 4vh; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font-family: var(--font-serif); font-style: italic; font-size: 14px; color: var(--muted); }
+.tsec .tdot { color: var(--faint); }
 
 /* ================= S7 — FOOTER ================= */
 .foot { background: var(--bg2); padding: 12vh 4vw 40px; position: relative; overflow: hidden; border-top: 1px solid var(--edge); }

@@ -1,8 +1,12 @@
 import { erc20Abi, parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 import {
   FUJI_DEPLOYMENT,
+  TREASURER_DEPLOYMENT,
+  pythAbi,
   validationRegistryAbi,
+  verglasAccountAbi,
   verglasGateAbi,
+  verglasTreasurerAbi,
   VerglasClient,
   type AccountState,
   type Attestation,
@@ -95,7 +99,7 @@ export async function fetchDashboard(): Promise<DashboardData> {
     client.getAttestation(D.agentId),
     client.isCleared(D.agentId).catch(() => false),
     chain.readContract({
-      address: D.testUsd,
+      address: D.usdc,
       abi: erc20Abi,
       functionName: "balanceOf",
       args: [D.account],
@@ -164,5 +168,93 @@ export async function fetchDashboard(): Promise<DashboardData> {
     cleared,
     gateMaxAge,
     fetchedAt: Date.now(),
+  };
+}
+
+const fxPaymentEvent = parseAbiItem(
+  "event FxPayment(address indexed supplier, uint256 amount, uint256 rateUsdTry, uint256 indexed day)",
+);
+
+export interface FxPaymentEvent {
+  supplier: Address;
+  amount: bigint;
+  rateUsdTry: bigint;
+  txHash: Hex;
+  timestamp: bigint;
+}
+
+export interface TreasurerData {
+  agentId: bigint;
+  operator: Address;
+  paused: boolean;
+  dailyLimit: bigint;
+  maxSlippageBps: number;
+  referenceRateUsdTry: bigint;
+  spentToday: bigint;
+  vaultBalance: bigint;
+  vaultFrozen: boolean;
+  vaultTxCount: bigint;
+  /** Live Pyth USD/TRY, normalized to 1e8 like the policy reference. */
+  pythRateUsdTry: bigint;
+  pythPublishTime: bigint;
+  payments: FxPaymentEvent[];
+}
+
+const T = TREASURER_DEPLOYMENT;
+const RATE_TARGET_EXPO = -8;
+
+export async function fetchTreasurer(): Promise<TreasurerData> {
+  const chain = client.hubChain;
+
+  const [policy, spentToday, paused, operator, vaultBalance, vaultFrozen, vaultTxCount, pythPrice, fxLogs] =
+    await Promise.all([
+      chain.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "policy" }),
+      chain.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "spentToday" }),
+      chain.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "paused" }),
+      chain.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "operator" }),
+      chain.readContract({ address: D.usdc, abi: erc20Abi, functionName: "balanceOf", args: [T.account] }),
+      chain.readContract({ address: T.account, abi: verglasAccountAbi, functionName: "frozen" }),
+      chain.readContract({ address: T.account, abi: verglasAccountAbi, functionName: "txCount" }),
+      chain.readContract({
+        address: T.pyth,
+        abi: pythAbi,
+        functionName: "getPriceUnsafe",
+        args: [T.usdTryPriceId],
+      }),
+      scanLogs(chain, (fromBlock, toBlock) =>
+        chain.getLogs({ address: T.treasurer, event: fxPaymentEvent, fromBlock, toBlock }),
+      ),
+    ]);
+
+  const payments: FxPaymentEvent[] = await Promise.all(
+    fxLogs.map(async (log) => ({
+      supplier: log.args.supplier!,
+      amount: log.args.amount!,
+      rateUsdTry: log.args.rateUsdTry!,
+      txHash: log.transactionHash,
+      timestamp: await blockTime(chain, log.blockNumber),
+    })),
+  );
+  payments.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
+
+  const [price, , expo, publishTime] = pythPrice;
+  const shift = expo - RATE_TARGET_EXPO;
+  const raw = BigInt(price);
+  const pythRateUsdTry = shift >= 0 ? raw * 10n ** BigInt(shift) : raw / 10n ** BigInt(-shift);
+
+  return {
+    agentId: T.agentId,
+    operator,
+    paused,
+    dailyLimit: policy[0],
+    maxSlippageBps: policy[1],
+    referenceRateUsdTry: policy[2],
+    spentToday,
+    vaultBalance,
+    vaultFrozen,
+    vaultTxCount,
+    pythRateUsdTry,
+    pythPublishTime: publishTime,
+    payments,
   };
 }

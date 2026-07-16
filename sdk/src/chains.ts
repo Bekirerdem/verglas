@@ -4,7 +4,7 @@ import { avalancheFuji } from "viem/chains";
 /** Fuji C-Chain (43113) — where the Verglas Hub lives on testnet. */
 export const fujiC = avalancheFuji;
 
-/** Dispatch test L1 (779672) — the second chain of the live M1 demo. */
+/** Dispatch test L1 (779672) — the second chain of the live demo. */
 export const dispatch = defineChain({
   id: 779672,
   name: "Dispatch Testnet",
@@ -28,16 +28,35 @@ export const BLOCKCHAIN_IDS = {
 /** Canonical TeleporterMessenger, same address on every Avalanche EVM chain. */
 export const TELEPORTER_ADDRESS = "0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf" as const;
 
-/** Live Fuji deployment of 2026-07-12 (see deployments/fuji-testnet.md). */
+/**
+ * Canonical ERC-8004 Identity Registry on Fuji (vanity CREATE2 deployment).
+ * Verglas agentIds are real ERC-721 tokens minted here; the SDK never calls
+ * it directly, but every consumer should know where identities come from.
+ */
+export const IDENTITY_REGISTRY_ADDRESS = "0x8004A818BFB912233c491871b3d84c89A494BD9e" as const;
+
+/** Live Fuji v2 deployment of 2026-07-16 (see deployments/fuji-testnet.md). */
 export const FUJI_DEPLOYMENT = {
-  hub: "0xc07ef259Eb88742e00113d9F460F5D2081078960",
-  validationRegistry: "0x31900CA6bBd05ac2516feB6798f6aeB86FD41239",
-  verifier: "0x2b6466EC93C064f67C260c30613593460252169C",
-  account: "0x0b35C0c0f44f7Fd62e556D6AcAC00EA313546F45",
-  testUsd: "0xa24972871B987cC7feD401Ea8e46F6D85F88a24C",
-  devIdentity: "0x332fc886dd6ab933c89a1149e7D938a6B4214a01",
-  gateOnDispatch: "0xD09c7baE6A2eE0E1E1C9443EF2a2791d8a97dc36",
-  agentId: 1599n,
+  hub: "0xE963114E7549167b340dC05b173A2597bf14CC7C",
+  /** The canonical ERC-8004 Validation Registry — not a Verglas deployment. */
+  validationRegistry: "0x8004Cb1BF31DAf7788923b405b754f57acEB4272",
+  verifier: "0xD8A0b54325B52345E390A4B297bC0629000960DE",
+  account: "0x8Ede2dB4a519B260944EE58125d6ecfA33CfaE72",
+  /** Circle's official Fuji USDC, 6 decimals. */
+  usdc: "0x5425890298aed601595a70AB815c96711a31Bc65",
+  gateOnDispatch: "0xa24972871B987cC7feD401Ea8e46F6D85F88a24C",
+  agentId: 219n,
   /** C-Chain block of the deployment — the earliest block worth scanning for events. */
-  deployBlock: 0x3651fb3n,
+  deployBlock: 0x3666514n,
+} as const;
+
+/** The V2 vertical: the treasurer and its own vault + canonical agentId. */
+export const TREASURER_DEPLOYMENT = {
+  treasurer: "0xfEa6a384A7eAFA63760F3C00bB518d76A90491D3",
+  account: "0x135a08223c5aBEAb6F6482aB08E85086f6265981",
+  agentId: 220n,
+  /** Pyth price-feed contract on Fuji. */
+  pyth: "0x23f0e8FAeE7bbb405E7A7C3d60138FCfd43d7509",
+  /** Pyth FX.USD/TRY price feed id. */
+  usdTryPriceId: "0x032a2eba1c2635bf973e95fb62b2c0705c1be2603b9572cc8d5edeaf8744e058",
 } as const;

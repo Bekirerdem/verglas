@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { getAddress, isAddress, isHex } from "viem";
-import { BLOCKCHAIN_IDS, dispatch, FUJI_DEPLOYMENT, fujiC, TELEPORTER_ADDRESS } from "../src/chains.js";
+import {
+  BLOCKCHAIN_IDS,
+  dispatch,
+  FUJI_DEPLOYMENT,
+  fujiC,
+  IDENTITY_REGISTRY_ADDRESS,
+  TELEPORTER_ADDRESS,
+  TREASURER_DEPLOYMENT,
+} from "../src/chains.js";
 import { VerglasClient } from "../src/client.js";
 
 describe("chain constants", () => {
@@ -23,9 +31,12 @@ describe("chain constants", () => {
       FUJI_DEPLOYMENT.validationRegistry,
       FUJI_DEPLOYMENT.verifier,
       FUJI_DEPLOYMENT.account,
-      FUJI_DEPLOYMENT.testUsd,
-      FUJI_DEPLOYMENT.devIdentity,
+      FUJI_DEPLOYMENT.usdc,
       FUJI_DEPLOYMENT.gateOnDispatch,
+      TREASURER_DEPLOYMENT.treasurer,
+      TREASURER_DEPLOYMENT.account,
+      TREASURER_DEPLOYMENT.pyth,
+      IDENTITY_REGISTRY_ADDRESS,
       TELEPORTER_ADDRESS,
     ];
     for (const a of addresses) {
@@ -33,6 +44,12 @@ describe("chain constants", () => {
       expect(getAddress(a)).toBe(a);
     }
     expect(new Set(addresses).size).toBe(addresses.length);
+  });
+
+  it("agent ids are distinct canonical registrations", () => {
+    expect(FUJI_DEPLOYMENT.agentId).not.toBe(TREASURER_DEPLOYMENT.agentId);
+    expect(isHex(TREASURER_DEPLOYMENT.usdTryPriceId)).toBe(true);
+    expect(TREASURER_DEPLOYMENT.usdTryPriceId.length).toBe(66);
   });
 });
 

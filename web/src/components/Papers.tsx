@@ -80,7 +80,7 @@ export function Papers({ data }: { data: DashboardData }) {
               {t("vault_spent")} <b>{usd(account.totalSpent)}</b> / {usd(account.totalBudget)}
             </span>
             <span>
-              {t("vault_balance")} <b>{usd(balance)} vUSD</b>
+              {t("vault_balance")} <b>{usd(balance)} USDC</b>
             </span>
           </div>
         </div>

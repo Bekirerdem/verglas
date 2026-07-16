@@ -60,7 +60,7 @@ export function Ledger({ data }: { data: DashboardData }) {
                 <tr key={s.txHash + s.txIndex.toString()}>
                   <td>{s.txIndex.toString()}</td>
                   <td>{short(s.to, 6, 3)}</td>
-                  <td className="amt">{usd(s.amount)} vUSD</td>
+                  <td className="amt">{usd(s.amount)} USDC</td>
                   <td>
                     <span className="commit">{short(`0x${s.newCommitment.toString(16).padStart(64, "0")}`, 12, 6)}</span>
                   </td>

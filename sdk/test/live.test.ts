@@ -13,7 +13,7 @@ describe.skipIf(!live)("live Fuji deployment", () => {
     const state = await client.getAccountState();
     expect(state.txCount).toBeGreaterThanOrEqual(3n);
     expect(state.whitelist.length).toBeGreaterThan(0);
-    expect(state.perTxLimit).toBe(200_000_000n);
+    expect(state.perTxLimit).toBe(5_000_000n);
   });
 
   it("reads the live attestation", { timeout: 30_000 }, async () => {
@@ -23,7 +23,7 @@ describe.skipIf(!live)("live Fuji deployment", () => {
     expect(att!.txCount).toBeGreaterThanOrEqual(3n);
   });
 
-  it("agent 1599 clears the Dispatch gate", { timeout: 30_000 }, async () => {
+  it("the demo agent clears the Dispatch gate", { timeout: 30_000 }, async () => {
     expect(await client.isCleared(FUJI_DEPLOYMENT.agentId)).toBe(true);
   });
 });

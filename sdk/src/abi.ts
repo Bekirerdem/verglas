@@ -33,6 +33,28 @@ export const validationRegistryAbi = parseAbi([
   "function getAgentValidations(uint256 agentId) view returns (bytes32[] requestHashes)",
 ]);
 
+export const verglasTreasurerAbi = parseAbi([
+  "function owner() view returns (address)",
+  "function operator() view returns (address)",
+  "function paused() view returns (bool)",
+  "function account() view returns (address)",
+  "function policy() view returns (uint256 dailyLimit, uint32 maxSlippageBps, uint256 referenceRateUsdTry)",
+  "function spentToday() view returns (uint256)",
+  "function payFX(address supplier, uint256 amountUsdc, bytes[] priceUpdate) payable",
+  "function setPolicy((uint256 dailyLimit, uint32 maxSlippageBps, uint256 referenceRateUsdTry) policy)",
+  "function setOperator(address operator)",
+  "function pause()",
+  "function unpause()",
+  "event FxPayment(address indexed supplier, uint256 amount, uint256 rateUsdTry, uint256 indexed day)",
+  "event PolicySet(uint256 dailyLimit, uint32 maxSlippageBps, uint256 referenceRateUsdTry)",
+]);
+
+/** Read-only Pyth surface for dashboards (display, not the enforced path). */
+export const pythAbi = parseAbi([
+  "function getPriceUnsafe(bytes32 id) view returns (int64 price, uint64 conf, int32 expo, uint256 publishTime)",
+  "function getUpdateFee(bytes[] updateData) view returns (uint256)",
+]);
+
 export const verglasGateAbi = parseAbi([
   "function isCleared(uint256 agentId) view returns (bool)",
   "function attestationOf(uint256 agentId) view returns (bytes32 requestHash, uint256 finalCommitment, uint256 txCount, uint8 score, uint64 issuedAt)",

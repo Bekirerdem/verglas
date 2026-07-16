@@ -1,0 +1,106 @@
+{
+  "period": {
+    "start": "2025-06-02",
+    "end": "2026-05-29",
+    "days": 254
+  },
+  "config": {
+    "windowDays": 15,
+    "bankSpreadBps": 300,
+    "railSpreadBps": 10
+  },
+  "paymentCount": 12,
+  "amountUSDPerPayment": 60000,
+  "naiveCostTRY": 31693326.599999998,
+  "agentCostTRY": 30493483.019999996,
+  "spreadSavingTRY": 892336.38,
+  "timingGainTRY": 307507.2000000003,
+  "totalSavingTRY": 1199843.580000002,
+  "savingPct": 3.7857924955091398,
+  "payments": [
+    {
+      "dueIndex": 21,
+      "agentIndex": 6,
+      "naiveRate": 39.854,
+      "agentRate": 39.227,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 42,
+      "agentIndex": 27,
+      "naiveRate": 40.581,
+      "agentRate": 40.049,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 63,
+      "agentIndex": 48,
+      "naiveRate": 41.042,
+      "agentRate": 40.642,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 84,
+      "agentIndex": 69,
+      "naiveRate": 41.57,
+      "agentRate": 41.187,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 105,
+      "agentIndex": 90,
+      "naiveRate": 41.92,
+      "agentRate": 41.693,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 126,
+      "agentIndex": 111,
+      "naiveRate": 42.427,
+      "agentRate": 42.087,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 147,
+      "agentIndex": 132,
+      "naiveRate": 42.85,
+      "agentRate": 42.445,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 168,
+      "agentIndex": 153,
+      "naiveRate": 43.403,
+      "agentRate": 43.042,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 189,
+      "agentIndex": 174,
+      "naiveRate": 43.869,
+      "agentRate": 43.509,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 210,
+      "agentIndex": 195,
+      "naiveRate": 44.367,
+      "agentRate": 43.994,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 231,
+      "agentIndex": 216,
+      "naiveRate": 45.055,
+      "agentRate": 44.609,
+      "amountUSD": 60000
+    },
+    {
+      "dueIndex": 252,
+      "agentIndex": 237,
+      "naiveRate": 45.899,
+      "agentRate": 45.233,
+      "amountUSD": 60000
+    }
+  ]
+}
