@@ -26,9 +26,10 @@ export function Hero({
           </span>
         </div>
         <nav className="navlinks">
-          <a href="#why">{t("nav_why")}</a>
-          <a href="#crossing">{t("nav_crossing")}</a>
-          <a href="#ledger">{t("nav_ledger")}</a>
+          <a href="#solution">{t("nav_how")}</a>
+          <a href="#surfaces">{t("nav_product")}</a>
+          <a href="#live">{t("nav_live")}</a>
+          <a href="/docs/">{t("nav_docs")}</a>
         </nav>
         <div className="toggles">
           <button className="tgl" onClick={() => setLang(lang === "en" ? "tr" : "en")} aria-label="Language">
@@ -49,18 +50,27 @@ export function Hero({
       </div>
 
       <div className="hero-block">
-        <p className="kicker hero-anim">{t("hero_kicker")}</p>
+        <p className="kicker hero-anim">{t("s1_kicker")}</p>
         <h1>
           <span className="hero-anim" style={{ display: "block" }}>
-            {t("hero_l1")}
+            {t("s1_h1a")}
           </span>
-          <span className="l2 hero-anim">{t("hero_l2")}</span>
+          <span className="l2 hero-anim">{t("s1_h1b")}</span>
         </h1>
         <p className="subline hero-anim">
-          {t("hero_sub_1")}
-          <b>{t("hero_sub_b")}</b>
-          {t("hero_sub_2")}
+          {t("s1_sub_1")}
+          <b>{t("s1_sub_b")}</b>
+          {t("s1_sub_2")}
         </p>
+
+        <div className="hero-ctas hero-anim">
+          <a className="cta-main" href="#solution">
+            {t("s1_cta_demo")}
+          </a>
+          <a className="cta-ghost" href="/docs/">
+            {t("s1_cta_docs")}
+          </a>
+        </div>
 
         <div className="clearance hero-anim" role="status">
           <span className="cell agent">
