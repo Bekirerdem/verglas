@@ -3,7 +3,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { fetchDashboard, type DashboardData } from "./lib/data";
 import { I18nProvider, useI18n } from "./lib/i18n";
-import { VerglasCanvas } from "./components/VerglasCanvas";
+import { VerglasScene } from "./components/VerglasScene";
 import { Hero } from "./components/Hero";
 import { ProofStrip } from "./components/ProofStrip";
 import { Accordion } from "./components/Accordion";
@@ -129,7 +129,7 @@ function Page() {
 
   return (
     <div ref={rootRef}>
-      <VerglasCanvas theme={theme} />
+      <VerglasScene theme={theme} />
       <div className="grain" aria-hidden="true" />
       {error && !data && (
         <div className="err">
