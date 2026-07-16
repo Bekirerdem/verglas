@@ -1,8 +1,67 @@
-# Verglas — Fuji Testnet Deployment (2026-07-12)
+# Verglas — Fuji Testnet Deployment v2 (2026-07-16)
+
+The stand-ins are gone: this deployment runs on the canonical ERC-8004
+registries and real Circle USDC, and adds the V2 vertical — a live
+VerglasTreasurer paying FX-timed supplier payments through its own vault.
+
+## Fuji C-Chain (43113) — v2
+
+| Contract                    | Address                                      |
+| --------------------------- | -------------------------------------------- |
+| VerglasHub                  | 0xE963114E7549167b340dC05b173A2597bf14CC7C   |
+| Groth16Verifier             | 0xD8A0b54325B52345E390A4B297bC0629000960DE   |
+| VerglasAccount (demo)       | 0x8Ede2dB4a519B260944EE58125d6ecfA33CfaE72   |
+| VerglasAccount (treasury)   | 0x135a08223c5aBEAb6F6482aB08E85086f6265981   |
+| VerglasTreasurer            | 0xfEa6a384A7eAFA63760F3C00bB518d76A90491D3   |
+| Identity Registry (canonical ERC-8004)   | 0x8004A818BFB912233c491871b3d84c89A494BD9e |
+| Validation Registry (canonical ERC-8004) | 0x8004Cb1BF31DAf7788923b405b754f57acEB4272 |
+| USDC (Circle official, 6 decimals)       | 0x5425890298aed601595a70AB815c96711a31Bc65 |
+| Pyth                        | 0x23f0e8FAeE7bbb405E7A7C3d60138FCfd43d7509   |
+
+Agent IDs are real ERC-721 tokens minted by the canonical Identity Registry:
+**219** (demo account) and **220** (treasurer vault). Deploy block 0x3666514.
+Pyth FX.USD/TRY feed id: 032a2eba1c2635bf973e95fb62b2c0705c1be2603b9572cc8d5edeaf8744e058.
+
+## Dispatch L1 (779672) — v2
+
+| Contract    | Address                                      |
+| ----------- | -------------------------------------------- |
+| VerglasGate | 0xa24972871B987cC7feD401Ea8e46F6D85F88a24C   |
+
+Gate parameters unchanged: minScore=100, maxAge=7 days, trusts the v2 Hub.
+
+## The v2 live run (2026-07-16)
+
+- Agent 219, window (0xA1,3e6)(0xB2,2e6)(0xA1,1e6) in real USDC, proof
+  verified on-chain by submitProof, and the response written into the
+  **canonical** ERC-8004 Validation Registry (score 100,
+  tag verglas:policy-compliance) — the first ZK-verified validation
+  response on that registry.
+- Treasurer: one-shot keeper tick executed a live payFX — Hermes USD/TRY
+  47.0523, owner reference 47.05211, deviation ~0.4bps under the 200bps
+  breaker, 1 USDC paid inside the 10 USDC daily epoch cap
+  (tx 0x568869caad6ad62227cb58ac3bee2d1b6265a3e87918524fafe97a3984197574).
+- ICM carry to Dispatch: tx 0x377dd7c7... then 0x0cbf9f0f... — public
+  relayer delivery pending at the time of writing (was instant on 07-12;
+  see the note below).
+
+## Notes (v2)
+
+- The deployer must hold faucet USDC before running either deploy script
+  (faucet.circle.com, ~10-20 USDC per day).
+- carryAttestation must be sent via cast send (not inside a forge script):
+  Foundry's local EVM cannot execute the Warp precompile Teleporter writes to.
+- REFERENCE_RATE env on DeployTreasurerFuji seeds the FX breaker anchor —
+  set it from a fresh Hermes read on demo day.
+
+---
+
+# Historical: Fuji Deployment v1 (2026-07-12, superseded)
 
 First live end-to-end run of the M1 pipeline: real spends on Fuji C-Chain,
 Groth16 policy-compliance proof verified on-chain, ERC-8004 validation
-stamped, attestation carried to the Dispatch L1 over ICM, gate clearance
+stamped (on Verglas's own registry deploy — v2 moved to the canonical one),
+attestation carried to the Dispatch L1 over ICM, gate clearance
 confirmed on the second chain.
 
 ## Fuji C-Chain (43113)
