@@ -10,6 +10,7 @@ export {
 export {
   verglasFactoryAbi,
   verglasDispenserAbi,
+  identityRegistryAbi,
   verglasAccountAbi,
   verglasHubAbi,
   validationRegistryAbi,

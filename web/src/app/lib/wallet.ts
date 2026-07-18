@@ -2,9 +2,13 @@ import { createWalletClient, custom, erc20Abi, type Address, type Hex } from "vi
 import {
   FUJI_DEPLOYMENT,
   fujiC,
+  IDENTITY_REGISTRY_ADDRESS,
+  identityRegistryAbi,
+  validationRegistryAbi,
   verglasAccountAbi,
   verglasDispenserAbi,
   verglasFactoryAbi,
+  verglasHubAbi,
   verglasTreasurerAbi,
 } from "@verglas/sdk";
 
@@ -141,6 +145,41 @@ export function sendClaimUsdc(from: Address): Promise<Hex> {
     address: FUJI_DEPLOYMENT.dispenser,
     abi: verglasDispenserAbi,
     functionName: "claim",
+    account: from,
+    chain: fujiC,
+  });
+}
+
+/** Stamp-line activation, tx 1/3: mint a fresh ERC-8004 agentId (ERC-721). */
+export function sendRegisterIdentity(from: Address): Promise<Hex> {
+  return walletClient().writeContract({
+    address: IDENTITY_REGISTRY_ADDRESS,
+    abi: identityRegistryAbi,
+    functionName: "register",
+    account: from,
+    chain: fujiC,
+  });
+}
+
+/** Stamp-line activation, tx 2/3: link the identity to the vault on the Hub. */
+export function sendBindAccount(from: Address, agentId: bigint, account: Address): Promise<Hex> {
+  return walletClient().writeContract({
+    address: FUJI_DEPLOYMENT.hub,
+    abi: verglasHubAbi,
+    functionName: "bindAccount",
+    args: [agentId, account],
+    account: from,
+    chain: fujiC,
+  });
+}
+
+/** Stamp-line activation, tx 3/3: open the validation window the keeper will prove. */
+export function sendValidationRequest(from: Address, agentId: bigint, requestHash: Hex): Promise<Hex> {
+  return walletClient().writeContract({
+    address: FUJI_DEPLOYMENT.validationRegistry,
+    abi: validationRegistryAbi,
+    functionName: "validationRequest",
+    args: [FUJI_DEPLOYMENT.hub, agentId, "verglas:policy-compliance:window", requestHash],
     account: from,
     chain: fujiC,
   });

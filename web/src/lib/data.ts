@@ -16,6 +16,7 @@ import {
 const spendEvent = parseAbiItem(
   "event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment)",
 );
+const accountBoundEvent = parseAbiItem("event AccountBound(uint256 indexed agentId, address indexed account)");
 const carriedEvent = parseAbiItem(
   "event AttestationCarried(uint256 indexed agentId, bytes32 indexed destinationBlockchainID, address gate, bytes32 messageID)",
 );
@@ -206,6 +207,15 @@ export interface VaultView {
 export async function fetchVaultView(account: Address, agentId: bigint | null): Promise<VaultView> {
   const chain = client.hubChain;
   const acct = { address: account, abi: verglasAccountAbi } as const;
+
+  // Factory-born vaults may have been bound to an identity via the console's
+  // "open the stamp line" flow — discover the agentId from the Hub's records.
+  if (agentId === null) {
+    const bound = await scanLogs(chain, (fromBlock, toBlock) =>
+      chain.getLogs({ address: D.hub, event: accountBoundEvent, args: { account }, fromBlock, toBlock }),
+    );
+    if (bound.length > 0) agentId = bound[bound.length - 1].args.agentId!;
+  }
 
   const [
     owner,

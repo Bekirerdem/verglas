@@ -40,8 +40,17 @@ export const verglasHubAbi = parseAbi([
   "function accountOf(uint256 agentId) view returns (address)",
   "function latestAttestation(uint256 agentId) view returns (bytes32 requestHash, uint256 finalCommitment, uint256 txCount, uint8 score, uint64 issuedAt)",
   "function checkpoints(address account) view returns (uint256 commitment, uint256 txCount)",
+  "event AccountBound(uint256 indexed agentId, address indexed account)",
   "event AttestationIssued(uint256 indexed agentId, bytes32 indexed requestHash, uint256 finalCommitment, uint256 txCount)",
   "event AttestationCarried(uint256 indexed agentId, bytes32 indexed destinationBlockchainID, address gate, bytes32 messageID)",
+]);
+
+/** Canonical ERC-8004 Identity Registry surface the console needs: minting
+    a fresh agentId (a real ERC-721) and reading ownership. */
+export const identityRegistryAbi = parseAbi([
+  "function register() returns (uint256 agentId)",
+  "function ownerOf(uint256 tokenId) view returns (address)",
+  "event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)",
 ]);
 
 export const validationRegistryAbi = parseAbi([

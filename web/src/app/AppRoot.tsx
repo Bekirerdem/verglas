@@ -213,7 +213,7 @@ function Console() {
             />
           </section>
           <ReceiptShelf view={view} treasurer={showTreasurer} />
-          <PassportBand view={view} />
+          <PassportBand view={view} wallet={wallet} isOwner={isOwner} onRefresh={() => load(sel)} />
         </>
       )}
 

@@ -365,6 +365,12 @@ const en = {
   app_bad_dest: "That's the USDC token CONTRACT — funds sent there are lost forever. Use your own account address.",
   app_no_identity: "No on-chain identity yet — proofs, stamps and the passport arrive with the keeper round.",
   app_rotate_new: "NEW KEEPER",
+  app_activate: "OPEN THE STAMP LINE",
+  app_activate_p: "Three signatures: mint your agent's ERC-8004 identity, bind it to this vault, open the proof window. After your next payments the keeper seals the stamp.",
+  app_act_step1: "IDENTITY",
+  app_act_step2: "BINDING",
+  app_act_step3: "WINDOW",
+  app_owner_needed: "Connect the owner wallet.",
 };
 
 const tr: typeof en = {
@@ -730,6 +736,12 @@ const tr: typeof en = {
   app_bad_dest: "Bu adres USDC token KONTRATI — oraya giden para sonsuza dek kaybolur. Kendi hesap adresini kullan.",
   app_no_identity: "Henüz zincir kimliği yok — kanıtlar, mühürler ve pasaport keeper turuyla gelecek.",
   app_rotate_new: "YENİ KEEPER",
+  app_activate: "DAMGA HATTINI AÇ",
+  app_activate_p: "Üç imza: agent'ının ERC-8004 kimliğini bas, bu kasaya bağla, kanıt penceresini aç. Sonraki ödemelerinden sonra mührü keeper basar.",
+  app_act_step1: "KİMLİK",
+  app_act_step2: "BAĞLAMA",
+  app_act_step3: "PENCERE",
+  app_owner_needed: "Sahip cüzdanıyla bağlan.",
 };
 
 const dicts = { en, tr };
