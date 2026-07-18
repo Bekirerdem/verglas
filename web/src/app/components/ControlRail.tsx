@@ -5,6 +5,7 @@ import type { TreasurerData, VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd } from "../../lib/format";
 import {
+  sendClaimUsdc,
   sendSetOperator,
   sendSetPolicy,
   sendTreasurerAction,
@@ -115,13 +116,33 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
 
   return (
     <aside className="rail rise" style={{ animationDelay: "0.18s" }}>
-      <div className="rail-card glass wallet-card">
+      <div className="rail-card glass">
         {wallet ? (
           <>
-            <span className="mono wallet-addr">{short(wallet)}</span>
-            <span className={`chip ${isOwner ? "chip-amber" : "chip-dim"}`}>
-              {t(isOwner ? "app_owner" : "app_viewer")}
-            </span>
+            <div className="rail-row">
+              <span className="mono wallet-addr">{short(wallet)}</span>
+              <span className={`chip ${isOwner ? "chip-amber" : "chip-dim"}`}>
+                {t(isOwner ? "app_owner" : "app_viewer")}
+              </span>
+            </div>
+            <div className="rail-actions">
+              <button
+                className="btn-ghost"
+                disabled={busy !== null}
+                onClick={() => run("claim", () => sendClaimUsdc(wallet))}
+              >
+                {busy === "claim" ? t("app_pending") : t("app_claim")}
+              </button>
+              <a
+                className="btn-ghost"
+                href="https://core.app/tools/testnet-faucet/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("app_gas")}
+              </a>
+            </div>
+            <p className="rail-hint">{t("app_claim_hint")}</p>
           </>
         ) : (
           <button className="btn-connect" onClick={onConnect}>

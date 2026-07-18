@@ -1,5 +1,12 @@
 import { createWalletClient, custom, erc20Abi, type Address, type Hex } from "viem";
-import { FUJI_DEPLOYMENT, fujiC, verglasAccountAbi, verglasFactoryAbi, verglasTreasurerAbi } from "@verglas/sdk";
+import {
+  FUJI_DEPLOYMENT,
+  fujiC,
+  verglasAccountAbi,
+  verglasDispenserAbi,
+  verglasFactoryAbi,
+  verglasTreasurerAbi,
+} from "@verglas/sdk";
 
 type Provider = Parameters<typeof custom>[0];
 
@@ -111,6 +118,17 @@ export function sendCreateVault(from: Address, input: CreateVaultInput): Promise
     abi: verglasFactoryAbi,
     functionName: "createVault",
     args: [input.agent, FUJI_DEPLOYMENT.usdc, input.perTxLimit, input.totalBudget, input.whitelist],
+    account: from,
+    chain: fujiC,
+  });
+}
+
+/** Workshop tap: 2 test-USDC into the connected wallet, once per 24h. */
+export function sendClaimUsdc(from: Address): Promise<Hex> {
+  return walletClient().writeContract({
+    address: FUJI_DEPLOYMENT.dispenser,
+    abi: verglasDispenserAbi,
+    functionName: "claim",
     account: from,
     chain: fujiC,
   });

@@ -27,6 +27,12 @@ export const verglasFactoryAbi = parseAbi([
   "event VaultCreated(address indexed owner, address indexed account, address agent, address token)",
 ]);
 
+export const verglasDispenserAbi = parseAbi([
+  "function claim()",
+  "function amountPerClaim() view returns (uint256)",
+  "function nextClaimAt(address who) view returns (uint256)",
+]);
+
 export const verglasHubAbi = parseAbi([
   "function submitProof(uint256 agentId, bytes32 requestHash, uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[12] publicSignals, string responseURI, bytes32 responseHash)",
   "function carryAttestation(uint256 agentId, bytes32 destinationBlockchainID, address gate) returns (bytes32)",

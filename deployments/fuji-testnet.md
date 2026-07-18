@@ -18,6 +18,7 @@ VerglasTreasurer paying FX-timed supplier payments through its own vault.
 | USDC (Circle official, 6 decimals)       | 0x5425890298aed601595a70AB815c96711a31Bc65 |
 | Pyth                        | 0x23f0e8FAeE7bbb405E7A7C3d60138FCfd43d7509   |
 | VerglasFactory (2026-07-18) | 0x770e72fcedadf61940e6e70630664f50ad8eac7b   |
+| VerglasDispenser (2026-07-19, 2 USDC/24h) | 0x29C0Dd6DEf26BaC92FDB19DD338089A9396F0EDb |
 
 Agent IDs are real ERC-721 tokens minted by the canonical Identity Registry:
 **219** (demo account) and **220** (treasurer vault). Deploy block 0x3666514.

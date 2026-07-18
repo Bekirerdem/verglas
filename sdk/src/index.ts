@@ -9,6 +9,7 @@ export {
 } from "./chains.js";
 export {
   verglasFactoryAbi,
+  verglasDispenserAbi,
   verglasAccountAbi,
   verglasHubAbi,
   validationRegistryAbi,

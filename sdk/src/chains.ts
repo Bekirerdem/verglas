@@ -50,6 +50,8 @@ export const FUJI_DEPLOYMENT = {
   deployBlock: 0x3666514n,
   /** VerglasFactory (2026-07-18) — the console's "create your vault" door. */
   factory: "0x770e72fcedadf61940e6e70630664f50ad8eac7b",
+  /** VerglasDispenser (2026-07-19) — workshop USDC tap, 2 USDC / 24h. */
+  dispenser: "0x29C0Dd6DEf26BaC92FDB19DD338089A9396F0EDb",
 } as const;
 
 /** The V2 vertical: the treasurer and its own vault + canonical agentId. */
