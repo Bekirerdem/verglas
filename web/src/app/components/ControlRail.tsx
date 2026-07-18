@@ -9,6 +9,7 @@ import {
   sendSetOperator,
   sendSetPolicy,
   sendTreasurerAction,
+  sendUsdc,
   sendVaultAction,
   sendWithdraw,
 } from "../lib/wallet";
@@ -96,6 +97,20 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
     }
   };
 
+  const [depAmt, setDepAmt] = useState("");
+  let depParsed: bigint | null = null;
+  try {
+    const v = parseUnits(depAmt, 6);
+    if (v > 0n) depParsed = v;
+  } catch {
+    depParsed = null;
+  }
+  const deposit = async () => {
+    if (!wallet || busy || depParsed === null) return;
+    const ok = await run("deposit", () => sendUsdc(wallet, view.account, depParsed!));
+    if (ok) setDepAmt("");
+  };
+
   let wdParsed: bigint | null = null;
   try {
     const v = parseUnits(wdAmt, 6);
@@ -129,13 +144,9 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
               </span>
             </div>
             <div className="rail-actions">
-              <button
-                className="btn-ghost"
-                disabled={busy !== null}
-                onClick={() => run("claim", () => sendClaimUsdc(wallet))}
-              >
-                {busy === "claim" ? t("app_pending") : t("app_claim")}
-              </button>
+              <a className="btn-ghost" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">
+                {t("app_circle")}
+              </a>
               <a
                 className="btn-ghost"
                 href="https://core.app/tools/testnet-faucet/"
@@ -144,6 +155,13 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
               >
                 {t("app_gas")}
               </a>
+              <button
+                className="btn-ghost"
+                disabled={busy !== null}
+                onClick={() => run("claim", () => sendClaimUsdc(wallet))}
+              >
+                {busy === "claim" ? t("app_pending") : t("app_claim")}
+              </button>
             </div>
             <p className="rail-hint">{t("app_claim_hint")}</p>
           </>
@@ -279,6 +297,25 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
           )}
         </div>
       )}
+
+      <div className="rail-card glass">
+        <span className="mono rail-tag">{t("app_deposit")} ⇧</span>
+        <div className="policy-form mono">
+          <label>
+            {t("w_amount")}
+            <input value={depAmt} onChange={(e) => setDepAmt(e.target.value)} inputMode="decimal" />
+          </label>
+          <div className="rail-actions">
+            <button
+              className="btn-ghost"
+              disabled={!wallet || busy !== null || depParsed === null}
+              onClick={deposit}
+            >
+              {busy === "deposit" ? t("app_pending") : t("app_deposit")}
+            </button>
+          </div>
+        </div>
+      </div>
 
       <div className="rail-card glass">
         <span className="mono rail-tag">{t("app_withdraw")} ⇩</span>
