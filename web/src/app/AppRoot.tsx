@@ -128,7 +128,7 @@ function Console() {
 
       <nav className="cnav glass">
         <a className="cnav-brand" href="/">
-          <img className="mark" src="/favicon.svg" alt="" />
+          <img className="mark" src="/icon-192.png" alt="" />
           <span className="logotype">
             VERGLAS<sup>{t("app_title")}</sup>
           </span>
