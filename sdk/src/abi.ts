@@ -13,7 +13,12 @@ export const verglasAccountAbi = parseAbi([
   "function whitelistLength() view returns (uint256)",
   "function whitelist(uint256 index) view returns (address)",
   "function spend(address to, uint256 amount)",
+  "function freeze()",
+  "function unfreeze()",
+  "function withdraw(address to, uint256 amount)",
   "event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment)",
+  "event Frozen()",
+  "event Unfrozen()",
 ]);
 
 export const verglasHubAbi = parseAbi([
