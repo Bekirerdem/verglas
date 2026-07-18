@@ -1,5 +1,5 @@
-import { createWalletClient, custom, type Address, type Hex } from "viem";
-import { fujiC, verglasAccountAbi, verglasTreasurerAbi } from "@verglas/sdk";
+import { createWalletClient, custom, erc20Abi, type Address, type Hex } from "viem";
+import { FUJI_DEPLOYMENT, fujiC, verglasAccountAbi, verglasFactoryAbi, verglasTreasurerAbi } from "@verglas/sdk";
 
 type Provider = Parameters<typeof custom>[0];
 
@@ -71,6 +71,57 @@ export function sendSetPolicy(treasurer: Address, from: Address, p: PolicyInput)
     abi: verglasTreasurerAbi,
     functionName: "setPolicy",
     args: [p],
+    account: from,
+    chain: fujiC,
+  });
+}
+
+export function sendSetOperator(treasurer: Address, from: Address, operator: Address): Promise<Hex> {
+  return walletClient().writeContract({
+    address: treasurer,
+    abi: verglasTreasurerAbi,
+    functionName: "setOperator",
+    args: [operator],
+    account: from,
+    chain: fujiC,
+  });
+}
+
+export function sendWithdraw(account: Address, from: Address, to: Address, amount: bigint): Promise<Hex> {
+  return walletClient().writeContract({
+    address: account,
+    abi: verglasAccountAbi,
+    functionName: "withdraw",
+    args: [to, amount],
+    account: from,
+    chain: fujiC,
+  });
+}
+
+export interface CreateVaultInput {
+  agent: Address;
+  perTxLimit: bigint;
+  totalBudget: bigint;
+  whitelist: Address[];
+}
+
+export function sendCreateVault(from: Address, input: CreateVaultInput): Promise<Hex> {
+  return walletClient().writeContract({
+    address: FUJI_DEPLOYMENT.factory,
+    abi: verglasFactoryAbi,
+    functionName: "createVault",
+    args: [input.agent, FUJI_DEPLOYMENT.usdc, input.perTxLimit, input.totalBudget, input.whitelist],
+    account: from,
+    chain: fujiC,
+  });
+}
+
+export function sendUsdc(from: Address, to: Address, amount: bigint): Promise<Hex> {
+  return walletClient().writeContract({
+    address: FUJI_DEPLOYMENT.usdc,
+    abi: erc20Abi,
+    functionName: "transfer",
+    args: [to, amount],
     account: from,
     chain: fujiC,
   });

@@ -5,6 +5,7 @@ import {
   pythAbi,
   validationRegistryAbi,
   verglasAccountAbi,
+  verglasFactoryAbi,
   verglasGateAbi,
   verglasTreasurerAbi,
   VerglasClient,
@@ -186,7 +187,8 @@ export interface VaultState {
 }
 
 export interface VaultView {
-  agentId: bigint;
+  /** null for factory-born vaults that have no ERC-8004 identity yet. */
+  agentId: bigint | null;
   account: Address;
   state: VaultState;
   balance: bigint;
@@ -199,8 +201,9 @@ export interface VaultView {
   fetchedAt: number;
 }
 
-/** One shape for any vault — the owner console reads #219 and #220 through this. */
-export async function fetchVaultView(account: Address, agentId: bigint): Promise<VaultView> {
+/** One shape for any vault — the known agents (#219/#220) and factory-born
+    vaults (agentId null: no 8004 surface to query yet) both read through this. */
+export async function fetchVaultView(account: Address, agentId: bigint | null): Promise<VaultView> {
   const chain = client.hubChain;
   const acct = { address: account, abi: verglasAccountAbi } as const;
 
@@ -228,18 +231,22 @@ export async function fetchVaultView(account: Address, agentId: bigint): Promise
     chain.readContract({ ...acct, functionName: "frozen" }),
     chain.readContract({ ...acct, functionName: "whitelistLength" }),
     chain.readContract({ address: D.usdc, abi: erc20Abi, functionName: "balanceOf", args: [account] }),
-    client.getAttestation(agentId).catch(() => null),
-    client.isCleared(agentId).catch(() => false),
-    chain.readContract({
-      address: D.validationRegistry,
-      abi: validationRegistryAbi,
-      functionName: "getAgentValidations",
-      args: [agentId],
-    }),
-    client
-      .gateChain!.readContract({ address: D.gateOnDispatch, abi: verglasGateAbi, functionName: "maxAge" })
-      .then((v) => BigInt(v))
-      .catch(() => 0n),
+    agentId === null ? Promise.resolve(null) : client.getAttestation(agentId).catch(() => null),
+    agentId === null ? Promise.resolve(false) : client.isCleared(agentId).catch(() => false),
+    agentId === null
+      ? Promise.resolve([] as readonly Hex[])
+      : chain.readContract({
+          address: D.validationRegistry,
+          abi: validationRegistryAbi,
+          functionName: "getAgentValidations",
+          args: [agentId],
+        }),
+    agentId === null
+      ? Promise.resolve(0n)
+      : client
+          .gateChain!.readContract({ address: D.gateOnDispatch, abi: verglasGateAbi, functionName: "maxAge" })
+          .then((v) => BigInt(v))
+          .catch(() => 0n),
   ]);
 
   const whitelist = await Promise.all(
@@ -261,9 +268,11 @@ export async function fetchVaultView(account: Address, agentId: bigint): Promise
     scanLogs(chain, (fromBlock, toBlock) =>
       chain.getLogs({ address: account, event: spendEvent, fromBlock, toBlock }),
     ),
-    scanLogs(chain, (fromBlock, toBlock) =>
-      chain.getLogs({ address: D.hub, event: carriedEvent, args: { agentId }, fromBlock, toBlock }),
-    ),
+    agentId === null
+      ? Promise.resolve([])
+      : scanLogs(chain, (fromBlock, toBlock) =>
+          chain.getLogs({ address: D.hub, event: carriedEvent, args: { agentId }, fromBlock, toBlock }),
+        ),
   ]);
 
   const spends: SpendEvent[] = await Promise.all(
@@ -311,6 +320,16 @@ export async function fetchVaultView(account: Address, agentId: bigint): Promise
     gateMaxAge,
     fetchedAt: Date.now(),
   };
+}
+
+/** Factory-born vaults of a wallet — the console's "my vaults" list. */
+export function fetchMyVaults(owner: Address): Promise<readonly Address[]> {
+  return client.hubChain.readContract({
+    address: FUJI_DEPLOYMENT.factory,
+    abi: verglasFactoryAbi,
+    functionName: "vaultsOf",
+    args: [owner],
+  });
 }
 
 const fxPaymentEvent = parseAbiItem(

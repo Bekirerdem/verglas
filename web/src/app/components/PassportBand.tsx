@@ -8,6 +8,17 @@ export function PassportBand({ view }: { view: VaultView }) {
   const { t } = useI18n();
   const att = view.attestation;
 
+  if (view.agentId === null) {
+    return (
+      <section className="passport">
+        <div className="passport-route rise" style={{ animationDelay: "0.1s" }}>
+          <span className="mono passport-tag">{t("app_passport")}</span>
+          <p className="serif app-noid">{t("app_no_identity")}</p>
+        </div>
+      </section>
+    );
+  }
+
   const deadline = att && view.gateMaxAge > 0n ? att.issuedAt + view.gateMaxAge : null;
   const left = deadline ? remaining(deadline) : "";
   const expired = deadline !== null && left === "";

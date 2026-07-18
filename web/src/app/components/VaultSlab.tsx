@@ -71,7 +71,7 @@ export function VaultSlab({ view, treasurer }: { view: VaultView; treasurer: Tre
     <div className="slab glass rise" style={{ animationDelay: "0.05s" }}>
       <div className="slab-head">
         <span className="mono slab-tag">
-          {t("vault_label")} #{view.agentId.toString()}
+          {t("vault_label")} {view.agentId !== null ? `#${view.agentId.toString()}` : short(view.account, 6, 4)}
         </span>
         <span className={`chip ${s.frozen ? "chip-frozen" : "chip-ok"}`}>
           {t(s.frozen ? "app_status_frozen" : "app_status_active")}

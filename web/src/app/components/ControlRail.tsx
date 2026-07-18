@@ -1,10 +1,16 @@
 import { useEffect, useState } from "react";
-import { parseUnits, type Address, type Hex } from "viem";
+import { isAddress, parseUnits, type Address, type Hex } from "viem";
 import { TREASURER_DEPLOYMENT } from "@verglas/sdk";
 import type { TreasurerData, VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd } from "../../lib/format";
-import { sendSetPolicy, sendTreasurerAction, sendVaultAction } from "../lib/wallet";
+import {
+  sendSetOperator,
+  sendSetPolicy,
+  sendTreasurerAction,
+  sendVaultAction,
+  sendWithdraw,
+} from "../lib/wallet";
 
 interface Props {
   view: VaultView;
@@ -25,6 +31,10 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
   const [daily, setDaily] = useState("");
   const [slip, setSlip] = useState("");
   const [ref, setRef] = useState("");
+  const [rotating, setRotating] = useState(false);
+  const [rotAddr, setRotAddr] = useState("");
+  const [wdAmt, setWdAmt] = useState("");
+  const [wdTo, setWdTo] = useState("");
 
   // the confirm window closes itself
   useEffect(() => {
@@ -72,6 +82,35 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
     if (!parsed || !isOwner || busy) return;
     const ok = await run("policy", () => sendSetPolicy(TREASURER_DEPLOYMENT.treasurer, wallet!, parsed!));
     if (ok) setEditing(false);
+  };
+
+  const rotate = async () => {
+    if (!isOwner || busy || !isAddress(rotAddr)) return;
+    const ok = await run("rotate", () =>
+      sendSetOperator(TREASURER_DEPLOYMENT.treasurer, wallet!, rotAddr as Address),
+    );
+    if (ok) {
+      setRotating(false);
+      setRotAddr("");
+    }
+  };
+
+  let wdParsed: bigint | null = null;
+  try {
+    const v = parseUnits(wdAmt, 6);
+    if (v > 0n) wdParsed = v;
+  } catch {
+    wdParsed = null;
+  }
+  const wdDest = wdTo.trim() === "" ? view.state.owner : wdTo.trim();
+  const wdValid = wdParsed !== null && isAddress(wdDest);
+
+  const withdraw = async () => {
+    if (!isOwner || busy || !wdValid) return;
+    const ok = await run("withdraw", () =>
+      sendWithdraw(view.account, wallet!, wdDest as Address, wdParsed!),
+    );
+    if (ok) setWdAmt("");
   };
 
   return (
@@ -139,28 +178,56 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
                   <dd>{short(treasurer.operator)}</dd>
                 </div>
               </dl>
-              <div className="rail-actions">
-                <button className="btn-ghost" disabled={!isOwner || busy !== null} onClick={openEdit}>
-                  {t("app_edit")}
-                </button>
-                <button
-                  className="btn-ghost"
-                  disabled={!isOwner || busy !== null}
-                  onClick={() =>
-                    run(treasurer.paused ? "unpause" : "pause", () =>
-                      sendTreasurerAction(
-                        TREASURER_DEPLOYMENT.treasurer,
-                        wallet!,
-                        treasurer.paused ? "unpause" : "pause",
-                      ),
-                    )
-                  }
-                >
-                  {busy === "pause" || busy === "unpause"
-                    ? t("app_pending")
-                    : t(treasurer.paused ? "app_unpause" : "app_pause")}
-                </button>
-              </div>
+              {rotating ? (
+                <div className="policy-form mono">
+                  <label>
+                    {t("app_rotate_new")}
+                    <input value={rotAddr} onChange={(e) => setRotAddr(e.target.value)} spellCheck={false} />
+                  </label>
+                  <div className="rail-actions">
+                    <button
+                      className="btn-primary"
+                      disabled={!isAddress(rotAddr) || busy !== null}
+                      onClick={rotate}
+                    >
+                      {busy === "rotate" ? t("app_pending") : t("app_rotate")}
+                    </button>
+                    <button className="btn-ghost" onClick={() => setRotating(false)}>
+                      {t("app_cancel")}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="rail-actions">
+                  <button className="btn-ghost" disabled={!isOwner || busy !== null} onClick={openEdit}>
+                    {t("app_edit")}
+                  </button>
+                  <button
+                    className="btn-ghost"
+                    disabled={!isOwner || busy !== null}
+                    onClick={() =>
+                      run(treasurer.paused ? "unpause" : "pause", () =>
+                        sendTreasurerAction(
+                          TREASURER_DEPLOYMENT.treasurer,
+                          wallet!,
+                          treasurer.paused ? "unpause" : "pause",
+                        ),
+                      )
+                    }
+                  >
+                    {busy === "pause" || busy === "unpause"
+                      ? t("app_pending")
+                      : t(treasurer.paused ? "app_unpause" : "app_pause")}
+                  </button>
+                  <button
+                    className="btn-ghost"
+                    disabled={!isOwner || busy !== null}
+                    onClick={() => setRotating(true)}
+                  >
+                    {t("app_rotate")}
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <div className="policy-form mono">
@@ -189,15 +256,27 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
         </div>
       )}
 
-      <div className="rail-card glass round2">
-        <span className="chip chip-dim">{t("app_round2")}</span>
-        <div className="rail-actions">
-          <button className="btn-ghost" disabled title={t("app_round2")}>
-            {t("app_withdraw")} ⇩
-          </button>
-          <button className="btn-ghost" disabled title={t("app_round2")}>
-            {t("app_rotate")}
-          </button>
+      <div className="rail-card glass">
+        <span className="mono rail-tag">{t("app_withdraw")} ⇩</span>
+        <div className="policy-form mono">
+          <label>
+            {t("w_amount")}
+            <input value={wdAmt} onChange={(e) => setWdAmt(e.target.value)} inputMode="decimal" />
+          </label>
+          <label>
+            {t("app_withdraw_to")}
+            <input
+              value={wdTo}
+              onChange={(e) => setWdTo(e.target.value)}
+              placeholder={short(view.state.owner)}
+              spellCheck={false}
+            />
+          </label>
+          <div className="rail-actions">
+            <button className="btn-ghost" disabled={!isOwner || busy !== null || !wdValid} onClick={withdraw}>
+              {busy === "withdraw" ? t("app_pending") : t("app_withdraw")}
+            </button>
+          </div>
         </div>
       </div>
     </aside>

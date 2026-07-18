@@ -48,6 +48,8 @@ export const FUJI_DEPLOYMENT = {
   agentId: 219n,
   /** C-Chain block of the deployment — the earliest block worth scanning for events. */
   deployBlock: 0x3666514n,
+  /** VerglasFactory (2026-07-18) — the console's "create your vault" door. */
+  factory: "0x770e72fcedadf61940e6e70630664f50ad8eac7b",
 } as const;
 
 /** The V2 vertical: the treasurer and its own vault + canonical agentId. */

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Address, Hex } from "viem";
 import { FUJI_DEPLOYMENT, TREASURER_DEPLOYMENT } from "@verglas/sdk";
 import {
+  fetchMyVaults,
   fetchTreasurer,
   fetchVaultView,
   hubChain,
@@ -14,19 +15,32 @@ import { VaultSlab } from "./components/VaultSlab";
 import { ControlRail } from "./components/ControlRail";
 import { ReceiptShelf } from "./components/ReceiptShelf";
 import { PassportBand } from "./components/PassportBand";
+import { CreateVaultWizard } from "./components/CreateVaultWizard";
 
 const REFRESH_MS = 30_000;
 
-export type VaultKey = "treasurer" | "demo";
+interface VaultEntry {
+  key: string;
+  account: Address;
+  agentId: bigint | null;
+}
 
-const VAULTS: Record<VaultKey, { account: Address; agentId: bigint }> = {
-  treasurer: { account: TREASURER_DEPLOYMENT.account, agentId: TREASURER_DEPLOYMENT.agentId },
-  demo: { account: FUJI_DEPLOYMENT.account, agentId: FUJI_DEPLOYMENT.agentId },
-};
+function resolveEntry(selKey: string, myVaults: readonly Address[]): VaultEntry {
+  if (selKey.startsWith("own-")) {
+    const account = selKey.slice(4) as Address;
+    if (myVaults.includes(account)) return { key: selKey, account, agentId: null };
+  }
+  if (selKey === "demo") {
+    return { key: "demo", account: FUJI_DEPLOYMENT.account, agentId: FUJI_DEPLOYMENT.agentId };
+  }
+  return { key: "treasurer", account: TREASURER_DEPLOYMENT.account, agentId: TREASURER_DEPLOYMENT.agentId };
+}
 
 function Console() {
   const { t, lang, setLang } = useI18n();
-  const [vaultKey, setVaultKey] = useState<VaultKey>("treasurer");
+  const [selKey, setSelKey] = useState("treasurer");
+  const [myVaults, setMyVaults] = useState<readonly Address[]>([]);
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [view, setView] = useState<VaultView | null>(null);
   const [treasurer, setTreasurer] = useState<TreasurerData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +58,8 @@ function Console() {
     localStorage.setItem("verglas-theme", theme);
   }, [theme]);
 
-  const load = useCallback((key: VaultKey) => {
-    fetchVaultView(VAULTS[key].account, VAULTS[key].agentId).then(
+  const load = useCallback((entry: VaultEntry) => {
+    fetchVaultView(entry.account, entry.agentId).then(
       (v) => {
         setView(v);
         setError(null);
@@ -57,17 +71,26 @@ function Console() {
 
   useEffect(() => {
     setView(null);
-    load(vaultKey);
-    const timer = setInterval(() => load(vaultKey), REFRESH_MS);
+    const entry = resolveEntry(selKey, myVaults);
+    load(entry);
+    const timer = setInterval(() => load(entry), REFRESH_MS);
     return () => clearInterval(timer);
-  }, [vaultKey, load]);
+  }, [selKey, myVaults, load]);
 
-  useEffect(() => {
-    getConnected().then(setWallet, () => {});
+  const refreshMyVaults = useCallback((owner: Address) => {
+    fetchMyVaults(owner).then(setMyVaults, () => {});
   }, []);
 
+  useEffect(() => {
+    getConnected().then((addr) => {
+      setWallet(addr);
+      if (addr) refreshMyVaults(addr);
+    }, () => {});
+  }, [refreshMyVaults]);
+
+  const sel = resolveEntry(selKey, myVaults);
   const isOwner = !!wallet && !!view && wallet.toLowerCase() === view.state.owner.toLowerCase();
-  const showTreasurer = vaultKey === "treasurer" ? treasurer : null;
+  const showTreasurer = sel.key === "treasurer" ? treasurer : null;
 
   /** Sign → wait for the receipt → refetch. Returns whether the tx landed. */
   const run = async (label: string, send: () => Promise<Hex>): Promise<boolean> => {
@@ -76,7 +99,7 @@ function Console() {
     try {
       const hash = await send();
       await hubChain.waitForTransactionReceipt({ hash });
-      load(vaultKey);
+      load(sel);
       return true;
     } catch {
       return false; // user rejected or reverted — the poll keeps the truth
@@ -85,7 +108,12 @@ function Console() {
     }
   };
 
-  const onConnect = () => connect().then(setWallet, () => {});
+  const onConnect = () =>
+    connect().then((addr) => {
+      setWallet(addr);
+      refreshMyVaults(addr);
+    }, () => {});
+
   const glaze = () => {
     setJustFroze(true);
     setTimeout(() => setJustFroze(false), 1100);
@@ -106,17 +134,36 @@ function Console() {
           </span>
         </a>
         <div className="cnav-picker" role="tablist">
-          {(Object.keys(VAULTS) as VaultKey[]).map((k) => (
+          <button
+            role="tab"
+            aria-selected={sel.key === "treasurer"}
+            className={sel.key === "treasurer" ? "on" : ""}
+            onClick={() => setSelKey("treasurer")}
+          >
+            {t("app_vault_treasurer")}
+          </button>
+          <button
+            role="tab"
+            aria-selected={sel.key === "demo"}
+            className={sel.key === "demo" ? "on" : ""}
+            onClick={() => setSelKey("demo")}
+          >
+            {t("app_vault_demo")}
+          </button>
+          {myVaults.map((a, i) => (
             <button
-              key={k}
+              key={a}
               role="tab"
-              aria-selected={vaultKey === k}
-              className={vaultKey === k ? "on" : ""}
-              onClick={() => setVaultKey(k)}
+              aria-selected={sel.key === `own-${a}`}
+              className={sel.key === `own-${a}` ? "on" : ""}
+              onClick={() => setSelKey(`own-${a}`)}
             >
-              {t(k === "treasurer" ? "app_vault_treasurer" : "app_vault_demo")}
+              {t("app_vault_mine")} {i + 1}
             </button>
           ))}
+          <button className="cnav-new" onClick={() => setWizardOpen(true)}>
+            + {t("w_new")}
+          </button>
         </div>
         <div className="cnav-right">
           <span className="net-dot mono">
@@ -166,6 +213,23 @@ function Console() {
           <ReceiptShelf view={view} treasurer={showTreasurer} />
           <PassportBand view={view} />
         </>
+      )}
+
+      {wizardOpen && (
+        <CreateVaultWizard
+          wallet={wallet}
+          onConnect={onConnect}
+          onClose={() => setWizardOpen(false)}
+          onCreated={(account) => {
+            setWizardOpen(false);
+            if (wallet) {
+              fetchMyVaults(wallet).then((v) => {
+                setMyVaults(v);
+                setSelKey(`own-${account}`);
+              }, () => {});
+            }
+          }}
+        />
       )}
     </div>
   );

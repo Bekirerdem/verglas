@@ -8,6 +8,7 @@ export {
   TREASURER_DEPLOYMENT,
 } from "./chains.js";
 export {
+  verglasFactoryAbi,
   verglasAccountAbi,
   verglasHubAbi,
   validationRegistryAbi,
