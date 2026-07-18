@@ -356,6 +356,7 @@ const en = {
   app_gas: "GAS (AVAX) ↗",
   app_claim_hint: "2 USDC per day into your wallet. In MetaMask, import the USDC token to see it.",
   app_withdraw_to: "TO (empty = you)",
+  app_bad_dest: "That's the USDC token CONTRACT — funds sent there are lost forever. Use your own account address.",
   app_no_identity: "No on-chain identity yet — proofs, stamps and the passport arrive with the keeper round.",
   app_rotate_new: "NEW KEEPER",
 };
@@ -714,6 +715,7 @@ const tr: typeof en = {
   app_gas: "GAS (AVAX) ↗",
   app_claim_hint: "Günde 2 USDC, kendi cüzdanına. Görmek için MetaMask'a USDC token'ını import et.",
   app_withdraw_to: "ALICI (boş = sen)",
+  app_bad_dest: "Bu adres USDC token KONTRATI — oraya giden para sonsuza dek kaybolur. Kendi hesap adresini kullan.",
   app_no_identity: "Henüz zincir kimliği yok — kanıtlar, mühürler ve pasaport keeper turuyla gelecek.",
   app_rotate_new: "YENİ KEEPER",
 };

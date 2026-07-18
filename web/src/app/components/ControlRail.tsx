@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { isAddress, parseUnits, type Address, type Hex } from "viem";
-import { TREASURER_DEPLOYMENT } from "@verglas/sdk";
+import { FUJI_DEPLOYMENT, TREASURER_DEPLOYMENT } from "@verglas/sdk";
 import type { TreasurerData, VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd } from "../../lib/format";
@@ -104,7 +104,10 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
     wdParsed = null;
   }
   const wdDest = wdTo.trim() === "" ? view.state.owner : wdTo.trim();
-  const wdValid = wdParsed !== null && isAddress(wdDest);
+  // Guard against the classic loss: pasting the token CONTRACT address
+  // (what MetaMask shows on the token page) instead of your own account.
+  const wdIsTokenContract = wdDest.toLowerCase() === FUJI_DEPLOYMENT.usdc.toLowerCase();
+  const wdValid = wdParsed !== null && isAddress(wdDest) && !wdIsTokenContract;
 
   const withdraw = async () => {
     if (!isOwner || busy || !wdValid) return;
@@ -293,6 +296,7 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
               spellCheck={false}
             />
           </label>
+          {wdIsTokenContract && <span className="wiz-err">{t("app_bad_dest")}</span>}
           <div className="rail-actions">
             <button className="btn-ghost" disabled={!isOwner || busy !== null || !wdValid} onClick={withdraw}>
               {busy === "withdraw" ? t("app_pending") : t("app_withdraw")}
