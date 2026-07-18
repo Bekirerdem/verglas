@@ -7,6 +7,7 @@ const en = {
   nav_product: "PRODUCT",
   nav_live: "LIVE",
   nav_docs: "DOCS",
+  nav_app: "CONSOLE",
   nav_cta: "LIVE GATE →",
 
   s1_kicker: "BUILT ON AVALANCHE · LIVE ON FUJI",
@@ -303,6 +304,7 @@ const tr: typeof en = {
   nav_product: "ÜRÜN",
   nav_live: "CANLI",
   nav_docs: "DOCS",
+  nav_app: "KONSOL",
   nav_cta: "CANLI KAPI →",
 
   s1_kicker: "AVALANCHE ÜZERİNDE · FUJI'DE CANLI",

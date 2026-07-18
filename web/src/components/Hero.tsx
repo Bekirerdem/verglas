@@ -30,6 +30,7 @@ export function Hero({
           <a href="#surfaces">{t("nav_product")}</a>
           <a href="#live">{t("nav_live")}</a>
           <a href="/docs/">{t("nav_docs")}</a>
+          <a href="/app/">{t("nav_app")}</a>
         </nav>
         <div className="toggles">
           <button className="tgl" onClick={() => setLang(lang === "en" ? "tr" : "en")} aria-label="Language">
