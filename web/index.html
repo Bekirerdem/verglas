@@ -26,6 +26,37 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://verglas.xyz/#org",
+          "name": "Verglas",
+          "url": "https://verglas.xyz/",
+          "logo": "https://verglas.xyz/icon-512.png"
+        },
+        {
+          "@type": "WebSite",
+          "name": "Verglas",
+          "url": "https://verglas.xyz/",
+          "publisher": { "@id": "https://verglas.xyz/#org" }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "Verglas",
+          "url": "https://verglas.xyz/",
+          "applicationCategory": "FinanceApplication",
+          "operatingSystem": "Web",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+          "description": "The trust layer for agent money on Avalanche: rule-bound non-custodial vaults for AI agents, zero-knowledge proof receipts over whole spending windows, and attestations that travel to every Avalanche L1 over native Interchain Messaging. Includes Verglas Treasurer, an autonomous corporate treasury agent with a daily cap and USD/TRY FX circuit breaker.",
+          "featureList": "Non-custodial agent vault, owner freeze lever, Groth16 policy-compliance proofs, canonical ERC-8004 validation, ICM attestation transport, FX circuit-breaker treasury agent, owner console PWA"
+        }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
