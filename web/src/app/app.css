@@ -379,6 +379,16 @@
   color: var(--text);
 }
 .policy-form input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.policy-form select {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--edge);
+  background: color-mix(in srgb, var(--bg2) 60%, transparent);
+  color: var(--text);
+}
+.policy-form select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .round2 { opacity: 0.75; }
 .round2 .chip { align-self: flex-start; }

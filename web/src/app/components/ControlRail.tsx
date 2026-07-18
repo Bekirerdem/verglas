@@ -8,6 +8,7 @@ import {
   sendClaimUsdc,
   sendSetOperator,
   sendSetPolicy,
+  sendSpend,
   sendTreasurerAction,
   sendUsdc,
   sendVaultAction,
@@ -19,13 +20,14 @@ interface Props {
   treasurer: TreasurerData | null;
   wallet: Address | null;
   isOwner: boolean;
+  isAgent: boolean;
   busy: string | null;
   onConnect: () => void;
   run: (label: string, send: () => Promise<Hex>) => Promise<boolean>;
   onFroze: () => void;
 }
 
-export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect, run, onFroze }: Props) {
+export function ControlRail({ view, treasurer, wallet, isOwner, isAgent, busy, onConnect, run, onFroze }: Props) {
   const { t } = useI18n();
   const frozen = view.state.frozen;
   const [armed, setArmed] = useState(false);
@@ -95,6 +97,21 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
       setRotating(false);
       setRotAddr("");
     }
+  };
+
+  const [payTo, setPayTo] = useState<string>(view.state.whitelist[0] ?? "");
+  const [payAmt, setPayAmt] = useState("");
+  let payParsed: bigint | null = null;
+  try {
+    const v = parseUnits(payAmt, 6);
+    if (v > 0n && v <= view.state.perTxLimit) payParsed = v;
+  } catch {
+    payParsed = null;
+  }
+  const pay = async () => {
+    if (!wallet || !isAgent || busy || payParsed === null || !isAddress(payTo)) return;
+    const ok = await run("spend", () => sendSpend(view.account, wallet, payTo as Address, payParsed!));
+    if (ok) setPayAmt("");
   };
 
   const [depAmt, setDepAmt] = useState("");
@@ -297,6 +314,39 @@ export function ControlRail({ view, treasurer, wallet, isOwner, busy, onConnect,
           )}
         </div>
       )}
+
+      <div className="rail-card glass">
+        <div className="rail-row">
+          <span className="mono rail-tag">{t("app_pay")}</span>
+          {isAgent && <span className="chip chip-ok">{t("app_role_agent")}</span>}
+        </div>
+        <div className="policy-form mono">
+          <label>
+            {t("app_pay_to")}
+            <select value={payTo} onChange={(e) => setPayTo(e.target.value)}>
+              {view.state.whitelist.map((w) => (
+                <option key={w} value={w}>
+                  {short(w, 8, 6)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            {t("w_amount")} (≤ {usd(view.state.perTxLimit)})
+            <input value={payAmt} onChange={(e) => setPayAmt(e.target.value)} inputMode="decimal" />
+          </label>
+          <div className="rail-actions">
+            <button
+              className="btn-primary"
+              disabled={!isAgent || busy !== null || payParsed === null}
+              onClick={pay}
+            >
+              {busy === "spend" ? t("app_pending") : t("app_pay")}
+            </button>
+          </div>
+          {!isAgent && <p className="rail-hint">{t("app_pay_hint")}</p>}
+        </div>
+      </div>
 
       <div className="rail-card glass">
         <span className="mono rail-tag">{t("app_deposit")} ⇧</span>

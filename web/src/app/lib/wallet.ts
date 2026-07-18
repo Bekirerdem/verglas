@@ -44,6 +44,18 @@ export async function getConnected(): Promise<Address | null> {
 }
 
 export type VaultAction = "freeze" | "unfreeze";
+
+/** The agent's door: pay a whitelisted destination within the vault's rules. */
+export function sendSpend(account: Address, from: Address, to: Address, amount: bigint): Promise<Hex> {
+  return walletClient().writeContract({
+    address: account,
+    abi: verglasAccountAbi,
+    functionName: "spend",
+    args: [to, amount],
+    account: from,
+    chain: fujiC,
+  });
+}
 export type TreasurerAction = "pause" | "unpause";
 
 export function sendVaultAction(account: Address, from: Address, fn: VaultAction): Promise<Hex> {

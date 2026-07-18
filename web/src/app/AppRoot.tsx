@@ -90,6 +90,7 @@ function Console() {
 
   const sel = resolveEntry(selKey, myVaults);
   const isOwner = !!wallet && !!view && wallet.toLowerCase() === view.state.owner.toLowerCase();
+  const isAgent = !!wallet && !!view && wallet.toLowerCase() === view.state.agent.toLowerCase();
   const showTreasurer = sel.key === "treasurer" ? treasurer : null;
 
   /** Sign → wait for the receipt → refetch. Returns whether the tx landed. */
@@ -204,6 +205,7 @@ function Console() {
               treasurer={showTreasurer}
               wallet={wallet}
               isOwner={isOwner}
+              isAgent={isAgent}
               busy={busy}
               onConnect={onConnect}
               run={run}
