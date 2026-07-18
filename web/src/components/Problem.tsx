@@ -1,19 +1,23 @@
 import { useI18n } from "../lib/i18n";
 
-/** S2 — THE PROBLEM: three sentences of "but", in human language. */
+/** S2 — THE PROBLEM, split in two: the business and the bot. */
 export function Problem() {
   const { t } = useI18n();
   return (
-    <section className="problem" id="problem">
-      <p className="ptag will-reveal">{t("s2_tag")}</p>
-      <h2 className="will-reveal">
-        {t("s2_p1_1")}
-        <b>{t("s2_p1_b1")}</b>
-        {t("s2_p1_2")}
-        <b>{t("s2_p1_b2")}</b>
-        {t("s2_p1_3")}
-      </h2>
-      <p className="pafter will-reveal">{t("s2_p2")}</p>
+    <section className="problem2" id="problem">
+      <p className="ptag will-reveal">{t("r2_tag")}</p>
+      <div className="p2-panels">
+        <div className="p2-biz will-reveal">
+          <h2>{t("r2_biz_h")}</h2>
+          <p>{t("r2_biz_p")}</p>
+        </div>
+        <div className="p2-bot will-reveal">
+          <h3>
+            {t("r2_bot_h")} <b>{t("r2_bot_b")}</b>
+          </h3>
+        </div>
+      </div>
+      <p className="p2-close serif will-reveal">{t("r2_close")}</p>
     </section>
   );
 }

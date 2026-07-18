@@ -7,12 +7,6 @@ import { useI18n } from "../lib/i18n";
 export function LiveBand({ data, treasurer }: { data: DashboardData; treasurer: TreasurerData | null }) {
   const { t } = useI18n();
   const lastFx = treasurer?.payments[0];
-  const diffs = [
-    { t: t("s5_d1_t"), b: t("s5_d1_b"), p: t("s5_d1_p") },
-    { t: t("s5_d2_t"), b: t("s5_d2_b"), p: t("s5_d2_p") },
-    { t: t("s5_d3_t"), b: t("s5_d3_b"), p: t("s5_d3_p") },
-    { t: t("s5_d4_t"), b: t("s5_d4_b"), p: t("s5_d4_p") },
-  ];
   return (
     <section className="liveband" id="live">
       <p className="ptag will-reveal">{t("s5_tag")}</p>
@@ -35,16 +29,9 @@ export function LiveBand({ data, treasurer }: { data: DashboardData; treasurer: 
         </div>
       </div>
 
-      <div className="diffs">
-        {diffs.map((d) => (
-          <div className="diff will-reveal" key={d.b}>
-            <h4>
-              {d.t} <b>{d.b}</b>
-            </h4>
-            <p>{d.p}</p>
-          </div>
-        ))}
-      </div>
+      <a className="cta-main lb-cta will-reveal" href="/app/">
+        {t("r6_biz_cta")}
+      </a>
     </section>
   );
 }

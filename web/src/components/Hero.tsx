@@ -26,8 +26,8 @@ export function Hero({
           </span>
         </div>
         <nav className="navlinks">
-          <a href="#solution">{t("nav_how")}</a>
-          <a href="#surfaces">{t("nav_product")}</a>
+          <a href="#scene">{t("nav_how")}</a>
+          <a href="#motor">{t("nav_product")}</a>
           <a href="#live">{t("nav_live")}</a>
           <a href="/docs/">{t("nav_docs")}</a>
           <a href="/app/">{t("nav_app")}</a>
@@ -65,7 +65,7 @@ export function Hero({
         </p>
 
         <div className="hero-ctas hero-anim">
-          <a className="cta-main" href="#solution">
+          <a className="cta-main" href="/app/">
             {t("s1_cta_demo")}
           </a>
           <a className="cta-ghost" href="/docs/">

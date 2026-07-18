@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import "./reframe.css";
 import { fetchDashboard, fetchTreasurer, type DashboardData, type TreasurerData } from "./lib/data";
 import { I18nProvider, useI18n } from "./lib/i18n";
 import { Hero } from "./components/Hero";
 import { Problem } from "./components/Problem";
-import { Solution } from "./components/Solution";
-import { Surfaces } from "./components/Surfaces";
+import { TreasurerScene } from "./components/TreasurerScene";
+import { Motor } from "./components/Motor";
 import { LiveBand } from "./components/LiveBand";
 import { Closing } from "./components/Closing";
 import { FooterWall } from "./components/FooterWall";
+import { VerglasCanvas } from "./components/VerglasCanvas";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -120,6 +122,7 @@ function Page() {
 
   return (
     <div ref={rootRef}>
+      <VerglasCanvas theme={theme} />
       <div className="grain" aria-hidden="true" />
       {error && !data && (
         <div className="err">
@@ -133,8 +136,8 @@ function Page() {
           <Hero data={data} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
           <main>
             <Problem />
-            <Solution />
-            <Surfaces treasurer={treasurer} />
+            <TreasurerScene treasurer={treasurer} />
+            <Motor />
             <LiveBand data={data} treasurer={treasurer} />
             <Closing />
           </main>

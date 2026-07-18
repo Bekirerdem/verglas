@@ -1,28 +1,20 @@
-import { FUJI_DEPLOYMENT } from "@verglas/sdk";
 import { useI18n } from "../lib/i18n";
 
-/** S6 — THE CLOSE: one invitation, two doors. */
+/** S6 — THE CLOSE: two doors, one per persona. */
 export function Closing() {
   const { t } = useI18n();
   return (
-    <section className="closing">
-      <h2 className="will-reveal">
-        {t("s6_h")}
-        <em>{t("s6_sub")}</em>
-      </h2>
-      <div className="ccta will-reveal">
-        <a
-          className="cta-main"
-          href={`https://subnets-test.avax.network/dispatch/address/${FUJI_DEPLOYMENT.gateOnDispatch}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("s6_cta_gate")}
-        </a>
-        <a className="cta-ghost" href="/docs/">
-          {t("s6_cta_docs")}
-        </a>
-      </div>
+    <section className="closing doors">
+      <a className="door door-biz will-reveal" href="/app/">
+        <h3>{t("r6_biz_h")}</h3>
+        <p className="serif">{t("r6_biz_p")}</p>
+        <span className="mono door-cta">{t("r6_biz_cta")}</span>
+      </a>
+      <a className="door door-dev will-reveal" href="/docs/">
+        <h3>{t("r6_dev_h")}</h3>
+        <p className="serif">{t("r6_dev_p")}</p>
+        <span className="mono door-cta">{t("r6_dev_cta")}</span>
+      </a>
     </section>
   );
 }
