@@ -14,6 +14,7 @@ import { connect, getConnected } from "./lib/wallet";
 import { VaultSlab } from "./components/VaultSlab";
 import { ControlRail } from "./components/ControlRail";
 import { ReceiptShelf } from "./components/ReceiptShelf";
+import { VaultHistory } from "./components/VaultHistory";
 import { PassportBand } from "./components/PassportBand";
 import { CreateVaultWizard } from "./components/CreateVaultWizard";
 import { vaultNames } from "./lib/activate";
@@ -265,6 +266,7 @@ function Console() {
             />
           </section>
           <ReceiptShelf view={view} treasurer={showTreasurer} />
+          <VaultHistory view={view} />
           <PassportBand view={view} wallet={wallet} isOwner={isOwner} onRefresh={() => load(sel)} />
         </>
       )}

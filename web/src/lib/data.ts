@@ -17,6 +17,22 @@ const spendEvent = parseAbiItem(
   "event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment)",
 );
 const accountBoundEvent = parseAbiItem("event AccountBound(uint256 indexed agentId, address indexed account)");
+const ownerWithdrawEvent = parseAbiItem("event OwnerWithdraw(address indexed to, uint256 amount)");
+const frozenEvent = parseAbiItem("event Frozen()");
+const unfrozenEvent = parseAbiItem("event Unfrozen()");
+const erc20TransferEvent = parseAbiItem(
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
+);
+
+export type HistoryKind = "spend" | "withdraw" | "deposit" | "freeze" | "thaw";
+
+export interface HistoryItem {
+  kind: HistoryKind;
+  amount: bigint | null;
+  counterparty: Address | null;
+  timestamp: bigint;
+  txHash: Hex;
+}
 const carriedEvent = parseAbiItem(
   "event AttestationCarried(uint256 indexed agentId, bytes32 indexed destinationBlockchainID, address gate, bytes32 messageID)",
 );
@@ -196,6 +212,7 @@ export interface VaultView {
   stamps: Stamp[];
   spends: SpendEvent[];
   carried: CarriedEvent[];
+  history: HistoryItem[];
   attestation: Attestation | null;
   cleared: boolean;
   gateMaxAge: bigint;
@@ -274,7 +291,7 @@ export async function fetchVaultView(account: Address, agentId: bigint | null): 
     )
   ).filter((s) => s.lastUpdate > 0n);
 
-  const [spendLogs, carriedLogs] = await Promise.all([
+  const [spendLogs, carriedLogs, lifecycleLogs, depositLogs] = await Promise.all([
     scanLogs(chain, (fromBlock, toBlock) =>
       chain.getLogs({ address: account, event: spendEvent, fromBlock, toBlock }),
     ),
@@ -283,6 +300,17 @@ export async function fetchVaultView(account: Address, agentId: bigint | null): 
       : scanLogs(chain, (fromBlock, toBlock) =>
           chain.getLogs({ address: D.hub, event: carriedEvent, args: { agentId }, fromBlock, toBlock }),
         ),
+    scanLogs(chain, (fromBlock, toBlock) =>
+      chain.getLogs({
+        address: account,
+        events: [ownerWithdrawEvent, frozenEvent, unfrozenEvent],
+        fromBlock,
+        toBlock,
+      }),
+    ),
+    scanLogs(chain, (fromBlock, toBlock) =>
+      chain.getLogs({ address: D.usdc, event: erc20TransferEvent, args: { to: account }, fromBlock, toBlock }),
+    ),
   ]);
 
   const spends: SpendEvent[] = await Promise.all(
@@ -308,6 +336,44 @@ export async function fetchVaultView(account: Address, agentId: bigint | null): 
   );
   carried.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
 
+  // One chronological feed: payments, deposits, withdrawals, brake events.
+  const history: HistoryItem[] = await Promise.all([
+    ...spends.map(async (s) => ({
+      kind: "spend" as const,
+      amount: s.amount,
+      counterparty: s.to,
+      timestamp: s.timestamp,
+      txHash: s.txHash,
+    })),
+    ...lifecycleLogs.map(async (log) => {
+      const timestamp = await blockTime(chain, log.blockNumber);
+      if (log.eventName === "OwnerWithdraw") {
+        return {
+          kind: "withdraw" as const,
+          amount: log.args.amount!,
+          counterparty: log.args.to!,
+          timestamp,
+          txHash: log.transactionHash,
+        };
+      }
+      return {
+        kind: log.eventName === "Frozen" ? ("freeze" as const) : ("thaw" as const),
+        amount: null,
+        counterparty: null,
+        timestamp,
+        txHash: log.transactionHash,
+      };
+    }),
+    ...depositLogs.map(async (log) => ({
+      kind: "deposit" as const,
+      amount: log.args.value!,
+      counterparty: log.args.from!,
+      timestamp: await blockTime(chain, log.blockNumber),
+      txHash: log.transactionHash,
+    })),
+  ]);
+  history.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
+
   return {
     agentId,
     account,
@@ -325,6 +391,7 @@ export async function fetchVaultView(account: Address, agentId: bigint | null): 
     stamps,
     spends,
     carried,
+    history,
     attestation,
     cleared,
     gateMaxAge,
