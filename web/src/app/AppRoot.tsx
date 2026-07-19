@@ -38,7 +38,11 @@ function resolveEntry(selKey: string, myVaults: readonly Address[]): VaultEntry 
 
 function Console() {
   const { t, lang, setLang } = useI18n();
-  const [selKey, setSelKey] = useState("treasurer");
+  const [selKey, setSelKeyState] = useState(() => localStorage.getItem("verglas-vault") ?? "treasurer");
+  const setSelKey = (key: string) => {
+    setSelKeyState(key);
+    localStorage.setItem("verglas-vault", key);
+  };
   const [myVaults, setMyVaults] = useState<readonly Address[]>([]);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [view, setView] = useState<VaultView | null>(null);
@@ -46,6 +50,7 @@ function Console() {
   const [error, setError] = useState<string | null>(null);
   const [wallet, setWallet] = useState<Address | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
   const [justFroze, setJustFroze] = useState(false);
   const [theme, setTheme] = useState<string>(() => {
     const saved = localStorage.getItem("verglas-theme");
@@ -78,7 +83,13 @@ function Console() {
   }, [selKey, myVaults, load]);
 
   const refreshMyVaults = useCallback((owner: Address) => {
-    fetchMyVaults(owner).then(setMyVaults, () => {});
+    fetchMyVaults(owner).then((v) => {
+      setMyVaults(v);
+      // First visit with an own vault: land the user on THEIR vault.
+      if (v.length > 0 && localStorage.getItem("verglas-vault") === null) {
+        setSelKeyState(`own-${v[0]}`);
+      }
+    }, () => {});
   }, []);
 
   useEffect(() => {
@@ -99,11 +110,14 @@ function Console() {
     setBusy(label);
     try {
       const hash = await send();
-      await hubChain.waitForTransactionReceipt({ hash });
+      const rc = await hubChain.waitForTransactionReceipt({ hash });
+      if (rc.status !== "success") throw new Error("reverted");
+      setTxError(null);
       load(sel);
       return true;
     } catch {
-      return false; // user rejected or reverted — the poll keeps the truth
+      setTxError(label); // rejected in the wallet or reverted by a vault rule
+      return false;
     } finally {
       setBusy(null);
     }
@@ -198,6 +212,11 @@ function Console() {
 
       {view && (
         <>
+          {txError && (
+            <div className="tx-error mono">
+              ⚠ {t("app_tx_failed")} ({txError})
+            </div>
+          )}
           <section className="slab-hero">
             <VaultSlab view={view} treasurer={showTreasurer} />
             <ControlRail

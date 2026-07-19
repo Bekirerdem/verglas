@@ -5,7 +5,6 @@ import type { TreasurerData, VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd } from "../../lib/format";
 import {
-  sendClaimUsdc,
   sendSetOperator,
   sendSetPolicy,
   sendSpend,
@@ -101,10 +100,11 @@ export function ControlRail({ view, treasurer, wallet, isOwner, isAgent, busy, o
 
   const [payTo, setPayTo] = useState<string>(view.state.whitelist[0] ?? "");
   const [payAmt, setPayAmt] = useState("");
+  const budgetLeft = view.state.totalBudget - view.state.totalSpent;
   let payParsed: bigint | null = null;
   try {
     const v = parseUnits(payAmt, 6);
-    if (v > 0n && v <= view.state.perTxLimit) payParsed = v;
+    if (v > 0n && v <= view.state.perTxLimit && v <= budgetLeft) payParsed = v;
   } catch {
     payParsed = null;
   }
@@ -172,13 +172,6 @@ export function ControlRail({ view, treasurer, wallet, isOwner, isAgent, busy, o
               >
                 {t("app_gas")}
               </a>
-              <button
-                className="btn-ghost"
-                disabled={busy !== null}
-                onClick={() => run("claim", () => sendClaimUsdc(wallet))}
-              >
-                {busy === "claim" ? t("app_pending") : t("app_claim")}
-              </button>
             </div>
             <p className="rail-hint">{t("app_claim_hint")}</p>
           </>
@@ -318,7 +311,11 @@ export function ControlRail({ view, treasurer, wallet, isOwner, isAgent, busy, o
       <div className="rail-card glass">
         <div className="rail-row">
           <span className="mono rail-tag">{t("app_pay")}</span>
-          {isAgent && <span className="chip chip-ok">{t("app_role_agent")}</span>}
+          {budgetLeft === 0n ? (
+            <span className="chip chip-frozen">{t("app_budget_out")}</span>
+          ) : (
+            isAgent && <span className="chip chip-ok">{t("app_role_agent")}</span>
+          )}
         </div>
         <div className="policy-form mono">
           <label>
@@ -332,7 +329,7 @@ export function ControlRail({ view, treasurer, wallet, isOwner, isAgent, busy, o
             </select>
           </label>
           <label>
-            {t("w_amount")} (≤ {usd(view.state.perTxLimit)})
+            {t("w_amount")} (≤ {usd(view.state.perTxLimit)} · {t("app_budget_left")} {usd(budgetLeft)})
             <input value={payAmt} onChange={(e) => setPayAmt(e.target.value)} inputMode="decimal" />
           </label>
           <div className="rail-actions">
