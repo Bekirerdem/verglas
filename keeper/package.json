@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "stamp": "tsx stamp.ts"
+    "stamp": "tsx stamp.ts",
+    "service": "tsx service.ts"
   },
   "dependencies": {
     "@verglas/sdk": "file:../sdk",
