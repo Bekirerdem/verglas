@@ -10,9 +10,11 @@ import {
   type VaultView,
 } from "../lib/data";
 import { I18nProvider, useI18n } from "../lib/i18n";
+import { short } from "../lib/format";
 import { connect, getConnected } from "./lib/wallet";
-import { VaultSlab } from "./components/VaultSlab";
-import { ControlRail } from "./components/ControlRail";
+import { StatusStrip } from "./components/StatusStrip";
+import { ActionDesk } from "./components/ActionDesk";
+import { BrakeLever } from "./components/BrakeLever";
 import { ReceiptShelf } from "./components/ReceiptShelf";
 import { VaultHistory } from "./components/VaultHistory";
 import { PassportBand } from "./components/PassportBand";
@@ -170,38 +172,6 @@ function Console() {
             VERGLAS<sup>{t("app_title")}</sup>
           </span>
         </a>
-        <div className="cnav-picker" role="tablist">
-          <button
-            role="tab"
-            aria-selected={sel.key === "treasurer"}
-            className={sel.key === "treasurer" ? "on" : ""}
-            onClick={() => setSelKey("treasurer")}
-          >
-            {t("app_vault_treasurer")}
-          </button>
-          <button
-            role="tab"
-            aria-selected={sel.key === "demo"}
-            className={sel.key === "demo" ? "on" : ""}
-            onClick={() => setSelKey("demo")}
-          >
-            {t("app_vault_demo")}
-          </button>
-          {myVaults.map((a, i) => (
-            <button
-              key={a}
-              role="tab"
-              aria-selected={sel.key === `own-${a}`}
-              className={sel.key === `own-${a}` ? "on" : ""}
-              onClick={() => setSelKey(`own-${a}`)}
-            >
-              {vaultNames()[a.toLowerCase()] ?? `${t("app_vault_mine")} ${i + 1}`}
-            </button>
-          ))}
-          <button className="cnav-new" onClick={() => setWizardOpen(true)}>
-            + {t("w_new")}
-          </button>
-        </div>
         <div className="cnav-right">
           <span className="net-dot mono">
             <i /> {t("app_net")}
@@ -245,30 +215,113 @@ function Console() {
       {!view && !error && <div className="loading">{t("app_loading")}</div>}
 
       {view && (
-        <>
-          {txError && (
-            <div className="tx-error mono">
-              ⚠ {t("app_tx_failed")} ({txError})
+        <div className="cshell">
+          <aside className="cside">
+            <span className="mono cside-head">{t("app_vaults")}</span>
+            <div className="cside-vaults" role="tablist">
+              {myVaults.map((a, i) => (
+                <button
+                  key={a}
+                  role="tab"
+                  aria-selected={sel.key === `own-${a}`}
+                  className={`cside-vault${sel.key === `own-${a}` ? " on" : ""}`}
+                  onClick={() => setSelKey(`own-${a}`)}
+                >
+                  {vaultNames()[a.toLowerCase()] ?? `${t("app_vault_mine")} ${i + 1}`}
+                </button>
+              ))}
+              <button
+                role="tab"
+                aria-selected={sel.key === "treasurer"}
+                className={`cside-vault${sel.key === "treasurer" ? " on" : ""}`}
+                onClick={() => setSelKey("treasurer")}
+              >
+                {t("app_vault_treasurer")}
+                <span className="chip chip-dim">{t("app_showcase")}</span>
+              </button>
+              <button
+                role="tab"
+                aria-selected={sel.key === "demo"}
+                className={`cside-vault${sel.key === "demo" ? " on" : ""}`}
+                onClick={() => setSelKey("demo")}
+              >
+                {t("app_vault_demo")}
+                <span className="chip chip-dim">{t("app_showcase")}</span>
+              </button>
             </div>
-          )}
-          <section className="slab-hero">
-            <VaultSlab view={view} treasurer={showTreasurer} />
-            <ControlRail
+            <button className="cnav-new cside-new" onClick={() => setWizardOpen(true)}>
+              + {t("w_new")}
+            </button>
+
+            <div className="cside-wallet">
+              {wallet ? (
+                <>
+                  <div className="rail-row">
+                    <span className="mono wallet-addr">{short(wallet)}</span>
+                    <span className={`chip ${isOwner ? "chip-amber" : "chip-dim"}`}>
+                      {t(isOwner ? "app_owner" : "app_viewer")}
+                    </span>
+                  </div>
+                  <a className="mono cside-link" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">
+                    {t("app_circle")}
+                  </a>
+                  <a
+                    className="mono cside-link"
+                    href="https://core.app/tools/testnet-faucet/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t("app_gas")}
+                  </a>
+                </>
+              ) : (
+                <button className="btn-connect" onClick={onConnect}>
+                  {t("app_connect")}
+                </button>
+              )}
+            </div>
+
+            <BrakeLever
+              view={view}
+              wallet={wallet}
+              isOwner={isOwner}
+              busy={busy}
+              run={run}
+              onFroze={glaze}
+            />
+          </aside>
+
+          <main className="cwork">
+            {txError && (
+              <div className="tx-error mono">
+                ⚠ {t("app_tx_failed")} ({txError})
+              </div>
+            )}
+            <StatusStrip view={view} treasurer={showTreasurer} />
+            <ActionDesk
               view={view}
               treasurer={showTreasurer}
               wallet={wallet}
               isOwner={isOwner}
               isAgent={isAgent}
               busy={busy}
-              onConnect={onConnect}
               run={run}
-              onFroze={glaze}
             />
-          </section>
-          <ReceiptShelf view={view} treasurer={showTreasurer} />
-          <VaultHistory view={view} />
-          <PassportBand view={view} wallet={wallet} isOwner={isOwner} onRefresh={() => load(sel)} />
-        </>
+            <VaultHistory view={view} />
+          </main>
+
+          <aside className="caudit">
+            <PassportBand
+              view={view}
+              wallet={wallet}
+              isOwner={isOwner}
+              busy={busy}
+              run={run}
+              onRefresh={() => load(sel)}
+            />
+            <ReceiptShelf view={view} treasurer={showTreasurer} />
+          </aside>
+        </div>
       )}
 
       {wizardOpen && (
