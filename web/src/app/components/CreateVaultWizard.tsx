@@ -4,8 +4,15 @@ import { fetchMyVaults, hubChain } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short } from "../../lib/format";
 import { sendCreateVault, sendUsdc } from "../lib/wallet";
+import { activateStampLine, setVaultName } from "../lib/activate";
 
 const FAUCET = "https://faucet.circle.com/";
+
+const PRESETS = [
+  { key: "w_p1", perTx: "2", budget: "10" },
+  { key: "w_p2", perTx: "5", budget: "20" },
+  { key: "w_p3", perTx: "10", budget: "50" },
+] as const;
 
 interface Props {
   wallet: Address | null;
@@ -14,9 +21,10 @@ interface Props {
   onCreated: (account: Address) => void;
 }
 
-/** The console's "create your vault" flow: rules → sign → fund. */
+/** The console's "create your vault" flow: rules → sign → fund → stamp line. */
 export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Props) {
   const { t } = useI18n();
+  const [name, setName] = useState("");
   const [agent, setAgent] = useState<string>(wallet ?? "");
   const [perTx, setPerTx] = useState("5");
   const [budget, setBudget] = useState("20");
@@ -26,6 +34,8 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
   const [created, setCreated] = useState<Address | null>(null);
   const [fundAmt, setFundAmt] = useState("2");
   const [fundedTx, setFundedTx] = useState(false);
+  const [actStep, setActStep] = useState<0 | 1 | 2 | 3>(0);
+  const [actAgentId, setActAgentId] = useState<bigint | null>(null);
 
   const whitelist = wl
     .split(/[\s,;]+/)
@@ -55,7 +65,9 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
       });
       await hubChain.waitForTransactionReceipt({ hash });
       const vaults = await fetchMyVaults(wallet!);
-      setCreated(vaults[vaults.length - 1] ?? null);
+      const account = vaults[vaults.length - 1] ?? null;
+      if (account && name.trim()) setVaultName(account, name.trim());
+      setCreated(account);
     } catch {
       setError(true);
     }
@@ -76,9 +88,23 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
     setBusy(null);
   };
 
+  const activate = async () => {
+    if (!created || !wallet || busy || actStep !== 0) return;
+    setBusy("activate");
+    setError(false);
+    try {
+      const agentId = await activateStampLine(wallet, created, setActStep);
+      setActAgentId(agentId);
+    } catch {
+      setError(true);
+    }
+    setActStep(0);
+    setBusy(null);
+  };
+
   return (
     <div className="wiz-overlay" role="dialog" aria-modal="true">
-      <div className="wiz glass">
+      <div className="wiz">
         <div className="rail-row">
           <span className="mono rail-tag">{t("w_title")}</span>
           <button className="btn-ghost" onClick={onClose}>
@@ -96,10 +122,28 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
         ) : created === null ? (
           <div className="policy-form mono">
             <label>
+              {t("w_name")}
+              <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} />
+            </label>
+            <label>
               {t("w_agent")}
               <input value={agent} onChange={(e) => setAgent(e.target.value)} spellCheck={false} />
             </label>
             <span className="wiz-hint">{t("w_agent_hint")}</span>
+            <div className="rail-actions">
+              {PRESETS.map((p) => (
+                <button
+                  key={p.key}
+                  className={`btn-ghost${perTx === p.perTx && budget === p.budget ? " on" : ""}`}
+                  onClick={() => {
+                    setPerTx(p.perTx);
+                    setBudget(p.budget);
+                  }}
+                >
+                  {t(p.key)}
+                </button>
+              ))}
+            </div>
             <div className="wiz-two">
               <label>
                 {t("w_pertx")}
@@ -133,6 +177,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
                 COPY
               </button>
             </div>
+
             <span className="mono rail-tag">{t("w_fund")}</span>
             <p className="rail-hint">{t("w_fund_p")}</p>
             <div className="wiz-two">
@@ -149,6 +194,21 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
                 </a>
               </div>
             </div>
+
+            <span className="mono rail-tag">{t("w_stamp")}</span>
+            <p className="rail-hint">{t("app_activate_p")}</p>
+            {actAgentId !== null ? (
+              <span className="chip chip-amber wiz-act-done">
+                ✓ {t("w_stamp_done")} #{actAgentId.toString()}
+              </span>
+            ) : (
+              <button className="btn-ghost" disabled={busy !== null} onClick={activate}>
+                {actStep === 0
+                  ? t("app_activate")
+                  : `${actStep}/3 · ${t(actStep === 1 ? "app_act_step1" : actStep === 2 ? "app_act_step2" : "app_act_step3")}…`}
+              </button>
+            )}
+
             {error && <span className="wiz-err">{t("w_error")}</span>}
             <button className="btn-primary" onClick={() => onCreated(created)}>
               {t("w_close")}

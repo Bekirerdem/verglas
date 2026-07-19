@@ -16,6 +16,11 @@ import { ControlRail } from "./components/ControlRail";
 import { ReceiptShelf } from "./components/ReceiptShelf";
 import { PassportBand } from "./components/PassportBand";
 import { CreateVaultWizard } from "./components/CreateVaultWizard";
+import { vaultNames } from "./lib/activate";
+
+interface InstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+}
 
 const REFRESH_MS = 30_000;
 
@@ -52,6 +57,16 @@ function Console() {
   const [busy, setBusy] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [justFroze, setJustFroze] = useState(false);
+  const [installEvt, setInstallEvt] = useState<InstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallEvt(e as InstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+  }, []);
   const [theme, setTheme] = useState<string>(() => {
     const saved = localStorage.getItem("verglas-theme");
     if (saved === "light" || saved === "dark") return saved;
@@ -173,7 +188,7 @@ function Console() {
               className={sel.key === `own-${a}` ? "on" : ""}
               onClick={() => setSelKey(`own-${a}`)}
             >
-              {t("app_vault_mine")} {i + 1}
+              {vaultNames()[a.toLowerCase()] ?? `${t("app_vault_mine")} ${i + 1}`}
             </button>
           ))}
           <button className="cnav-new" onClick={() => setWizardOpen(true)}>
@@ -200,6 +215,17 @@ function Console() {
           >
             ◐
           </button>
+          {installEvt && (
+            <button
+              className="mono cnav-new"
+              onClick={() => {
+                installEvt.prompt();
+                setInstallEvt(null);
+              }}
+            >
+              {t("app_install")}
+            </button>
+          )}
         </div>
       </nav>
 

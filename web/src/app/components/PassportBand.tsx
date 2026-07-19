@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { concat, keccak256, parseEventLogs, toHex, type Address } from "viem";
-import { identityRegistryAbi } from "@verglas/sdk";
-import { hubChain, type VaultView } from "../../lib/data";
+import type { Address } from "viem";
+import type { VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { remaining, short, utcDate } from "../../lib/format";
-import { sendBindAccount, sendRegisterIdentity, sendValidationRequest } from "../lib/wallet";
+import { activateStampLine } from "../lib/activate";
 
 const TX = "https://testnet.snowtrace.io/tx/";
 
@@ -25,23 +24,7 @@ export function PassportBand({ view, wallet, isOwner, onRefresh }: Props) {
     if (!wallet || !isOwner || step !== 0) return;
     setActErr(false);
     try {
-      setStep(1);
-      const h1 = await sendRegisterIdentity(wallet);
-      const rc = await hubChain.waitForTransactionReceipt({ hash: h1 });
-      const minted = parseEventLogs({ abi: identityRegistryAbi, logs: rc.logs, eventName: "Transfer" });
-      const agentId = minted[0]?.args.tokenId;
-      if (agentId === undefined) throw new Error("no-agent-id");
-
-      setStep(2);
-      const h2 = await sendBindAccount(wallet, agentId, view.account);
-      await hubChain.waitForTransactionReceipt({ hash: h2 });
-
-      setStep(3);
-      const rand = new Uint8Array(32);
-      crypto.getRandomValues(rand);
-      const requestHash = keccak256(concat([view.account, toHex(rand)]));
-      const h3 = await sendValidationRequest(wallet, agentId, requestHash);
-      await hubChain.waitForTransactionReceipt({ hash: h3 });
+      await activateStampLine(wallet, view.account, setStep);
       onRefresh();
     } catch {
       setActErr(true);
