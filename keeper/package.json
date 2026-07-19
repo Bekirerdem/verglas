@@ -1,0 +1,16 @@
+{
+  "name": "keeper",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "stamp": "tsx stamp.ts"
+  },
+  "dependencies": {
+    "@verglas/sdk": "file:../sdk",
+    "viem": "^2.55.1"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}
