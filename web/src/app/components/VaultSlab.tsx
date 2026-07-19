@@ -40,6 +40,7 @@ export function VaultSlab({ view, treasurer }: { view: VaultView; treasurer: Tre
 
   let fx: null | {
     live: string;
+    liveIsFresh: boolean;
     ref: string;
     devBps: number;
     maxBps: number;
@@ -49,12 +50,15 @@ export function VaultSlab({ view, treasurer }: { view: VaultView; treasurer: Tre
   let epochPct = 0;
   if (treasurer) {
     const ref = treasurer.referenceRateUsdTry;
-    const live = treasurer.pythRateUsdTry;
+    // Prefer the true live Hermes rate; fall back to the last on-chain
+    // written price with an honest label when Hermes is unreachable.
+    const live = treasurer.hermesRateUsdTry ?? treasurer.pythRateUsdTry;
     const diff = live > ref ? live - ref : ref - live;
     const devBps = ref > 0n ? Number((diff * 1_000_000n) / ref) / 100 : 0;
     const maxBps = treasurer.maxSlippageBps;
     fx = {
       live: rate4(live),
+      liveIsFresh: treasurer.hermesRateUsdTry !== null,
       ref: rate4(ref),
       devBps,
       maxBps,
@@ -120,7 +124,7 @@ export function VaultSlab({ view, treasurer }: { view: VaultView; treasurer: Tre
           <div className="fx-head mono">{t("app_fx")}</div>
           <div className="fx-grid">
             <div>
-              <span className="mono fx-label">{t("app_fx_live")}</span>
+              <span className="mono fx-label">{t(fx.liveIsFresh ? "app_fx_live" : "app_fx_last")}</span>
               <span className="fx-rate mono">{fx.live}</span>
             </div>
             <div>
