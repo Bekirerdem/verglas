@@ -58,6 +58,12 @@ function Console() {
   const [txError, setTxError] = useState<string | null>(null);
   const [justFroze, setJustFroze] = useState(false);
   const [installEvt, setInstallEvt] = useState<InstallPromptEvent | null>(null);
+  // iOS never fires beforeinstallprompt — show the manual path instead.
+  const [iosHint] = useState(
+    () =>
+      /iPhone|iPad|iPod/.test(navigator.userAgent) &&
+      !window.matchMedia("(display-mode: standalone)").matches,
+  );
 
   useEffect(() => {
     const onPrompt = (e: Event) => {
@@ -226,6 +232,7 @@ function Console() {
               {t("app_install")}
             </button>
           )}
+          {iosHint && <span className="mono ios-hint">{t("app_ios_hint")}</span>}
         </div>
       </nav>
 

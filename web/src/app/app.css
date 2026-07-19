@@ -316,6 +316,7 @@
 .btn-ghost:hover:not(:disabled) { color: var(--text); border-color: var(--text); }
 .btn-ghost:disabled { opacity: 0.4; cursor: default; }
 .btn-ghost.on { color: var(--text); border-color: var(--accent); }
+.ios-hint { font-size: 9px; letter-spacing: 1px; color: var(--muted); white-space: nowrap; }
 .wiz-act-done { align-self: flex-start; }
 .rail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
