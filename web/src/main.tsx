@@ -1,7 +1,17 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { registerSW } from "virtual:pwa-register";
 import "./theme.css";
 import App from "./App";
+
+// Register the service worker from the landing too, so the site is
+// installable no matter which page a visitor enters from.
+registerSW({
+  immediate: true,
+  onRegisteredSW(_url, registration) {
+    if (registration) setInterval(() => registration.update(), 60_000);
+  },
+});
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
