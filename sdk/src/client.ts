@@ -1,5 +1,6 @@
 import {
   createPublicClient,
+  fallback,
   http,
   type Address,
   type Hex,
@@ -69,10 +70,20 @@ export class VerglasClient {
     this.walletClient = opts.walletClient;
   }
 
-  /** The live Fuji testnet deployment, gate on Dispatch. */
+  /** The live Fuji testnet deployment, gate on Dispatch. Reads go through a
+      fallback transport: the official RPC rate-limits per IP (429), which
+      would take the console down for a whole venue on shared wifi. */
   static fuji(opts?: { walletClient?: WalletClient }): VerglasClient {
     return new VerglasClient({
-      hubChain: createPublicClient({ chain: fujiC, transport: http(), batch: { multicall: true } }),
+      hubChain: createPublicClient({
+        chain: fujiC,
+        transport: fallback([
+          http(),
+          http("https://avalanche-fuji-c-chain-rpc.publicnode.com"),
+          http("https://avalanche-fuji.drpc.org"),
+        ]),
+        batch: { multicall: true },
+      }),
       gateChain: createPublicClient({ chain: dispatch, transport: http() }),
       addresses: {
         hub: FUJI_DEPLOYMENT.hub,
