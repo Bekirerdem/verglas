@@ -13,6 +13,20 @@ registerSW({
   },
 });
 
+// autoUpdate swaps the worker under a running page and purges the old
+// precache — an old bundle against an empty cache is a black screen.
+// Reload once when a NEW worker takes over (never on first install).
+if ("serviceWorker" in navigator) {
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController) {
+      hadController = true;
+      return;
+    }
+    location.reload();
+  });
+}
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <App />
