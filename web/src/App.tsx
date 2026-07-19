@@ -65,10 +65,10 @@ function Page() {
     };
   }, []);
 
-  // entrance + scroll choreography (runs once the page first has data)
-  const hasData = data !== null;
+  // entrance + scroll choreography — runs on mount; the page never waits
+  // for chain data (a slow RPC must not black out the site).
   useEffect(() => {
-    if (!hasData || !rootRef.current) return;
+    if (!rootRef.current) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const ctx = gsap.context(() => {
       const showAll = () => gsap.set(".hero-anim, .will-reveal", { opacity: 1, clearProps: "transform" });
@@ -113,12 +113,12 @@ function Page() {
       }
     }, rootRef);
     return () => ctx.revert();
-  }, [hasData]);
+  }, []);
 
   // language switch re-renders text; make sure revealed items stay visible
   useEffect(() => {
-    if (hasData) gsap.set(".will-reveal", { opacity: 1, clearProps: "transform" });
-  }, [lang, hasData]);
+    gsap.set(".will-reveal", { opacity: 1, clearProps: "transform" });
+  }, [lang]);
 
   return (
     <div ref={rootRef}>
@@ -129,21 +129,16 @@ function Page() {
           RPC: {error} {t("err_retry")}
         </div>
       )}
-      {!data && !error && <div className="loading">{t("loading")}</div>}
 
-      {data && (
-        <>
-          <Hero data={data} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
-          <main>
-            <Problem />
-            <TreasurerScene treasurer={treasurer} />
-            <Motor />
-            <LiveBand data={data} treasurer={treasurer} />
-            <Closing />
-          </main>
-          <FooterWall />
-        </>
-      )}
+      <Hero data={data} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
+      <main>
+        <Problem />
+        <TreasurerScene treasurer={treasurer} />
+        <Motor />
+        <LiveBand data={data} treasurer={treasurer} />
+        <Closing />
+      </main>
+      <FooterWall />
     </div>
   );
 }

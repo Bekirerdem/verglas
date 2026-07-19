@@ -8,13 +8,16 @@ export function Hero({
   theme,
   onToggleTheme,
 }: {
-  data: DashboardData;
+  data: DashboardData | null;
   theme: string;
   onToggleTheme: () => void;
 }) {
   const { t, lang, setLang } = useI18n();
-  const { cleared, attestation, gateMaxAge } = data;
-  const expires = attestation && gateMaxAge > 0n ? remaining(attestation.issuedAt + gateMaxAge) : "";
+  // The page never waits for the chain: the clearance cell streams in when
+  // the read lands and stays neutral until then.
+  const cleared = data?.cleared ?? null;
+  const expires =
+    data?.attestation && data.gateMaxAge > 0n ? remaining(data.attestation.issuedAt + data.gateMaxAge) : "";
 
   return (
     <header className="hero">
@@ -77,9 +80,9 @@ export function Hero({
           <span className="cell agent">
             {t("hero_agent")} <b>#{FUJI_DEPLOYMENT.agentId.toString()}</b>
           </span>
-          <span className={`cell status ${cleared ? "ok" : "no"}`}>
+          <span className={`cell status ${cleared === null ? "" : cleared ? "ok" : "no"}`}>
             <span className="dot" />
-            {cleared ? t("hero_cleared") : t("hero_not_cleared")}
+            {cleared === null ? "· · ·" : cleared ? t("hero_cleared") : t("hero_not_cleared")}
           </span>
           <span className="cell until">
             {cleared && expires ? `${t("hero_valid")} ${expires}` : t("hero_live")}

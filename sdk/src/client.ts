@@ -78,9 +78,11 @@ export class VerglasClient {
       hubChain: createPublicClient({
         chain: fujiC,
         transport: fallback([
-          http(),
-          http("https://avalanche-fuji-c-chain-rpc.publicnode.com"),
-          http("https://avalanche-fuji.drpc.org"),
+          // Fail fast: a rate-limited primary must hand over in seconds,
+          // not stall reads behind minutes of retry backoff.
+          http(undefined, { retryCount: 1, timeout: 4_000 }),
+          http("https://avalanche-fuji-c-chain-rpc.publicnode.com", { retryCount: 1, timeout: 6_000 }),
+          http("https://avalanche-fuji.drpc.org", { retryCount: 1, timeout: 6_000 }),
         ]),
         batch: { multicall: true },
       }),
