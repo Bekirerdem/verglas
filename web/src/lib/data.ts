@@ -397,9 +397,6 @@ export function fetchMyVaults(owner: Address): Promise<readonly Address[]> {
   });
 }
 
-const fxPaymentEvent = parseAbiItem(
-  "event FxPayment(address indexed supplier, uint256 amount, uint256 rateUsdTry, uint256 indexed day)",
-);
 
 export interface FxPaymentEvent {
   supplier: Address;
@@ -455,7 +452,10 @@ const RATE_TARGET_EXPO = -8;
 export async function fetchTreasurer(): Promise<TreasurerData> {
   const chain = client.hubChain;
 
-  const [policy, spentToday, paused, operator, vaultBalance, vaultFrozen, vaultTxCount, pythPrice, fxLogs, hermesRateUsdTry] =
+  // Point reads only — no eth_getLogs. The public fallback RPCs 500 on
+  // full-range getLogs, and both callers (landing status + console policy)
+  // need only current state, never the FX payment history.
+  const [policy, spentToday, paused, operator, vaultBalance, vaultFrozen, vaultTxCount, pythPrice, hermesRateUsdTry] =
     await Promise.all([
       chain.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "policy" }),
       chain.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "spentToday" }),
@@ -470,22 +470,10 @@ export async function fetchTreasurer(): Promise<TreasurerData> {
         functionName: "getPriceUnsafe",
         args: [T.usdTryPriceId],
       }),
-      scanLogs(chain, (fromBlock, toBlock) =>
-        chain.getLogs({ address: T.treasurer, event: fxPaymentEvent, fromBlock, toBlock }),
-      ),
       fetchHermesRate(),
     ]);
 
-  const payments: FxPaymentEvent[] = await Promise.all(
-    fxLogs.map(async (log) => ({
-      supplier: log.args.supplier!,
-      amount: log.args.amount!,
-      rateUsdTry: log.args.rateUsdTry!,
-      txHash: log.transactionHash,
-      timestamp: await blockTime(chain, log.blockNumber),
-    })),
-  );
-  payments.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
+  const payments: FxPaymentEvent[] = [];
 
   const [price, , expo, publishTime] = pythPrice;
   const shift = expo - RATE_TARGET_EXPO;

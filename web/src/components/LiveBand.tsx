@@ -1,12 +1,13 @@
 import type { DashboardData, TreasurerData } from "../lib/data";
-import { usd } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 
 /** S5 — LIVE RIGHT NOW: three chosen numbers instead of a raw table,
     then the four differences, compact. */
 export function LiveBand({ data, treasurer }: { data: DashboardData | null; treasurer: TreasurerData | null }) {
   const { t } = useI18n();
-  const lastFx = treasurer?.payments[0];
+  // A live, moving rate is better landing proof than a stale payment — and
+  // it needs no eth_getLogs, so the fallback RPCs never 500 on the landing.
+  const rate = treasurer ? (treasurer.hermesRateUsdTry ?? treasurer.pythRateUsdTry) : null;
   const cleared = data?.cleared ?? false;
   return (
     <section className="liveband" id="live">
@@ -21,7 +22,7 @@ export function LiveBand({ data, treasurer }: { data: DashboardData | null; trea
         <div className="metric">
           <span className="ml">{t("s5_m2_l")}</span>
           <span className="mv">
-            {lastFx ? `${usd(lastFx.amount)} USDC @ ${(Number(lastFx.rateUsdTry) / 1e8).toFixed(2)}` : t("s5_m2_none")}
+            {rate ? `${(Number(rate) / 1e8).toFixed(2)} ₺` : t("s5_m2_none")}
           </span>
         </div>
         <div className="metric">
