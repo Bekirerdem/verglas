@@ -322,12 +322,14 @@
 .bdate { color: var(--ink3); white-space: nowrap; }
 .bempty { padding: 18px 22px 22px; font-size: 13.5px; color: var(--ink2); }
 
-/* loading / error */
-.loading, .err {
-  margin: 40vh auto 0; width: fit-content; font-size: 13px; color: var(--ink2);
+/* loading / error — beat the landing's full-height .loading from theme.css */
+.console .loading, .console .err {
+  min-height: 0; display: block;
+  margin: 34vh auto 0; width: fit-content;
+  font-family: inherit; font-size: 13px; letter-spacing: 0.2px; color: var(--ink2);
   background: var(--card); border: 1px solid var(--edge); border-radius: 999px; padding: 10px 22px; box-shadow: var(--cshadow);
 }
-.err { color: var(--crimson-hi); max-width: 70ch; border-radius: 14px; }
+.console .err { color: var(--crimson-hi); max-width: 70ch; border-radius: 14px; }
 
 /* entrance */
 .brise { opacity: 0; transform: translateY(14px); animation: brise 0.55s cubic-bezier(0.3, 0, 0.2, 1) forwards; }
