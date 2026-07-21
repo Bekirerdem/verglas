@@ -102,19 +102,27 @@ function Console() {
     localStorage.setItem("verglas-theme", theme);
   }, [theme]);
 
+  const [switching, setSwitching] = useState(false);
+
   const load = useCallback((entry: VaultEntry) => {
     fetchVaultView(entry.account, entry.agentId).then(
       (v) => {
         setView(v);
         setError(null);
+        setSwitching(false);
       },
-      (e: unknown) => setError(e instanceof Error ? e.message : String(e)),
+      (e: unknown) => {
+        setError(e instanceof Error ? e.message : String(e));
+        setSwitching(false);
+      },
     );
     fetchTreasurer().then(setTreasurer, () => {});
   }, []);
 
+  // Stale-while-revalidate: keep the current vault on screen (dimmed) and
+  // swap atomically when the new one lands — no blank waiting room.
   useEffect(() => {
-    setView(null);
+    setSwitching(true);
     const entry = resolveEntry(selKey, myVaults);
     load(entry);
     const timer = setInterval(() => load(entry), REFRESH_MS);
@@ -179,13 +187,15 @@ function Console() {
     setTimeout(() => setJustFroze(false), 1100);
   };
 
-  const vaultLabel = (key: string, account: Address): string => {
-    if (key === "treasurer") return "Haznedar";
-    if (key === "demo") return "Demo Agent";
+  const vaultLabel = (account: Address): string => {
+    if (account.toLowerCase() === TREASURER_DEPLOYMENT.account.toLowerCase()) return "Haznedar";
+    if (account.toLowerCase() === FUJI_DEPLOYMENT.account.toLowerCase()) return "Demo Agent";
     const i = myVaults.findIndex((a) => a.toLowerCase() === account.toLowerCase());
     return vaultNames()[account.toLowerCase()] ?? `${t("app_vault_mine")} ${i + 1}`;
   };
-  const selLabel = vaultLabel(sel.key, sel.account);
+  // Labels follow the vault that is actually ON SCREEN (the fetched view),
+  // so a switch never shows the new name over the old vault's numbers.
+  const selLabel = view ? vaultLabel(view.account) : vaultLabel(sel.account);
   const ownerName = view ? contactName(view.state.owner) : null;
   const balanceOf = (a: Address) => {
     const b = balances[a.toLowerCase()];
@@ -228,7 +238,7 @@ function Console() {
                 className={`bnav${navKey === n.key ? " on" : ""}`}
                 onClick={() => navigate(n.key)}
               >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d={n.icon} />
                 </svg>
                 {t(n.label)}
@@ -244,7 +254,7 @@ function Console() {
                 className={`bacct${sel.key === `own-${a}` ? " on" : ""}`}
                 onClick={() => setSelKey(`own-${a}`)}
               >
-                <span>{vaultLabel(`own-${a}`, a)}</span>
+                <span>{vaultLabel(a)}</span>
                 <span className="v num">{balanceOf(a)}</span>
               </button>
             ))}
@@ -320,7 +330,7 @@ function Console() {
           {!view && !error && <div className="loading">{t("app_loading")}</div>}
 
           {view && (
-            <>
+            <div className={switching ? "bswitching" : undefined}>
               <div className="bhead brise">
                 <div>
                   <h1>{t("b_overview")}</h1>
@@ -381,7 +391,7 @@ function Console() {
               </div>
 
               <VaultHistory view={view} vaultLabel={selLabel} query={query} />
-            </>
+            </div>
           )}
         </main>
       </div>
