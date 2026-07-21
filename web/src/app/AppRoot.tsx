@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address, Hex } from "viem";
 import { FUJI_DEPLOYMENT, TREASURER_DEPLOYMENT } from "@verglas/sdk";
 import {
@@ -103,10 +103,13 @@ function Console() {
   }, [theme]);
 
   const [switching, setSwitching] = useState(false);
+  // Per-vault view cache: revisits swap instantly, then refresh silently.
+  const viewCache = useRef<Record<string, VaultView>>({});
 
   const load = useCallback((entry: VaultEntry) => {
     fetchVaultView(entry.account, entry.agentId).then(
       (v) => {
+        viewCache.current[entry.account.toLowerCase()] = v;
         setView(v);
         setError(null);
         setSwitching(false);
@@ -122,8 +125,10 @@ function Console() {
   // Stale-while-revalidate: keep the current vault on screen (dimmed) and
   // swap atomically when the new one lands — no blank waiting room.
   useEffect(() => {
-    setSwitching(true);
     const entry = resolveEntry(selKey, myVaults);
+    const cached = viewCache.current[entry.account.toLowerCase()];
+    if (cached) setView(cached);
+    setSwitching(!cached);
     load(entry);
     const timer = setInterval(() => load(entry), REFRESH_MS);
     return () => clearInterval(timer);
