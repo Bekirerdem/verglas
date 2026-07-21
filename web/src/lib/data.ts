@@ -144,45 +144,17 @@ export async function fetchDashboard(): Promise<DashboardData> {
     )
   ).filter((s) => s.lastUpdate > 0n);
 
-  const [spendLogs, carriedLogs] = await Promise.all([
-    scanLogs(chain, (fromBlock, toBlock) =>
-      chain.getLogs({ address: D.account, event: spendEvent, fromBlock, toBlock }),
-    ),
-    scanLogs(chain, (fromBlock, toBlock) =>
-      chain.getLogs({ address: D.hub, event: carriedEvent, fromBlock, toBlock }),
-    ),
-  ]);
-
-  const spends: SpendEvent[] = await Promise.all(
-    spendLogs.map(async (log) => ({
-      to: log.args.to!,
-      amount: log.args.amount!,
-      txIndex: log.args.txIndex!,
-      newCommitment: log.args.newCommitment!,
-      txHash: log.transactionHash,
-      timestamp: await blockTime(chain, log.blockNumber),
-    })),
-  );
-  spends.sort((a, b) => (a.txIndex < b.txIndex ? 1 : -1));
-
-  const carried: CarriedEvent[] = await Promise.all(
-    carriedLogs.map(async (log) => ({
-      destinationBlockchainID: log.args.destinationBlockchainID!,
-      gate: log.args.gate!,
-      messageID: log.args.messageID!,
-      txHash: log.transactionHash,
-      timestamp: await blockTime(chain, log.blockNumber),
-    })),
-  );
-  carried.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
-
+  // The landing shows only live status (cleared / attestation / rate) — it
+  // never renders spend or carry history, so we skip the heavy full-range
+  // eth_getLogs scans that the fallback RPCs choke on. History belongs to
+  // the console (fetchVaultView), not the marketing page.
   return {
     account,
     balance,
     attestation,
     stamps,
-    spends,
-    carried,
+    spends: [],
+    carried: [],
     cleared,
     gateMaxAge,
     fetchedAt: Date.now(),

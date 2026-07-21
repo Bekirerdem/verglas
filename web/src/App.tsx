@@ -18,10 +18,9 @@ gsap.registerPlugin(ScrollTrigger);
 const REFRESH_MS = 45_000;
 
 function Page() {
-  const { t, lang } = useI18n();
+  const { lang } = useI18n();
   const [data, setData] = useState<DashboardData | null>(null);
   const [treasurer, setTreasurer] = useState<TreasurerData | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<string>(() => {
     const saved = localStorage.getItem("verglas-theme");
     if (saved === "light" || saved === "dark") return saved;
@@ -37,16 +36,13 @@ function Page() {
   useEffect(() => {
     let alive = true;
     const load = () => {
+      // A failed read keeps the last good data on screen and stays silent —
+      // the marketing page never surfaces an RPC error to a visitor.
       fetchDashboard().then(
         (d) => {
-          if (alive) {
-            setData(d);
-            setError(null);
-          }
+          if (alive) setData(d);
         },
-        (e: unknown) => {
-          if (alive) setError(e instanceof Error ? e.message : String(e));
-        },
+        () => {},
       );
       // The treasurer panel degrades to a loading note on its own — a V2 read
       // failure must never take the V1 dashboard down with it.
@@ -124,11 +120,9 @@ function Page() {
     <div ref={rootRef}>
       <VerglasCanvas theme={theme} />
       <div className="grain" aria-hidden="true" />
-      {error && !data && (
-        <div className="err">
-          RPC: {error} {t("err_retry")}
-        </div>
-      )}
+      {/* The landing is a marketing page: a chain read failure must never
+          surface a raw RPC error to a visitor. The live cells simply stay
+          in their neutral state until the data lands. */}
 
       <Hero data={data} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
       <main>
