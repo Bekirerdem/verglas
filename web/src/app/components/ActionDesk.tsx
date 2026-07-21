@@ -4,6 +4,7 @@ import { FUJI_DEPLOYMENT, TREASURER_DEPLOYMENT } from "@verglas/sdk";
 import type { TreasurerData, VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd } from "../../lib/format";
+import { contactName } from "../lib/contacts";
 import {
   sendSetOperator,
   sendSetPolicy,
@@ -13,6 +14,8 @@ import {
   sendWithdraw,
 } from "../lib/wallet";
 
+export type Desk = "pay" | "deposit" | "withdraw" | "rules" | "people" | null;
+
 interface Props {
   view: VaultView;
   treasurer: TreasurerData | null;
@@ -20,22 +23,20 @@ interface Props {
   isOwner: boolean;
   isAgent: boolean;
   busy: string | null;
+  open: Desk;
+  onToggle: (d: Desk) => void;
   run: (label: string, send: () => Promise<Hex>) => Promise<boolean>;
 }
 
-type Desk = "pay" | "deposit" | "withdraw" | "policy" | null;
-
-/** Inline action desk under the status strip: one tab row, one expanding
-    panel. No modals — the console works like a terminal, in place. */
-export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, run }: Props) {
+/** Action pills + one inline panel. Everything happens in place, in plain
+    language; the wallet appears only at signature time. */
+export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, open, onToggle, run }: Props) {
   const { t } = useI18n();
-  const [open, setOpen] = useState<Desk>(null);
-  const toggle = (d: Desk) => setOpen(open === d ? null : d);
+  const budgetLeft = view.state.totalBudget - view.state.totalSpent;
 
   // -------- pay --------
   const [payTo, setPayTo] = useState<string>(view.state.whitelist[0] ?? "");
   const [payAmt, setPayAmt] = useState("");
-  const budgetLeft = view.state.totalBudget - view.state.totalSpent;
   let payParsed: bigint | null = null;
   try {
     const v = parseUnits(payAmt, 6);
@@ -87,7 +88,7 @@ export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, ru
     if (ok) setWdAmt("");
   };
 
-  // -------- policy (treasurer vault only) --------
+  // -------- treasurer rules --------
   const [editing, setEditing] = useState(false);
   const [daily, setDaily] = useState("");
   const [slip, setSlip] = useState("");
@@ -128,102 +129,79 @@ export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, ru
   };
 
   return (
-    <div className="desk">
-      <div className="desk-tabs" role="tablist">
+    <>
+      <div className="bpills">
         <button
-          role="tab"
-          aria-selected={open === "pay"}
-          className={`desk-tab primary${open === "pay" ? " on" : ""}`}
-          onClick={() => toggle("pay")}
+          className={`bpill primary${open === "pay" ? " on" : ""}`}
+          onClick={() => onToggle("pay")}
         >
-          {t("app_pay")}
-          {budgetLeft === 0n && <span className="chip chip-frozen">{t("app_budget_out")}</span>}
+          ↗ &nbsp;{t("b_pay")}
         </button>
-        <button
-          role="tab"
-          aria-selected={open === "deposit"}
-          className={`desk-tab${open === "deposit" ? " on" : ""}`}
-          onClick={() => toggle("deposit")}
-        >
-          {t("app_deposit")} ⇧
+        <button className={`bpill${open === "deposit" ? " on" : ""}`} onClick={() => onToggle("deposit")}>
+          ⇧ &nbsp;{t("b_load")}
         </button>
-        <button
-          role="tab"
-          aria-selected={open === "withdraw"}
-          className={`desk-tab${open === "withdraw" ? " on" : ""}`}
-          onClick={() => toggle("withdraw")}
-        >
-          {t("app_withdraw")} ⇩
+        <button className={`bpill${open === "withdraw" ? " on" : ""}`} onClick={() => onToggle("withdraw")}>
+          ⇩ &nbsp;{t("b_withdraw")}
         </button>
-        {treasurer && (
-          <button
-            role="tab"
-            aria-selected={open === "policy"}
-            className={`desk-tab${open === "policy" ? " on" : ""}`}
-            onClick={() => toggle("policy")}
-          >
-            {t("app_policy")}
-            {treasurer.paused && <span className="chip chip-frozen">{t("app_paused")}</span>}
-          </button>
-        )}
+        <button className={`bpill${open === "rules" ? " on" : ""}`} onClick={() => onToggle("rules")}>
+          ✎ &nbsp;{t("b_edit_rules")}
+        </button>
       </div>
 
       {open === "pay" && (
-        <div className="desk-panel glass">
-          <div className="policy-form mono desk-grid">
+        <div className="bpanel brise">
+          <h4>
+            {t("b_pay")}{" "}
+            {budgetLeft === 0n && <span className="bchip sec">{t("app_budget_out")}</span>}
+          </h4>
+          <div className="bform">
             <label>
-              {t("app_pay_to")}
+              {t("b_to")} {t("b_to_wl")}
               <select value={payTo} onChange={(e) => setPayTo(e.target.value)}>
                 {view.state.whitelist.map((w) => (
                   <option key={w} value={w}>
-                    {short(w, 8, 6)}
+                    {contactName(w) ?? short(w, 8, 6)}
                   </option>
                 ))}
               </select>
             </label>
             <label>
-              {t("w_amount")} (≤ {usd(view.state.perTxLimit)} · {t("app_budget_left")} {usd(budgetLeft)})
+              {t("b_amount")} · ≤ {usd(view.state.perTxLimit)} · {t("app_budget_left")} {usd(budgetLeft)}
               <input value={payAmt} onChange={(e) => setPayAmt(e.target.value)} inputMode="decimal" />
             </label>
-            <button
-              className="btn-primary"
-              disabled={!isAgent || busy !== null || payParsed === null}
-              onClick={pay}
-            >
-              {busy === "spend" ? t("app_pending") : t("app_pay")}
+            <button className="bbtn" disabled={!isAgent || busy !== null || payParsed === null} onClick={pay}>
+              {busy === "spend" ? t("b_pending") : t("b_send")}
             </button>
           </div>
-          {!isAgent && <p className="rail-hint">{t("app_pay_hint")}</p>}
+          {!isAgent && <p className="bhint">{t("b_agent_only")}</p>}
         </div>
       )}
 
       {open === "deposit" && (
-        <div className="desk-panel glass">
-          <div className="policy-form mono desk-grid">
+        <div className="bpanel brise">
+          <h4>{t("b_load")}</h4>
+          <div className="bform">
             <label>
-              {t("w_amount")}
+              {t("b_amount")}
               <input value={depAmt} onChange={(e) => setDepAmt(e.target.value)} inputMode="decimal" />
             </label>
-            <button
-              className="btn-primary"
-              disabled={!wallet || busy !== null || depParsed === null}
-              onClick={deposit}
-            >
-              {busy === "deposit" ? t("app_pending") : t("app_deposit")}
+            <button className="bbtn" disabled={!wallet || busy !== null || depParsed === null} onClick={deposit}>
+              {busy === "deposit" ? t("b_pending") : t("b_send")}
             </button>
           </div>
         </div>
       )}
 
       {open === "withdraw" && (
-        <div className="desk-panel glass">
-          <div className="policy-form mono desk-grid">
+        <div className="bpanel brise">
+          <h4>{t("b_withdraw")}</h4>
+          <div className="bform">
             <label>
-              {t("w_amount")}
+              {t("b_amount")}
               <input value={wdAmt} onChange={(e) => setWdAmt(e.target.value)} inputMode="decimal" />
             </label>
             <label>
-              {t("app_withdraw_to")}
+              {t("b_wd_to")}
               <input
                 value={wdTo}
                 onChange={(e) => setWdTo(e.target.value)}
@@ -231,42 +209,46 @@ export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, ru
                 spellCheck={false}
               />
             </label>
-            <button className="btn-primary" disabled={!isOwner || busy !== null || !wdValid} onClick={withdraw}>
-              {busy === "withdraw" ? t("app_pending") : t("app_withdraw")}
+            <button className="bbtn" disabled={!isOwner || busy !== null || !wdValid} onClick={withdraw}>
+              {busy === "withdraw" ? t("b_pending") : t("b_send")}
             </button>
           </div>
-          {wdIsTokenContract && <span className="wiz-err">{t("app_bad_dest")}</span>}
+          {wdIsTokenContract && <div className="berr">{t("app_bad_dest")}</div>}
         </div>
       )}
 
-      {open === "policy" && treasurer && (
-        <div className="desk-panel glass">
-          {!editing ? (
+      {open === "rules" && (
+        <div className="bpanel brise">
+          <h4>
+            {t("b_rules")}{" "}
+            {treasurer?.paused && <span className="bchip sec">{t("app_paused")}</span>}
+          </h4>
+          {!treasurer ? (
+            <p className="bhint" style={{ marginTop: 0 }}>{t("b_rules_locked")}</p>
+          ) : !editing ? (
             <>
-              <dl className="policy-list mono desk-policy">
-                <div>
-                  <dt>{t("app_policy_daily")}</dt>
-                  <dd>{usd(treasurer.dailyLimit)} USDC</dd>
-                </div>
-                <div>
-                  <dt>{t("app_policy_slip")}</dt>
-                  <dd>{treasurer.maxSlippageBps} bps</dd>
-                </div>
-                <div>
-                  <dt>{t("app_policy_ref")}</dt>
-                  <dd>{(Number(treasurer.referenceRateUsdTry) / 1e8).toFixed(4)}</dd>
-                </div>
-                <div>
-                  <dt>{t("app_keeper")}</dt>
-                  <dd>{short(treasurer.operator)}</dd>
-                </div>
-              </dl>
-              <div className="rail-actions">
-                <button className="btn-ghost" disabled={!isOwner || busy !== null} onClick={openEdit}>
+              <div className="brow">
+                <span className="k">{t("b_daily_limit")}</span>
+                <span className="v num">{usd(treasurer.dailyLimit)} USDC</span>
+              </div>
+              <div className="brow">
+                <span className="k">{t("b_slip")}</span>
+                <span className="v num">{treasurer.maxSlippageBps}</span>
+              </div>
+              <div className="brow">
+                <span className="k">{t("b_ref_rate")}</span>
+                <span className="v num">{(Number(treasurer.referenceRateUsdTry) / 1e8).toFixed(4)}</span>
+              </div>
+              <div className="brow">
+                <span className="k">{t("b_keeper")}</span>
+                <span className="v">{contactName(treasurer.operator) ?? short(treasurer.operator)}</span>
+              </div>
+              <div className="bform" style={{ marginTop: 10 }}>
+                <button className="bbtn ghost" disabled={!isOwner || busy !== null} onClick={openEdit}>
                   {t("app_edit")}
                 </button>
                 <button
-                  className="btn-ghost"
+                  className="bbtn ghost"
                   disabled={!isOwner || busy !== null}
                   onClick={() =>
                     run(treasurer.paused ? "unpause" : "pause", () =>
@@ -279,48 +261,46 @@ export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, ru
                   }
                 >
                   {busy === "pause" || busy === "unpause"
-                    ? t("app_pending")
-                    : t(treasurer.paused ? "app_unpause" : "app_pause")}
+                    ? t("b_pending")
+                    : t(treasurer.paused ? "b_resume_t" : "b_pause_t")}
                 </button>
-              </div>
-              <div className="policy-form mono desk-grid">
-                <label>
-                  {t("app_rotate_new")}
+                <label style={{ flexBasis: 260 }}>
+                  {t("b_rotate")}
                   <input value={rotAddr} onChange={(e) => setRotAddr(e.target.value)} spellCheck={false} />
                 </label>
                 <button
-                  className="btn-ghost"
+                  className="bbtn ghost"
                   disabled={!isOwner || !isAddress(rotAddr) || busy !== null}
                   onClick={rotate}
                 >
-                  {busy === "rotate" ? t("app_pending") : t("app_rotate")}
+                  {busy === "rotate" ? t("b_pending") : t("b_save")}
                 </button>
               </div>
             </>
           ) : (
-            <div className="policy-form mono desk-grid">
+            <div className="bform">
               <label>
-                {t("app_policy_daily")}
+                {t("b_daily_limit")}
                 <input value={daily} onChange={(e) => setDaily(e.target.value)} inputMode="decimal" />
               </label>
               <label>
-                {t("app_policy_slip")}
+                {t("b_slip")}
                 <input value={slip} onChange={(e) => setSlip(e.target.value)} inputMode="numeric" />
               </label>
               <label>
-                {t("app_policy_ref")}
+                {t("b_ref_rate")}
                 <input value={ref} onChange={(e) => setRef(e.target.value)} inputMode="decimal" />
               </label>
-              <button className="btn-primary" disabled={!parsed || busy !== null} onClick={savePolicy}>
-                {busy === "policy" ? t("app_pending") : t("app_save")}
+              <button className="bbtn" disabled={!parsed || busy !== null} onClick={savePolicy}>
+                {busy === "policy" ? t("b_pending") : t("b_save")}
               </button>
-              <button className="btn-ghost" onClick={() => setEditing(false)}>
-                {t("app_cancel")}
+              <button className="bbtn ghost" onClick={() => setEditing(false)}>
+                {t("b_cancel")}
               </button>
             </div>
           )}
         </div>
       )}
-    </div>
+    </>
   );
 }

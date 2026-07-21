@@ -192,6 +192,22 @@ export async function fetchDashboard(): Promise<DashboardData> {
 /** Public client for the hub chain — the console's write flows wait for receipts here. */
 export const hubChain = client.hubChain;
 
+/** USDC balances for the side rail's vault list — batched reads. */
+export async function fetchBalances(accounts: readonly Address[]): Promise<Record<string, bigint>> {
+  const out: Record<string, bigint> = {};
+  await Promise.all(
+    accounts.map(async (a) => {
+      out[a.toLowerCase()] = await client.hubChain.readContract({
+        address: D.usdc,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [a],
+      });
+    }),
+  );
+  return out;
+}
+
 export interface VaultState {
   owner: Address;
   agent: Address;
