@@ -1,6 +1,7 @@
 import {
   createPublicClient,
   erc20Abi,
+  fallback,
   http,
   parseAbiItem,
   type Address,
@@ -85,12 +86,11 @@ export interface DashboardData {
 const client = VerglasClient.fuji();
 const D = FUJI_DEPLOYMENT;
 
-/** History scanning (M1, pre-indexer). Three rules keep the visitor's
-    devtools console clean — a failed HTTP request is an uncatchable red
-    line there, so the fix is to never send a request that will fail:
-    1. eth_getLogs goes ONLY to the official RPC. The fallback endpoints
-       (publicnode/drpc) 500 intermittently on getLogs; falling back to
-       them trades one quiet 429 for a loud error cascade.
+/** History scanning (M1, pre-indexer). Three rules keep the console
+    responsive and the visitor's devtools clean:
+    1. The scan NEVER blocks a paint — fetchVaultView resolves from point
+       reads plus whatever the store already holds; the scan extends the
+       store in the background and re-delivers through a callback.
     2. Each vault has a persistent per-browser log store: the historical
        range is scanned once, then every refresh only extends it from
        scannedTo to head — a couple of requests instead of hundreds.
@@ -98,14 +98,21 @@ const D = FUJI_DEPLOYMENT;
        chunk and resumes on the next refresh; history never rejects the
        whole view. */
 const CHUNK = 2_000n; // public RPC caps eth_getLogs ranges (~2048 blocks)
-const FIRST_PAINT_BUDGET_MS = 3_500; // virgin store: keep the first view fast
-const CATCHUP_BUDGET_MS = 8_000; // cached view on screen: scan longer, silently
+const SCAN_BUDGET_MS = 8_000; // per refresh cycle; the scan never blocks a paint
 const CHUNK_PAUSE_MS = 120; // breathing room between chunks (per-IP 429 limit)
 const LOG_CACHE_V = 1;
 
+// getLogs prefers the official RPC but must survive its outages: the
+// endpoint intermittently drops browser traffic with CORS-less error
+// responses (every request surfaces as ERR_FAILED), which used to kill
+// history entirely. publicnode handles our small 2k-block chunks; its
+// rare 500 just halts the scan until the next refresh.
 const logsChain = createPublicClient({
   chain: fujiC,
-  transport: http(undefined, { retryCount: 0, timeout: 10_000 }),
+  transport: fallback([
+    http(undefined, { retryCount: 0, timeout: 10_000 }),
+    http("https://avalanche-fuji-c-chain-rpc.publicnode.com", { retryCount: 0, timeout: 10_000 }),
+  ]),
 });
 
 interface VaultLogs {
@@ -178,6 +185,16 @@ async function findCreationBlock(account: Address): Promise<bigint> {
   }
 }
 
+/** The store as it stands right now — no network, no creation-block
+    search. Shares the same object getVaultLogs works on, so a background
+    scan's appends are visible to the next peek. */
+function peekVaultLogs(account: Address): VaultLogs | null {
+  const key = account.toLowerCase();
+  const store = logStores.get(key) ?? loadVaultLogs(account);
+  if (store) logStores.set(key, store);
+  return store;
+}
+
 async function getVaultLogs(account: Address, agentIdHint: bigint | null): Promise<VaultLogs> {
   const key = account.toLowerCase();
   let store = logStores.get(key) ?? loadVaultLogs(account);
@@ -204,8 +221,7 @@ const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve,
     time budget. Chunks are atomic: the store only mutates after every log
     of the chunk (timestamps included) resolved, so a retry cannot dupe. */
 async function extendVaultLogs(store: VaultLogs, account: Address): Promise<void> {
-  const virgin = store.scannedTo < store.creationBlock;
-  const deadline = Date.now() + (virgin ? FIRST_PAINT_BUDGET_MS : CATCHUP_BUDGET_MS);
+  const deadline = Date.now() + SCAN_BUDGET_MS;
   let head: bigint;
   try {
     head = await logsChain.getBlockNumber();
@@ -460,19 +476,13 @@ export interface VaultView {
   fetchedAt: number;
 }
 
-/** One shape for any vault — the known agents (#219/#220) and factory-born
-    vaults (agentId null: no 8004 surface to query yet) both read through this. */
-export async function fetchVaultView(account: Address, agentId: bigint | null): Promise<VaultView> {
+/** The fast half of a vault view: point reads only, no log scans. */
+async function readVaultCore(
+  account: Address,
+  agentId: bigint | null,
+): Promise<Omit<VaultView, "spends" | "carried" | "history" | "fetchedAt">> {
   const chain = client.hubChain;
   const acct = { address: account, abi: verglasAccountAbi } as const;
-
-  // History — and, for factory vaults, agentId discovery via AccountBound —
-  // comes from the incremental store: a bounded, resumable scan instead of
-  // the old full-range sweep on every refresh.
-  const store = await getVaultLogs(account, agentId);
-  await extendVaultLogs(store, account);
-  saveVaultLogs(account, store);
-  if (agentId === null) agentId = store.agentId;
 
   const [
     owner,
@@ -531,11 +541,6 @@ export async function fetchVaultView(account: Address, agentId: bigint | null): 
     )
   ).filter((s) => s.lastUpdate > 0n);
 
-  // One chronological feed, served from the store (append order → sorted copies).
-  const spends = [...store.spends].sort((a, b) => (a.txIndex < b.txIndex ? 1 : -1));
-  const carried = [...store.carried].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
-  const history = [...store.history].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
-
   return {
     agentId,
     account,
@@ -551,14 +556,58 @@ export async function fetchVaultView(account: Address, agentId: bigint | null): 
     },
     balance,
     stamps,
-    spends,
-    carried,
-    history,
     attestation,
     cleared,
     gateMaxAge,
-    fetchedAt: Date.now(),
   };
+}
+
+/** One chronological feed, served from the store (append order → sorted copies). */
+function storeSlices(store: VaultLogs | null): Pick<VaultView, "spends" | "carried" | "history"> {
+  if (!store) return { spends: [], carried: [], history: [] };
+  return {
+    spends: [...store.spends].sort((a, b) => (a.txIndex < b.txIndex ? 1 : -1)),
+    carried: [...store.carried].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1)),
+    history: [...store.history].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1)),
+  };
+}
+
+/** One shape for any vault — the known agents (#219/#220) and factory-born
+    vaults (agentId null: no 8004 surface to query yet) both read through this.
+
+    First paint never waits for history: the view resolves from point reads
+    plus whatever the store already holds, while the catch-up scan (and, for
+    a virgin factory vault, the creation-block search) runs in the
+    background and re-delivers the extended view through onUpdate. */
+export async function fetchVaultView(
+  account: Address,
+  agentId: bigint | null,
+  onUpdate?: (view: VaultView) => void,
+): Promise<VaultView> {
+  const cached = peekVaultLogs(account);
+  const knownId = agentId ?? cached?.agentId ?? readAgentHint(account);
+
+  const scan = getVaultLogs(account, knownId).then(async (store) => {
+    await extendVaultLogs(store, account);
+    saveVaultLogs(account, store);
+    return store;
+  });
+
+  const core = await readVaultCore(account, knownId);
+  const view: VaultView = { ...core, ...storeSlices(cached), fetchedAt: Date.now() };
+
+  if (onUpdate)
+    void scan
+      .then(async (store) => {
+        // A virgin store can discover its agentId mid-scan (AccountBound);
+        // the audit surfaces (stamps, passport) only exist after a re-read then.
+        const fresh =
+          knownId === null && store.agentId !== null ? await readVaultCore(account, store.agentId) : core;
+        onUpdate({ ...fresh, ...storeSlices(store), fetchedAt: Date.now() });
+      })
+      .catch(() => {}); // a failed re-read keeps the already-delivered view
+
+  return view;
 }
 
 /** Factory-born vaults of a wallet — the console's "my vaults" list. */

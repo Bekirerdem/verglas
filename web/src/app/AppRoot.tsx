@@ -105,20 +105,26 @@ function Console() {
   const [switching, setSwitching] = useState(false);
   // Per-vault view cache: revisits swap instantly, then refresh silently.
   const viewCache = useRef<Record<string, VaultView>>({});
+  // The vault on screen — a fetch (or its background history scan) that
+  // lands after the user switched away must never overwrite the new vault.
+  const currentKey = useRef("");
 
   const load = useCallback((entry: VaultEntry) => {
-    fetchVaultView(entry.account, entry.agentId).then(
-      (v) => {
-        viewCache.current[entry.account.toLowerCase()] = v;
-        setView(v);
-        setError(null);
-        setSwitching(false);
-      },
-      (e: unknown) => {
-        setError(e instanceof Error ? e.message : String(e));
-        setSwitching(false);
-      },
-    );
+    const key = entry.account.toLowerCase();
+    const apply = (v: VaultView) => {
+      viewCache.current[key] = v;
+      if (currentKey.current !== key) return;
+      setView(v);
+      setError(null);
+      setSwitching(false);
+    };
+    // apply runs twice: once with the fast point-read view, once more when
+    // the background history scan lands.
+    fetchVaultView(entry.account, entry.agentId, apply).then(apply, (e: unknown) => {
+      if (currentKey.current !== key) return;
+      setError(e instanceof Error ? e.message : String(e));
+      setSwitching(false);
+    });
     fetchTreasurer().then(setTreasurer, () => {});
   }, []);
 
@@ -126,6 +132,7 @@ function Console() {
   // swap atomically when the new one lands — no blank waiting room.
   useEffect(() => {
     const entry = resolveEntry(selKey, myVaults);
+    currentKey.current = entry.account.toLowerCase();
     const cached = viewCache.current[entry.account.toLowerCase()];
     if (cached) setView(cached);
     setSwitching(!cached);
