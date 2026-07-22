@@ -1,5 +1,14 @@
-import { erc20Abi, parseAbiItem, type Address, type Hex, type PublicClient } from "viem";
 import {
+  createPublicClient,
+  erc20Abi,
+  http,
+  parseAbiItem,
+  type Address,
+  type Hex,
+  type PublicClient,
+} from "viem";
+import {
+  fujiC,
   FUJI_DEPLOYMENT,
   TREASURER_DEPLOYMENT,
   pythAbi,
@@ -76,27 +85,271 @@ export interface DashboardData {
 const client = VerglasClient.fuji();
 const D = FUJI_DEPLOYMENT;
 
-/** Full-history scan from the deploy block: public RPCs cap eth_getLogs
-    ranges (~2048 blocks), so chunk and run in bounded parallel batches.
-    Fine at M1 scale; an indexer replaces this in M2. */
-const CHUNK = 2_000n;
-const PARALLEL = 12;
+/** History scanning (M1, pre-indexer). Three rules keep the visitor's
+    devtools console clean — a failed HTTP request is an uncatchable red
+    line there, so the fix is to never send a request that will fail:
+    1. eth_getLogs goes ONLY to the official RPC. The fallback endpoints
+       (publicnode/drpc) 500 intermittently on getLogs; falling back to
+       them trades one quiet 429 for a loud error cascade.
+    2. Each vault has a persistent per-browser log store: the historical
+       range is scanned once, then every refresh only extends it from
+       scannedTo to head — a couple of requests instead of hundreds.
+    3. A failed or over-budget scan halts at the last fully ingested
+       chunk and resumes on the next refresh; history never rejects the
+       whole view. */
+const CHUNK = 2_000n; // public RPC caps eth_getLogs ranges (~2048 blocks)
+const FIRST_PAINT_BUDGET_MS = 3_500; // virgin store: keep the first view fast
+const CATCHUP_BUDGET_MS = 8_000; // cached view on screen: scan longer, silently
+const CHUNK_PAUSE_MS = 120; // breathing room between chunks (per-IP 429 limit)
+const LOG_CACHE_V = 1;
 
-async function scanLogs<T>(
-  chain: PublicClient,
-  fetchChunk: (fromBlock: bigint, toBlock: bigint) => Promise<T[]>,
-): Promise<T[]> {
-  const head = await chain.getBlockNumber();
-  const ranges: Array<[bigint, bigint]> = [];
-  for (let b = D.deployBlock; b <= head; b += CHUNK) {
-    ranges.push([b, b + CHUNK - 1n < head ? b + CHUNK - 1n : head]);
+const logsChain = createPublicClient({
+  chain: fujiC,
+  transport: http(undefined, { retryCount: 0, timeout: 10_000 }),
+});
+
+interface VaultLogs {
+  creationBlock: bigint;
+  /** Last block whose logs are fully in the store (inclusive). */
+  scannedTo: bigint;
+  /** Discovered via AccountBound for factory vaults; null until bound. */
+  agentId: bigint | null;
+  spends: SpendEvent[];
+  carried: CarriedEvent[];
+  history: HistoryItem[];
+}
+
+const logStores = new Map<string, VaultLogs>();
+const storeKey = (account: Address) => `vg-logs-${LOG_CACHE_V}-${account.toLowerCase()}`;
+const BIG = "#bigint:";
+/** Written by the activation flow so this browser never has to rediscover
+    its own vault's agentId from logs. */
+export const agentHintKey = (account: Address) => `vg-agent-hint-${account.toLowerCase()}`;
+
+function saveVaultLogs(account: Address, store: VaultLogs): void {
+  try {
+    localStorage.setItem(
+      storeKey(account),
+      JSON.stringify(store, (_k, v: unknown) => (typeof v === "bigint" ? BIG + v.toString() : v)),
+    );
+  } catch {
+    // quota / private mode — the in-memory store still covers this session
   }
-  const out: T[] = [];
-  for (let i = 0; i < ranges.length; i += PARALLEL) {
-    const part = await Promise.all(ranges.slice(i, i + PARALLEL).map(([f, t]) => fetchChunk(f, t)));
-    out.push(...part.flat());
+}
+
+function loadVaultLogs(account: Address): VaultLogs | null {
+  try {
+    const raw = localStorage.getItem(storeKey(account));
+    if (!raw) return null;
+    return JSON.parse(raw, (_k, v: unknown) =>
+      typeof v === "string" && v.startsWith(BIG) ? BigInt(v.slice(BIG.length)) : v,
+    ) as VaultLogs;
+  } catch {
+    return null;
   }
-  return out;
+}
+
+function readAgentHint(account: Address): bigint | null {
+  try {
+    const raw = localStorage.getItem(agentHintKey(account));
+    return raw === null ? null : BigInt(raw);
+  } catch {
+    return null;
+  }
+}
+
+/** Creation block via binary search over eth_getCode — point reads, no
+    getLogs. Bounds every scan for factory vaults, so a vault created
+    minutes ago (every workshop attendee's) scans a handful of blocks. */
+async function findCreationBlock(account: Address): Promise<bigint> {
+  try {
+    const head = await logsChain.getBlockNumber();
+    let lo = D.deployBlock;
+    let hi = head;
+    while (lo < hi) {
+      const mid = lo + (hi - lo) / 2n;
+      const code = await logsChain.getCode({ address: account, blockNumber: mid });
+      if (code && code !== "0x") hi = mid;
+      else lo = mid + 1n;
+    }
+    return lo;
+  } catch {
+    return D.deployBlock; // superset fallback: just a longer one-time scan
+  }
+}
+
+async function getVaultLogs(account: Address, agentIdHint: bigint | null): Promise<VaultLogs> {
+  const key = account.toLowerCase();
+  let store = logStores.get(key) ?? loadVaultLogs(account);
+  if (!store) {
+    const known = key === D.account.toLowerCase() || key === T.account.toLowerCase();
+    const creationBlock = known ? D.deployBlock : await findCreationBlock(account);
+    store = {
+      creationBlock,
+      scannedTo: creationBlock - 1n,
+      agentId: null,
+      spends: [],
+      carried: [],
+      history: [],
+    };
+  }
+  if (store.agentId === null) store.agentId = agentIdHint ?? readAgentHint(account);
+  logStores.set(key, store);
+  return store;
+}
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** Extend the store from scannedTo toward head, chunk by chunk, inside a
+    time budget. Chunks are atomic: the store only mutates after every log
+    of the chunk (timestamps included) resolved, so a retry cannot dupe. */
+async function extendVaultLogs(store: VaultLogs, account: Address): Promise<void> {
+  const virgin = store.scannedTo < store.creationBlock;
+  const deadline = Date.now() + (virgin ? FIRST_PAINT_BUDGET_MS : CATCHUP_BUDGET_MS);
+  let head: bigint;
+  try {
+    head = await logsChain.getBlockNumber();
+  } catch {
+    return; // official RPC unreachable — keep what we have, no error spam
+  }
+
+  const chain = client.hubChain;
+  let from = store.scannedTo + 1n;
+  let retried = false;
+  while (from <= head && Date.now() < deadline) {
+    const to = from + CHUNK - 1n < head ? from + CHUNK - 1n : head;
+    try {
+      const [acctLogs, depositLogs, boundLogs, carriedKnown] = await Promise.all([
+        logsChain.getLogs({
+          address: account,
+          events: [spendEvent, ownerWithdrawEvent, frozenEvent, unfrozenEvent],
+          fromBlock: from,
+          toBlock: to,
+        }),
+        logsChain.getLogs({
+          address: D.usdc,
+          event: erc20TransferEvent,
+          args: { to: account },
+          fromBlock: from,
+          toBlock: to,
+        }),
+        store.agentId === null
+          ? logsChain.getLogs({
+              address: D.hub,
+              event: accountBoundEvent,
+              args: { account },
+              fromBlock: from,
+              toBlock: to,
+            })
+          : Promise.resolve([]),
+        store.agentId !== null
+          ? logsChain.getLogs({
+              address: D.hub,
+              event: carriedEvent,
+              args: { agentId: store.agentId },
+              fromBlock: from,
+              toBlock: to,
+            })
+          : Promise.resolve([]),
+      ]);
+
+      let carriedLogs = carriedKnown;
+      if (boundLogs.length > 0) {
+        // Bind discovered mid-scan: pick up carries from this same chunk
+        // too — a carry can never precede its bind, earlier chunks are clean.
+        store.agentId = boundLogs[boundLogs.length - 1].args.agentId!;
+        carriedLogs = await logsChain.getLogs({
+          address: D.hub,
+          event: carriedEvent,
+          args: { agentId: store.agentId },
+          fromBlock: from,
+          toBlock: to,
+        });
+      }
+
+      const spendPending: Promise<SpendEvent>[] = [];
+      const lifecyclePending: Promise<HistoryItem>[] = [];
+      for (const log of acctLogs) {
+        if (log.eventName === "Spend") {
+          spendPending.push(
+            (async () => ({
+              to: log.args.to!,
+              amount: log.args.amount!,
+              txIndex: log.args.txIndex!,
+              newCommitment: log.args.newCommitment!,
+              txHash: log.transactionHash,
+              timestamp: await blockTime(chain, log.blockNumber),
+            }))(),
+          );
+        } else if (log.eventName === "OwnerWithdraw") {
+          lifecyclePending.push(
+            (async () => ({
+              kind: "withdraw" as const,
+              amount: log.args.amount!,
+              counterparty: log.args.to!,
+              timestamp: await blockTime(chain, log.blockNumber),
+              txHash: log.transactionHash,
+            }))(),
+          );
+        } else {
+          lifecyclePending.push(
+            (async () => ({
+              kind: log.eventName === "Frozen" ? ("freeze" as const) : ("thaw" as const),
+              amount: null,
+              counterparty: null,
+              timestamp: await blockTime(chain, log.blockNumber),
+              txHash: log.transactionHash,
+            }))(),
+          );
+        }
+      }
+
+      const [spendsAdd, lifecycleAdd, depositsAdd, carriedAdd] = await Promise.all([
+        Promise.all(spendPending),
+        Promise.all(lifecyclePending),
+        Promise.all(
+          depositLogs.map(async (log) => ({
+            kind: "deposit" as const,
+            amount: log.args.value!,
+            counterparty: log.args.from!,
+            timestamp: await blockTime(chain, log.blockNumber),
+            txHash: log.transactionHash,
+          })),
+        ),
+        Promise.all(
+          carriedLogs.map(async (log) => ({
+            destinationBlockchainID: log.args.destinationBlockchainID!,
+            gate: log.args.gate!,
+            messageID: log.args.messageID!,
+            txHash: log.transactionHash,
+            timestamp: await blockTime(chain, log.blockNumber),
+          })),
+        ),
+      ]);
+
+      store.spends.push(...spendsAdd);
+      store.carried.push(...carriedAdd);
+      store.history.push(
+        ...spendsAdd.map((s) => ({
+          kind: "spend" as const,
+          amount: s.amount,
+          counterparty: s.to,
+          timestamp: s.timestamp,
+          txHash: s.txHash,
+        })),
+        ...lifecycleAdd,
+        ...depositsAdd,
+      );
+      store.scannedTo = to;
+      from = to + 1n;
+      retried = false;
+      if (from <= head) await sleep(CHUNK_PAUSE_MS);
+    } catch {
+      if (retried) break; // halt at the contiguous boundary; resume next refresh
+      retried = true;
+      await sleep(1_200);
+    }
+  }
 }
 
 const blockTimeCache = new Map<bigint, Promise<bigint>>();
@@ -213,14 +466,13 @@ export async function fetchVaultView(account: Address, agentId: bigint | null): 
   const chain = client.hubChain;
   const acct = { address: account, abi: verglasAccountAbi } as const;
 
-  // Factory-born vaults may have been bound to an identity via the console's
-  // "open the stamp line" flow — discover the agentId from the Hub's records.
-  if (agentId === null) {
-    const bound = await scanLogs(chain, (fromBlock, toBlock) =>
-      chain.getLogs({ address: D.hub, event: accountBoundEvent, args: { account }, fromBlock, toBlock }),
-    );
-    if (bound.length > 0) agentId = bound[bound.length - 1].args.agentId!;
-  }
+  // History — and, for factory vaults, agentId discovery via AccountBound —
+  // comes from the incremental store: a bounded, resumable scan instead of
+  // the old full-range sweep on every refresh.
+  const store = await getVaultLogs(account, agentId);
+  await extendVaultLogs(store, account);
+  saveVaultLogs(account, store);
+  if (agentId === null) agentId = store.agentId;
 
   const [
     owner,
@@ -279,88 +531,10 @@ export async function fetchVaultView(account: Address, agentId: bigint | null): 
     )
   ).filter((s) => s.lastUpdate > 0n);
 
-  const [spendLogs, carriedLogs, lifecycleLogs, depositLogs] = await Promise.all([
-    scanLogs(chain, (fromBlock, toBlock) =>
-      chain.getLogs({ address: account, event: spendEvent, fromBlock, toBlock }),
-    ),
-    agentId === null
-      ? Promise.resolve([])
-      : scanLogs(chain, (fromBlock, toBlock) =>
-          chain.getLogs({ address: D.hub, event: carriedEvent, args: { agentId }, fromBlock, toBlock }),
-        ),
-    scanLogs(chain, (fromBlock, toBlock) =>
-      chain.getLogs({
-        address: account,
-        events: [ownerWithdrawEvent, frozenEvent, unfrozenEvent],
-        fromBlock,
-        toBlock,
-      }),
-    ),
-    scanLogs(chain, (fromBlock, toBlock) =>
-      chain.getLogs({ address: D.usdc, event: erc20TransferEvent, args: { to: account }, fromBlock, toBlock }),
-    ),
-  ]);
-
-  const spends: SpendEvent[] = await Promise.all(
-    spendLogs.map(async (log) => ({
-      to: log.args.to!,
-      amount: log.args.amount!,
-      txIndex: log.args.txIndex!,
-      newCommitment: log.args.newCommitment!,
-      txHash: log.transactionHash,
-      timestamp: await blockTime(chain, log.blockNumber),
-    })),
-  );
-  spends.sort((a, b) => (a.txIndex < b.txIndex ? 1 : -1));
-
-  const carried: CarriedEvent[] = await Promise.all(
-    carriedLogs.map(async (log) => ({
-      destinationBlockchainID: log.args.destinationBlockchainID!,
-      gate: log.args.gate!,
-      messageID: log.args.messageID!,
-      txHash: log.transactionHash,
-      timestamp: await blockTime(chain, log.blockNumber),
-    })),
-  );
-  carried.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
-
-  // One chronological feed: payments, deposits, withdrawals, brake events.
-  const history: HistoryItem[] = await Promise.all([
-    ...spends.map(async (s) => ({
-      kind: "spend" as const,
-      amount: s.amount,
-      counterparty: s.to,
-      timestamp: s.timestamp,
-      txHash: s.txHash,
-    })),
-    ...lifecycleLogs.map(async (log) => {
-      const timestamp = await blockTime(chain, log.blockNumber);
-      if (log.eventName === "OwnerWithdraw") {
-        return {
-          kind: "withdraw" as const,
-          amount: log.args.amount!,
-          counterparty: log.args.to!,
-          timestamp,
-          txHash: log.transactionHash,
-        };
-      }
-      return {
-        kind: log.eventName === "Frozen" ? ("freeze" as const) : ("thaw" as const),
-        amount: null,
-        counterparty: null,
-        timestamp,
-        txHash: log.transactionHash,
-      };
-    }),
-    ...depositLogs.map(async (log) => ({
-      kind: "deposit" as const,
-      amount: log.args.value!,
-      counterparty: log.args.from!,
-      timestamp: await blockTime(chain, log.blockNumber),
-      txHash: log.transactionHash,
-    })),
-  ]);
-  history.sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
+  // One chronological feed, served from the store (append order → sorted copies).
+  const spends = [...store.spends].sort((a, b) => (a.txIndex < b.txIndex ? 1 : -1));
+  const carried = [...store.carried].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
+  const history = [...store.history].sort((a, b) => (a.timestamp < b.timestamp ? 1 : -1));
 
   return {
     agentId,

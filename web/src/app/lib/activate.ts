@@ -1,6 +1,6 @@
 import { concat, keccak256, parseEventLogs, toHex, type Address } from "viem";
 import { identityRegistryAbi } from "@verglas/sdk";
-import { hubChain } from "../../lib/data";
+import { agentHintKey, hubChain } from "../../lib/data";
 import { sendBindAccount, sendRegisterIdentity, sendValidationRequest } from "./wallet";
 
 /** The stamp-line activation: mint an ERC-8004 identity, bind it to the
@@ -21,6 +21,12 @@ export async function activateStampLine(
   onStep(2);
   const h2 = await sendBindAccount(wallet, agentId, account);
   await hubChain.waitForTransactionReceipt({ hash: h2 });
+  // This browser just learned the vault's agentId — spare it the log rediscovery.
+  try {
+    localStorage.setItem(agentHintKey(account), agentId.toString());
+  } catch {
+    // private mode: the incremental scan will rediscover it
+  }
 
   onStep(3);
   const rand = new Uint8Array(32);
