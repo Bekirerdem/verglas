@@ -32,6 +32,11 @@ export default defineConfig({
         // stay network-served); no SPA fallback wanted.
         navigateFallback: null,
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // A freshly installed worker activates and takes the page over on its
+        // own — without these the update sat in "waiting" until a manual
+        // unregister (the chronic stale-bundle problem).
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],

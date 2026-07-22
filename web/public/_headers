@@ -1,0 +1,7 @@
+# Cloudflare Pages headers. The service worker script must never be served
+# stale from the edge or the browser HTTP cache — a cached sw.js pins users
+# to an old bundle for hours (Pages' default here was max-age=14400).
+/sw.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
