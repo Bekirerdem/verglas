@@ -172,9 +172,40 @@ contract VerglasHubTest is Test {
     }
 
     function test_RevertWhen_BindByNonOwner() public {
+        // agent owns neither the identity nor the account — the identity gate
+        // is checked first.
         vm.prank(agent);
-        vm.expectRevert(VerglasHub.NotAccountOwner.selector);
+        vm.expectRevert(VerglasHub.NotIdentityOwner.selector);
         hub.bindAccount(AGENT_ID, address(account));
+    }
+
+    /// @notice An attacker who owns their OWN account must not be able to
+    ///         rebind someone else's agentId to it (attestation hijack).
+    function test_RevertWhen_HijackBindByForeignAccountOwner() public {
+        address attacker = makeAddr("attacker");
+        address[] memory wl = new address[](1);
+        wl[0] = dexA;
+        VerglasAccount attackerAccount = new VerglasAccount(attacker, agent, address(token), PER_TX, BUDGET, wl);
+
+        // attacker owns attackerAccount but NOT AGENT_ID (owner does).
+        vm.prank(attacker);
+        vm.expectRevert(VerglasHub.NotIdentityOwner.selector);
+        hub.bindAccount(AGENT_ID, address(attackerAccount));
+
+        // the legit binding is untouched.
+        assertEq(hub.accountOf(AGENT_ID), address(account));
+    }
+
+    /// @notice Identity owner who does not own the target account is rejected too.
+    function test_RevertWhen_BindIdentityOwnerWrongAccount() public {
+        address[] memory wl = new address[](1);
+        wl[0] = dexA;
+        VerglasAccount otherAccount =
+            new VerglasAccount(makeAddr("someoneElse"), agent, address(token), PER_TX, BUDGET, wl);
+
+        vm.prank(owner); // owns AGENT_ID, but not otherAccount
+        vm.expectRevert(VerglasHub.NotAccountOwner.selector);
+        hub.bindAccount(AGENT_ID, address(otherAccount));
     }
 
     function test_Registry_OnlyRequestedValidatorResponds() public {

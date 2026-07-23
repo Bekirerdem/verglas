@@ -2,7 +2,7 @@
 pragma solidity 0.8.25;
 
 import {VerglasAccount} from "./VerglasAccount.sol";
-import {ValidationRegistry} from "./ValidationRegistry.sol";
+import {ValidationRegistry, IIdentityRegistry} from "./ValidationRegistry.sol";
 import {Groth16Verifier} from "./Groth16Verifier.sol";
 import {AttestationPacket} from "./AttestationPacket.sol";
 import {ITeleporterMessenger, TeleporterMessageInput, TeleporterFeeInfo} from "./interfaces/ITeleporterMessenger.sol";
@@ -52,6 +52,7 @@ contract VerglasHub {
     );
 
     error NotAccountOwner();
+    error NotIdentityOwner();
     error NoBoundAccount();
     error BadInitialCommitment();
     error BadFinalCommitment();
@@ -67,7 +68,13 @@ contract VerglasHub {
     }
 
     /// @notice Links an agent identity (ERC-8004 agentId) to its VerglasAccount.
+    /// @dev The caller must own BOTH sides of the binding: the ERC-8004 identity
+    ///      (so nobody can bind or overwrite an agentId they don't hold) and the
+    ///      account (so the identity points only at a vault its owner controls).
+    ///      Without the identity check any account owner could hijack an agentId's
+    ///      attestation by rebinding accountOf[agentId] to their own vault.
     function bindAccount(uint256 agentId, address account) external {
+        if (msg.sender != registry.identityRegistry().ownerOf(agentId)) revert NotIdentityOwner();
         if (msg.sender != VerglasAccount(account).owner()) revert NotAccountOwner();
         accountOf[agentId] = account;
         emit AccountBound(agentId, account);
