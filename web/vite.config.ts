@@ -12,6 +12,15 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: false,
+      // Self-destroying worker: the precache SW kept serving a poisoned copy
+      // of the app shell (a corrupt entry bricks the page to a black screen,
+      // and since the app JS never runs, the update poll never runs either —
+      // a permanent lock until a manual unregister). This ships a cleanup SW
+      // that unregisters itself and purges all caches, so every already-
+      // poisoned browser self-heals on its next visit and no new precache can
+      // brick the page. PWA installability can return post-showcase with a
+      // config that never precaches the entry (e.g. NetworkFirst shell).
+      selfDestroying: true,
       manifest: {
         name: 'Verglas',
         short_name: 'Verglas',
