@@ -1,10 +1,8 @@
-import { useState } from "react";
-import { concat, keccak256, toHex, type Address, type Hex } from "viem";
+import type { Address, Hex } from "viem";
 import type { VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { remaining, short, utcDate } from "../../lib/format";
-import { activateStampLine } from "../lib/activate";
-import { sendValidationRequest } from "../lib/wallet";
+import { useAudit } from "../lib/useAudit";
 
 const TX = "https://testnet.snowtrace.io/tx/";
 
@@ -15,37 +13,16 @@ interface Props {
   busy: string | null;
   run: (label: string, send: () => Promise<Hex>) => Promise<boolean>;
   onRefresh: () => void;
+  /** Jump to the audit page (the card is the teaser, the page is the story). */
+  onOpenAudit?: () => void;
 }
 
 /** Audit card: the ZK machinery translated into auditor language —
     proof ready, verification passed, crossing cleared. The chain shows up
     as one trust line, not as the interface. */
-export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh }: Props) {
+export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh, onOpenAudit }: Props) {
   const { t } = useI18n();
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
-  const [actErr, setActErr] = useState(false);
-
-  const activate = async () => {
-    if (!wallet || !isOwner || step !== 0) return;
-    setActErr(false);
-    try {
-      await activateStampLine(wallet, view.account, setStep);
-      onRefresh();
-    } catch {
-      setActErr(true);
-    }
-    setStep(0);
-  };
-
-  const renew = () => {
-    if (!wallet || !isOwner || view.agentId === null) return;
-    const rand = new Uint8Array(32);
-    crypto.getRandomValues(rand);
-    const requestHash = keccak256(concat([view.account, toHex(rand)]));
-    void run("renew", () => sendValidationRequest(wallet, view.agentId!, requestHash)).then((ok) => {
-      if (ok) onRefresh();
-    });
-  };
+  const { step, actErr, activate, renew } = useAudit(view, wallet, isOwner, run, onRefresh);
 
   if (view.agentId === null) {
     return (
@@ -110,6 +87,11 @@ export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh }: Props
       {isOwner && (
         <button className="bmore" disabled={busy !== null} onClick={renew} title={t("b_renew_hint")}>
           {busy === "renew" ? t("b_pending") : `${t("b_renew")} →`}
+        </button>
+      )}
+      {onOpenAudit && (
+        <button className="bmore" onClick={onOpenAudit}>
+          {t("b_audit_open_page")} →
         </button>
       )}
     </div>

@@ -1,24 +1,16 @@
 import { useState } from "react";
 import { isAddress, parseUnits, type Address, type Hex } from "viem";
-import { FUJI_DEPLOYMENT, TREASURER_DEPLOYMENT } from "@verglas/sdk";
-import type { TreasurerData, VaultView } from "../../lib/data";
+import { FUJI_DEPLOYMENT } from "@verglas/sdk";
+import type { VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd } from "../../lib/format";
 import { contactName } from "../lib/contacts";
-import {
-  sendSetOperator,
-  sendSetPolicy,
-  sendSpend,
-  sendTreasurerAction,
-  sendUsdc,
-  sendWithdraw,
-} from "../lib/wallet";
+import { sendSpend, sendUsdc, sendWithdraw } from "../lib/wallet";
 
-export type Desk = "pay" | "deposit" | "withdraw" | "rules" | "people" | null;
+export type Desk = "pay" | "deposit" | "withdraw" | null;
 
 interface Props {
   view: VaultView;
-  treasurer: TreasurerData | null;
   wallet: Address | null;
   isOwner: boolean;
   isAgent: boolean;
@@ -30,7 +22,7 @@ interface Props {
 
 /** Action pills + one inline panel. Everything happens in place, in plain
     language; the wallet appears only at signature time. */
-export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, open, onToggle, run }: Props) {
+export function ActionDesk({ view, wallet, isOwner, isAgent, busy, open, onToggle, run }: Props) {
   const { t } = useI18n();
   const budgetLeft = view.state.totalBudget - view.state.totalSpent;
 
@@ -88,46 +80,6 @@ export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, op
     if (ok) setWdAmt("");
   };
 
-  // -------- treasurer rules --------
-  const [editing, setEditing] = useState(false);
-  const [daily, setDaily] = useState("");
-  const [slip, setSlip] = useState("");
-  const [ref, setRef] = useState("");
-  const [rotAddr, setRotAddr] = useState("");
-  const openEdit = () => {
-    if (!treasurer) return;
-    setDaily((Number(treasurer.dailyLimit) / 1e6).toString());
-    setSlip(treasurer.maxSlippageBps.toString());
-    setRef((Number(treasurer.referenceRateUsdTry) / 1e8).toFixed(4));
-    setEditing(true);
-  };
-  let parsed: { dailyLimit: bigint; maxSlippageBps: number; referenceRateUsdTry: bigint } | null = null;
-  try {
-    const bps = Number.parseInt(slip, 10);
-    const refNum = Number.parseFloat(ref);
-    if (Number.isFinite(bps) && bps >= 0 && Number.isFinite(refNum) && refNum > 0) {
-      parsed = {
-        dailyLimit: parseUnits(daily, 6),
-        maxSlippageBps: bps,
-        referenceRateUsdTry: BigInt(Math.round(refNum * 1e8)),
-      };
-    }
-  } catch {
-    parsed = null;
-  }
-  const savePolicy = async () => {
-    if (!parsed || !isOwner || busy) return;
-    const ok = await run("policy", () => sendSetPolicy(TREASURER_DEPLOYMENT.treasurer, wallet!, parsed!));
-    if (ok) setEditing(false);
-  };
-  const rotate = async () => {
-    if (!isOwner || busy || !isAddress(rotAddr)) return;
-    const ok = await run("rotate", () =>
-      sendSetOperator(TREASURER_DEPLOYMENT.treasurer, wallet!, rotAddr as Address),
-    );
-    if (ok) setRotAddr("");
-  };
-
   return (
     <>
       <div className="bpills">
@@ -142,9 +94,6 @@ export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, op
         </button>
         <button className={`bpill${open === "withdraw" ? " on" : ""}`} onClick={() => onToggle("withdraw")}>
           ⇩ &nbsp;{t("b_withdraw")}
-        </button>
-        <button className={`bpill${open === "rules" ? " on" : ""}`} onClick={() => onToggle("rules")}>
-          ✎ &nbsp;{t("b_edit_rules")}
         </button>
       </div>
 
@@ -214,91 +163,6 @@ export function ActionDesk({ view, treasurer, wallet, isOwner, isAgent, busy, op
             </button>
           </div>
           {wdIsTokenContract && <div className="berr">{t("app_bad_dest")}</div>}
-        </div>
-      )}
-
-      {open === "rules" && (
-        <div className="bpanel brise">
-          <h4>
-            {t("b_rules")}{" "}
-            {treasurer?.paused && <span className="bchip sec">{t("app_paused")}</span>}
-          </h4>
-          {!treasurer ? (
-            <p className="bhint" style={{ marginTop: 0 }}>{t("b_rules_locked")}</p>
-          ) : !editing ? (
-            <>
-              <div className="brow">
-                <span className="k">{t("b_daily_limit")}</span>
-                <span className="v num">{usd(treasurer.dailyLimit)} USDC</span>
-              </div>
-              <div className="brow">
-                <span className="k">{t("b_slip")}</span>
-                <span className="v num">{treasurer.maxSlippageBps}</span>
-              </div>
-              <div className="brow">
-                <span className="k">{t("b_ref_rate")}</span>
-                <span className="v num">{(Number(treasurer.referenceRateUsdTry) / 1e8).toFixed(4)}</span>
-              </div>
-              <div className="brow">
-                <span className="k">{t("b_keeper")}</span>
-                <span className="v">{contactName(treasurer.operator) ?? short(treasurer.operator)}</span>
-              </div>
-              <div className="bform" style={{ marginTop: 10 }}>
-                <button className="bbtn ghost" disabled={!isOwner || busy !== null} onClick={openEdit}>
-                  {t("app_edit")}
-                </button>
-                <button
-                  className="bbtn ghost"
-                  disabled={!isOwner || busy !== null}
-                  onClick={() =>
-                    run(treasurer.paused ? "unpause" : "pause", () =>
-                      sendTreasurerAction(
-                        TREASURER_DEPLOYMENT.treasurer,
-                        wallet!,
-                        treasurer.paused ? "unpause" : "pause",
-                      ),
-                    )
-                  }
-                >
-                  {busy === "pause" || busy === "unpause"
-                    ? t("b_pending")
-                    : t(treasurer.paused ? "b_resume_t" : "b_pause_t")}
-                </button>
-                <label style={{ flexBasis: 260 }}>
-                  {t("b_rotate")}
-                  <input value={rotAddr} onChange={(e) => setRotAddr(e.target.value)} spellCheck={false} />
-                </label>
-                <button
-                  className="bbtn ghost"
-                  disabled={!isOwner || !isAddress(rotAddr) || busy !== null}
-                  onClick={rotate}
-                >
-                  {busy === "rotate" ? t("b_pending") : t("b_save")}
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="bform">
-              <label>
-                {t("b_daily_limit")}
-                <input value={daily} onChange={(e) => setDaily(e.target.value)} inputMode="decimal" />
-              </label>
-              <label>
-                {t("b_slip")}
-                <input value={slip} onChange={(e) => setSlip(e.target.value)} inputMode="numeric" />
-              </label>
-              <label>
-                {t("b_ref_rate")}
-                <input value={ref} onChange={(e) => setRef(e.target.value)} inputMode="decimal" />
-              </label>
-              <button className="bbtn" disabled={!parsed || busy !== null} onClick={savePolicy}>
-                {busy === "policy" ? t("b_pending") : t("b_save")}
-              </button>
-              <button className="bbtn ghost" onClick={() => setEditing(false)}>
-                {t("b_cancel")}
-              </button>
-            </div>
-          )}
         </div>
       )}
     </>

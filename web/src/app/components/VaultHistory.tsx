@@ -1,7 +1,9 @@
-import type { HistoryItem, VaultView } from "../../lib/data";
+import { useState } from "react";
+import type { HistoryItem, HistoryKind, VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd, utcDate } from "../../lib/format";
 import { contactName, initials } from "../lib/contacts";
+import { memoFor, setMemo } from "../lib/memos";
 
 const TX = "https://testnet.snowtrace.io/tx/";
 
@@ -16,19 +18,26 @@ const SIGN: Record<HistoryItem["kind"], string> = {
   thaw: "",
 };
 
-/** Recent activity as a banking statement: named parties, human
-    descriptions, quiet receipt links. */
-export function VaultHistory({
-  view,
-  vaultLabel,
-  query,
-}: {
+interface Props {
   view: VaultView;
   vaultLabel: string;
   query: string;
-}) {
+  /** Show only the newest N rows (the overview teaser). */
+  limit?: number;
+  /** Restrict to one movement kind (the payments page chips);
+      "security" covers freeze + thaw together. */
+  kind?: HistoryKind | "security" | null;
+  /** Editable per-row memos (payments page only). */
+  withMemo?: boolean;
+  /** "See all" link target — rendered when rows were cut by limit. */
+  onSeeAll?: () => void;
+}
+
+/** Recent activity as a banking statement: named parties, human
+    descriptions, quiet receipt links. */
+export function VaultHistory({ view, vaultLabel, query, limit, kind = null, withMemo, onSeeAll }: Props) {
   const { t } = useI18n();
-  if (view.history.length === 0) return null;
+  const [, bump] = useState(0);
 
   const describe = (item: HistoryItem): { title: string; sub: string; badge: string; color: string } => {
     switch (item.kind) {
@@ -53,21 +62,32 @@ export function VaultHistory({
   };
 
   const q = query.trim().toLowerCase();
-  const rows = view.history.filter((item) => {
+  const matchesKind = (k: HistoryKind) =>
+    kind === null || (kind === "security" ? k === "freeze" || k === "thaw" : k === kind);
+  const filtered = view.history.filter((item) => {
+    if (!matchesKind(item.kind)) return false;
     if (q === "") return true;
     const d = describe(item);
     return (
       d.title.toLowerCase().includes(q) ||
       d.sub.toLowerCase().includes(q) ||
       (item.counterparty ?? "").toLowerCase().includes(q) ||
-      item.txHash.toLowerCase().includes(q)
+      item.txHash.toLowerCase().includes(q) ||
+      (memoFor(item.txHash) ?? "").toLowerCase().includes(q)
     );
   });
+  const rows = limit !== undefined ? filtered.slice(0, limit) : filtered;
+  const cut = limit !== undefined && filtered.length > limit;
 
   return (
     <section className="btx brise" id="activity">
       <div className="btx-head">
         <h2>{t("b_activity")}</h2>
+        {cut && onSeeAll && (
+          <button className="bmore" onClick={onSeeAll}>
+            {t("b_see_all")} →
+          </button>
+        )}
       </div>
       <div className="btx-wrap">
         <table>
@@ -75,7 +95,7 @@ export function VaultHistory({
             <tr>
               <th>{t("b_th_date")}</th>
               <th>{t("b_th_desc")}</th>
-              <th>{t("b_th_account")}</th>
+              {withMemo ? <th>{t("b_th_memo")}</th> : <th>{t("b_th_account")}</th>}
               <th style={{ textAlign: "right" }}>{t("b_th_amount")}</th>
               <th>{t("b_th_status")}</th>
               <th />
@@ -97,7 +117,21 @@ export function VaultHistory({
                       </span>
                     </div>
                   </td>
-                  <td className="bdate">{vaultLabel}</td>
+                  {withMemo ? (
+                    <td>
+                      <input
+                        className="bmemo"
+                        defaultValue={memoFor(item.txHash) ?? ""}
+                        placeholder={t("b_memo_ph")}
+                        onBlur={(e) => {
+                          setMemo(item.txHash, e.target.value);
+                          bump((n) => n + 1);
+                        }}
+                      />
+                    </td>
+                  ) : (
+                    <td className="bdate">{vaultLabel}</td>
+                  )}
                   <td className={`bamt num${item.kind === "deposit" ? " plus" : ""}${item.amount === null ? " dim" : ""}`}>
                     {item.amount !== null ? `${SIGN[item.kind]}${usd(item.amount)} USDC` : "—"}
                   </td>
@@ -108,7 +142,7 @@ export function VaultHistory({
                   </td>
                   <td style={{ textAlign: "right" }}>
                     <a className="breceipt" href={TX + item.txHash} target="_blank" rel="noreferrer">
-                      {t(security ? "b_detail" : "b_receipt")}
+                      {t(security ? "b_detail" : "b_receipt")} ↗
                     </a>
                   </td>
                 </tr>
@@ -117,7 +151,7 @@ export function VaultHistory({
           </tbody>
         </table>
       </div>
-      {rows.length === 0 && <div className="bempty">—</div>}
+      {rows.length === 0 && <div className="bempty">{t("b_empty_history")}</div>}
     </section>
   );
 }

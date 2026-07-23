@@ -7,6 +7,7 @@ import {
   fetchTreasurer,
   fetchVaultView,
   hubChain,
+  type HistoryKind,
   type TreasurerData,
   type VaultView,
 } from "../lib/data";
@@ -14,6 +15,7 @@ import { I18nProvider, useI18n } from "../lib/i18n";
 import { short, usd, utcDate } from "../lib/format";
 import { connect, getConnected } from "./lib/wallet";
 import { contactName, initials } from "./lib/contacts";
+import { memoFor } from "./lib/memos";
 import { vaultNames } from "./lib/activate";
 import { BalanceCard } from "./components/BalanceCard";
 import { GuvenceCard } from "./components/GuvenceCard";
@@ -22,6 +24,8 @@ import { ActionDesk, type Desk } from "./components/ActionDesk";
 import { ContactsPanel } from "./components/ContactsPanel";
 import { VaultHistory } from "./components/VaultHistory";
 import { CreateVaultWizard } from "./components/CreateVaultWizard";
+import { RulesPage } from "./components/RulesPage";
+import { AuditPage } from "./components/AuditPage";
 
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -54,6 +58,15 @@ const NAV = [
   { key: "people", label: "b_people", icon: "M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M9.5 11a4 4 0 100-8 4 4 0 000 8z" },
 ] as const;
 
+type Page = (typeof NAV)[number]["key"];
+
+/** Real pages behind the sidebar: the URL hash is the router, so the back
+    button and reloads land where the user actually was. */
+function pageFromHash(): Page {
+  const h = location.hash.replace(/^#\/?/, "");
+  return (NAV.some((n) => n.key === h) ? h : "overview") as Page;
+}
+
 function Console() {
   const { t, lang, setLang } = useI18n();
   const [selKey, setSelKeyState] = useState(() => localStorage.getItem("verglas-vault") ?? "treasurer");
@@ -72,8 +85,18 @@ function Console() {
   const [txError, setTxError] = useState<string | null>(null);
   const [justFroze, setJustFroze] = useState(false);
   const [desk, setDesk] = useState<Desk>(null);
-  const [navKey, setNavKey] = useState<string>("overview");
+  const [page, setPage] = useState<Page>(pageFromHash);
   const [query, setQuery] = useState("");
+  const [kindF, setKindF] = useState<HistoryKind | "security" | null>(null);
+
+  useEffect(() => {
+    const onHash = () => {
+      setPage(pageFromHash());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
   const [, bump] = useState(0);
   const [installEvt, setInstallEvt] = useState<InstallPromptEvent | null>(null);
   // iOS never fires beforeinstallprompt — show the manual path instead.
@@ -214,13 +237,32 @@ function Console() {
     return b === undefined ? "" : usd(b);
   };
 
-  const navigate = (key: string) => {
-    setNavKey(key);
-    if (key === "overview") window.scrollTo({ top: 0, behavior: "smooth" });
-    if (key === "payments") document.getElementById("activity")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    if (key === "audit") document.getElementById("audit")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    if (key === "rules") setDesk(desk === "rules" ? null : "rules");
-    if (key === "people") setDesk(desk === "people" ? null : "people");
+  const navigate = (key: Page) => {
+    location.hash = key === "overview" ? "/" : `/${key}`;
+    window.scrollTo(0, 0); // clicking the current page still returns to top
+  };
+
+  /** Statement rows as an accountant-ready CSV, memos included. */
+  const exportCsv = () => {
+    if (!view) return;
+    const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
+    const rows = view.history.map((h) =>
+      [
+        new Date(Number(h.timestamp) * 1000).toISOString(),
+        h.kind,
+        esc(contactName(h.counterparty) ?? ""),
+        h.counterparty ?? "",
+        h.amount !== null ? `${h.kind === "deposit" ? "" : "-"}${(Number(h.amount) / 1e6).toFixed(2)}` : "",
+        esc(memoFor(h.txHash) ?? ""),
+        h.txHash,
+      ].join(","),
+    );
+    const csv = ["date_utc,type,counterparty_name,counterparty_address,amount_usdc,memo,tx_hash", ...rows].join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    a.download = `verglas-${selLabel.toLowerCase().replace(/\s+/g, "-")}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   };
 
   const frozen = view?.state.frozen ?? false;
@@ -247,7 +289,7 @@ function Console() {
             {NAV.map((n) => (
               <button
                 key={n.key}
-                className={`bnav${navKey === n.key ? " on" : ""}`}
+                className={`bnav${page === n.key ? " on" : ""}`}
                 onClick={() => navigate(n.key)}
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -345,45 +387,112 @@ function Console() {
             <div className={switching ? "bswitching" : undefined}>
               <div className="bhead brise">
                 <div>
-                  <h1>{t("b_overview")}</h1>
+                  <h1>{t(NAV.find((n) => n.key === page)!.label)}</h1>
                   <div className="sub">
-                    {t(frozen ? "b_sub_frozen" : "b_sub_ok")}
-                    {lastStamp && ` — ${t("b_last_audit")}: ${utcDate(lastStamp.lastUpdate)}`}
+                    {page === "overview" ? (
+                      <>
+                        {t(frozen ? "b_sub_frozen" : "b_sub_ok")}
+                        {lastStamp && ` — ${t("b_last_audit")}: ${utcDate(lastStamp.lastUpdate)}`}
+                      </>
+                    ) : (
+                      t(`b_sub_${page}`)
+                    )}
                   </div>
                 </div>
-                <div className="bsearch">
-                  ⌕
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder={t("b_search")}
-                  />
-                </div>
+                {page === "payments" && (
+                  <div className="bsearch">
+                    ⌕
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder={t("b_search")}
+                    />
+                  </div>
+                )}
                 <span className="envchip">{t("b_env")}</span>
               </div>
 
               {txError && <div className="bnote">⚠ {t("app_tx_failed")}</div>}
 
-              <ActionDesk
-                view={view}
-                treasurer={showTreasurer}
-                wallet={wallet}
-                isOwner={isOwner}
-                isAgent={isAgent}
-                busy={busy}
-                open={desk}
-                onToggle={(d) => setDesk(desk === d ? null : d)}
-                run={run}
-              />
-
-              {desk === "people" && <ContactsPanel view={view} onChange={() => bump((n) => n + 1)} />}
-
-              <div className="bgrid">
-                <BalanceCard
+              {(page === "overview" || page === "payments") && (
+                <ActionDesk
                   view={view}
-                  rateUsdTry={treasurer ? (treasurer.hermesRateUsdTry ?? treasurer.pythRateUsdTry) : null}
+                  wallet={wallet}
+                  isOwner={isOwner}
+                  isAgent={isAgent}
+                  busy={busy}
+                  open={desk}
+                  onToggle={(d) => setDesk(desk === d ? null : d)}
+                  run={run}
                 />
-                <GuvenceCard
+              )}
+
+              {page === "overview" && (
+                <>
+                  <div className="bgrid">
+                    <BalanceCard
+                      view={view}
+                      rateUsdTry={treasurer ? (treasurer.hermesRateUsdTry ?? treasurer.pythRateUsdTry) : null}
+                    />
+                    <GuvenceCard
+                      view={view}
+                      treasurer={showTreasurer}
+                      wallet={wallet}
+                      isOwner={isOwner}
+                      busy={busy}
+                      run={run}
+                      onFroze={glaze}
+                    />
+                    <AuditCard
+                      view={view}
+                      wallet={wallet}
+                      isOwner={isOwner}
+                      busy={busy}
+                      run={run}
+                      onRefresh={() => load(sel)}
+                      onOpenAudit={() => navigate("audit")}
+                    />
+                  </div>
+                  <VaultHistory
+                    view={view}
+                    vaultLabel={selLabel}
+                    query=""
+                    limit={6}
+                    onSeeAll={() => navigate("payments")}
+                  />
+                </>
+              )}
+
+              {page === "payments" && (
+                <>
+                  <div className="bfilters brise">
+                    {(
+                      [
+                        [null, "b_f_all"],
+                        ["spend", "b_f_pay"],
+                        ["deposit", "b_f_dep"],
+                        ["withdraw", "b_f_wd"],
+                        ["security", "b_f_sec"],
+                      ] as const
+                    ).map(([k, label]) => (
+                      <button
+                        key={label}
+                        className={`bfchip${kindF === k ? " on" : ""}`}
+                        onClick={() => setKindF(k)}
+                      >
+                        {t(label)}
+                      </button>
+                    ))}
+                    <button className="bfchip csv" onClick={exportCsv}>
+                      ⇣ {t("b_csv")}
+                    </button>
+                  </div>
+                  <VaultHistory view={view} vaultLabel={selLabel} query={query} kind={kindF} withMemo />
+                </>
+              )}
+
+              {page === "rules" && (
+                <RulesPage
                   view={view}
                   treasurer={showTreasurer}
                   wallet={wallet}
@@ -391,8 +500,12 @@ function Console() {
                   busy={busy}
                   run={run}
                   onFroze={glaze}
+                  onNewVault={() => setWizardOpen(true)}
                 />
-                <AuditCard
+              )}
+
+              {page === "audit" && (
+                <AuditPage
                   view={view}
                   wallet={wallet}
                   isOwner={isOwner}
@@ -400,9 +513,20 @@ function Console() {
                   run={run}
                   onRefresh={() => load(sel)}
                 />
-              </div>
+              )}
 
-              <VaultHistory view={view} vaultLabel={selLabel} query={query} />
+              {page === "people" && (
+                <>
+                  <ContactsPanel view={view} onChange={() => bump((n) => n + 1)} />
+                  <div className="bpanel brise" style={{ marginTop: 14 }}>
+                    <h4>{t("b_people_locked_h")}</h4>
+                    <p className="bhint" style={{ marginTop: 0 }}>{t("b_people_locked_p")}</p>
+                    <button className="bbtn ghost" onClick={() => setWizardOpen(true)}>
+                      + {t("w_new")}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </main>
