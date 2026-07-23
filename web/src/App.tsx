@@ -7,6 +7,7 @@ import { I18nProvider, useI18n } from "./lib/i18n";
 import { Hero } from "./components/Hero";
 import { Problem } from "./components/Problem";
 import { TreasurerScene } from "./components/TreasurerScene";
+import { Passport } from "./components/Passport";
 import { Motor } from "./components/Motor";
 import { LiveBand } from "./components/LiveBand";
 import { Closing } from "./components/Closing";
@@ -67,32 +68,48 @@ function Page() {
     if (!rootRef.current) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const ctx = gsap.context(() => {
-      const showAll = () => gsap.set(".hero-anim, .will-reveal", { opacity: 1, clearProps: "transform" });
+      const showAll = () =>
+        gsap.set(".hero-anim, .will-reveal, .pp-reveal", { opacity: 1, filter: "blur(0px)", clearProps: "transform" });
       if (reduced) {
         showAll();
         return;
       }
       const play = () => {
+        // Hero entrance — Premium/Krehel reveal token: opacity + y16 + blur6,
+        // decelerate (power3.out), 480ms, standard stagger 80ms (<400ms budget).
         gsap.fromTo(
           ".hero-anim",
-          { opacity: 0, y: 34 },
-          { opacity: 1, y: 0, duration: 0.9, ease: "power3.out", stagger: 0.09, delay: 0.1 },
+          { opacity: 0, y: 16, filter: "blur(6px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.48, ease: "power3.out", stagger: 0.08, delay: 0.1 },
         );
-        // hero copy drifts up as you leave — depth against the fixed ice
+        // hero copy drifts up as you leave — counter-motion depth against the
+        // fixed ice (ambient layer, ease:none for 1:1 scroll linkage)
         gsap.to(".hero-block", {
-          yPercent: -22,
-          opacity: 0.4,
+          yPercent: -18,
+          opacity: 0.35,
           ease: "none",
           scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
         });
+        gsap.to(".hero-passport", {
+          yPercent: -34,
+          ease: "none",
+          scrollTrigger: { trigger: ".hero", start: "top top", end: "bottom top", scrub: true },
+        });
+        // Section reveals share the one signature token — same y16+blur6,
+        // same easing, so the whole page reads as one motion voice.
         gsap.utils.toArray<HTMLElement>(".will-reveal").forEach((el) => {
-          gsap.to(el, {
-            opacity: 1,
-            y: 0,
-            duration: 0.9,
-            ease: "power3.out",
-            scrollTrigger: { trigger: el, start: "top 82%" },
-          });
+          gsap.fromTo(
+            el,
+            { opacity: 0, y: 16, filter: "blur(6px)" },
+            {
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)",
+              duration: 0.48,
+              ease: "power3.out",
+              scrollTrigger: { trigger: el, start: "top 84%" },
+            },
+          );
         });
       };
       if (document.visibilityState === "visible") {
@@ -113,7 +130,7 @@ function Page() {
 
   // language switch re-renders text; make sure revealed items stay visible
   useEffect(() => {
-    gsap.set(".will-reveal", { opacity: 1, clearProps: "transform" });
+    gsap.set(".will-reveal, .pp-reveal", { opacity: 1, filter: "blur(0px)", clearProps: "transform" });
   }, [lang]);
 
   return (
@@ -126,9 +143,14 @@ function Page() {
 
       <Hero data={data} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
       <main>
-        <Problem />
+        <div className="room room-raised">
+          <Problem />
+        </div>
         <TreasurerScene treasurer={treasurer} />
-        <Motor />
+        <Passport />
+        <div className="room room-raised">
+          <Motor />
+        </div>
         <LiveBand data={data} treasurer={treasurer} />
         <Closing />
       </main>

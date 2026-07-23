@@ -1,7 +1,8 @@
 import { useI18n } from "../lib/i18n";
 
-/** S4 — THE ENGINE: why you'd believe it. Compact; the full-bleed ice band
-    carries the stamp from hub to gate in a slow loop. */
+/** S4 — WHY YOU'D BELIEVE IT: the three guarantees, one card each. The
+    interchain crossing now has its own scene (Passport), so this section
+    stays a compact, tonally-raised proof triad. */
 export function Motor() {
   const { t } = useI18n();
   const cards = [1, 2, 3] as const;
@@ -15,16 +16,6 @@ export function Motor() {
             <p>{t(`r4_c${n}_p` as "r4_c1_p")}</p>
           </div>
         ))}
-      </div>
-      <div className="m-band" aria-hidden="true">
-        <span className="mono m-node">C-CHAIN</span>
-        <i className="m-rail">
-          <b className="m-stamp">VG</b>
-        </i>
-        <span className="mono m-node">DISPATCH</span>
-        <span className="m-bandtext">
-          {t("band_1")} → {t("band_2")}
-        </span>
       </div>
     </section>
   );

@@ -179,22 +179,6 @@ a { color: inherit; }
 .clearance .until { color: var(--faint); }
 @media (max-width: 760px) { .clearance { flex-direction: column; align-items: stretch; } .clearance .cell + .cell { border-left: 0; border-top: 1px solid var(--edge); } }
 
-.hero .stampmark {
-  position: absolute;
-  width: 92px; height: 92px; border-radius: 18px;
-  right: max(5vw, calc(50% - 580px));
-  top: 21vh;
-  transform: rotate(8deg);
-  background: linear-gradient(155deg, var(--stamp-amber-hi), var(--stamp-amber) 60%, var(--stamp-amber-lo));
-  color: var(--stamp-ink);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  box-shadow: 0 10px 34px rgba(240, 180, 41, 0.32);
-  z-index: 3;
-}
-.hero .stampmark .score { font-size: 28px; font-weight: 800; line-height: 1; }
-.hero .stampmark .of { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 1.6px; margin-top: 3px; }
-@media (max-width: 1100px) { .hero .stampmark { display: none; } }
-
 .hero-ctas { margin-top: 34px; display: flex; flex-wrap: wrap; gap: 14px; }
 .cta-main {
   font-family: var(--font-mono); font-size: 12px; letter-spacing: 2.4px; text-decoration: none;

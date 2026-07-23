@@ -328,6 +328,13 @@ const en = {
   r4_c3_t: "THE PASSPORT",
   r4_c3_p: "Not a platform's word — a stamp every Avalanche L1 can check.",
 
+  hp_sealed: "SEALED",
+  r3p_tag: "03 · THE PASSPORT",
+  r3p_h: "One proof, every Avalanche L1.",
+  r3p_p: "The attestation isn't locked to the chain that issued it. Over native ICM it crosses to any Avalanche L1, and a gate on the far side clears the agent with a single view call — no bridge, no custodian, no second trust.",
+  r3p_kite: "Kite walls trust in. Verglas lets it travel.",
+  r3p_hint: "SCROLL — CARRY THE STAMP ACROSS",
+
   r6_biz_h: "Set up your treasurer",
   r6_biz_p: "Vault + rules + brake. Start in the console.",
   r6_biz_cta: "OPEN THE CONSOLE →",
@@ -845,6 +852,13 @@ const tr: typeof en = {
   r4_c2_p: "Güven skor değil — zincirde doğrulanan matematik.",
   r4_c3_t: "PASAPORT",
   r4_c3_p: "Platform sözü değil — her Avalanche L1'inin sorabildiği damga.",
+
+  hp_sealed: "MÜHÜRLÜ",
+  r3p_tag: "03 · PASAPORT",
+  r3p_h: "Tek kanıt, tüm Avalanche L1'leri.",
+  r3p_p: "Attestation onu üreten zincire kilitli değil. Yerel ICM ile başka bir Avalanche L1'ine geçer; karşı taraftaki kapı agent'ı tek bir view çağrısıyla onaylar — köprü yok, emanetçi yok, ikinci güven yok.",
+  r3p_kite: "Kite güveni içeri hapseder. Verglas onu taşır.",
+  r3p_hint: "KAYDIR — DAMGAYI KARŞIYA TAŞI",
 
   r6_biz_h: "Haznedarını kur",
   r6_biz_p: "Kasa + kurallar + fren. Konsoldan başla.",

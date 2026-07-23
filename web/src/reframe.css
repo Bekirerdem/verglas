@@ -1,8 +1,20 @@
-/* Reframed landing sections (2026-07-18): problem split, treasurer scene,
-   motor, two doors. Marketing-first copy over the living VerglasCanvas ground.
-   Visual craft pass intentionally comes later — this is the skeleton. */
+/* Landing sections (craft pass 2026-07-23): the page reads as a tonal
+   journey — night ice → raised rooms → the passport moment → close. Each
+   "room" gets a distinct surface so sections stop blurring into one dark
+   sheet. Motion is one signature token everywhere (opacity + y16 + blur6,
+   power3.out, 480ms) so the whole page moves in one voice. */
 
 .serif { font-family: var(--font-serif); font-style: italic; }
+
+/* ---------------- tonal rooms ---------------- */
+.room { position: relative; }
+/* A raised room reads a hair lighter (dark) / a hair darker (light) than the
+   base ice, delineated with hairline edges — works in both themes. */
+.room-raised {
+  background: color-mix(in srgb, var(--text) 3.5%, var(--bg));
+  border-top: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+}
 
 /* ---------------- S2 · problem split ---------------- */
 .problem2 { padding: 18vh 5vw 14vh; position: relative; }
@@ -45,16 +57,32 @@
 .ts-intro b { color: var(--text); font-style: normal; font-family: var(--font-display); font-weight: 700; }
 
 .ts-frame {
-  border-radius: 18px;
-  padding: 26px 28px;
+  border-radius: 20px;
+  padding: 34px 36px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 640px;
+  gap: 24px;
+  max-width: 760px;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.4s;
+  transition: border-color 0.4s, box-shadow 0.4s;
+  /* Real weight: a glass slab that owns the scene, not a chip floating in a
+     void. Depth from a soft ice glow + inset highlight. */
+  background: color-mix(in srgb, var(--card-solid) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(1.2);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid var(--edge);
+  box-shadow: 0 30px 80px -30px var(--shadow), inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
 }
+.ts-frame::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(600px 260px at 78% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
+}
+.ts-frame[data-stage="2"] { box-shadow: 0 30px 90px -28px color-mix(in srgb, var(--accent) 40%, var(--shadow)), inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent); }
 .tsf-head { display: flex; align-items: center; gap: 12px; font-size: 11px; letter-spacing: 2px; color: var(--muted); }
 .tsf-chip { font-size: 9px; letter-spacing: 1.6px; padding: 4px 10px; border-radius: 999px; border: 1px solid; }
 .tsf-chip.ok { color: var(--ok); border-color: color-mix(in srgb, var(--ok) 45%, transparent); }
@@ -166,52 +194,114 @@
 .m-tag { font-size: 10px; letter-spacing: 2.4px; color: var(--accent); }
 .m-card p { margin-top: 10px; font-size: 16px; }
 
-.m-band {
+/* ---------------- S3b · passport (the moat, full-bleed pinned) ---------------- */
+.passport {
   position: relative;
+  /* the brightest room: a deep ice stage the crossing lights up */
+  background:
+    radial-gradient(1100px 520px at 50% 30%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 68%),
+    var(--bg2);
   border-top: 1px solid var(--edge);
   border-bottom: 1px solid var(--edge);
-  padding: 6vh 5vw;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  background:
-    radial-gradient(800px 300px at 50% 50%, rgba(190, 216, 255, 0.06), transparent 70%),
-    color-mix(in srgb, var(--bg2) 75%, transparent);
   overflow: hidden;
 }
-.m-node { font-size: 10px; letter-spacing: 2px; color: var(--muted); border: 1px solid var(--edge); border-radius: 9px; padding: 9px 13px; white-space: nowrap; }
-.m-rail { position: relative; flex: 1; height: 2px; background: var(--edge); }
-.m-stamp {
-  position: absolute;
-  top: -13px;
-  left: 0;
-  font-family: "BioRhyme", var(--font-display);
-  font-weight: 800;
-  font-size: 11px;
-  letter-spacing: 1px;
-  color: var(--stamp-amber);
-  border: 1.5px solid var(--stamp-amber);
-  border-radius: 7px;
-  padding: 3px 7px;
-  background: var(--bg);
-  animation: stamp-travel 6s cubic-bezier(0.5, 0, 0.4, 1) infinite;
+.pp-inner {
+  min-height: 100svh;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 12vh 5vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 22px;
 }
-@keyframes stamp-travel {
-  0% { left: 0; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { left: calc(100% - 40px); opacity: 0; }
-}
-.m-bandtext {
-  position: absolute;
-  right: 5vw;
-  bottom: 8px;
+.passport .ptag { color: var(--accent); }
+.pp-h {
   font-family: var(--font-display);
   font-stretch: 72%;
   font-weight: 800;
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: var(--faint);
+  text-transform: uppercase;
+  font-size: clamp(30px, 5vw, 68px);
+  line-height: 0.98;
+  letter-spacing: 0.5px;
+  max-width: 16em;
+}
+.pp-p { color: var(--muted); font-size: clamp(15px, 1.4vw, 18px); max-width: 44ch; }
+
+.pp-stage { width: min(880px, 100%); margin: 4vh 0 2vh; }
+.pp-rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.pp-node {
+  position: relative;
+  z-index: 2; /* sit above the crossing beam so labels stay readable */
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1px solid var(--edge);
+  border-radius: 12px;
+  padding: 14px 18px;
+  background: var(--card-solid);
+  white-space: nowrap;
+  transition: border-color 0.5s, box-shadow 0.5s;
+}
+.pp-node b { font-family: var(--font-mono); font-size: 12px; letter-spacing: 2px; }
+.pp-node em { font-family: var(--font-mono); font-style: normal; font-size: 10px; letter-spacing: 1.4px; color: var(--faint); transition: color 0.5s; }
+.pp-line { position: relative; z-index: 1; flex: 1; height: 2px; background: var(--edge); }
+/* The crossing beam — a thin glowing rail centered on the line, growing
+   left→right as the stamp travels. Behind the opaque nodes (z-index). */
+.pp-sweep {
+  position: absolute;
+  top: calc(50% - 1.5px);
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 0;
+  transform-origin: left center;
+  transform: scaleX(0);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 70%, transparent), var(--accent-hi));
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.pp-stamp {
+  position: absolute;
+  z-index: 3;
+  top: -15px;
+  left: 0;
+  font-family: "BioRhyme", var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--stamp-ink);
+  background: linear-gradient(155deg, var(--stamp-amber-hi), var(--stamp-amber) 60%, var(--stamp-amber-lo));
+  border-radius: 8px;
+  padding: 6px 10px;
+  box-shadow: 0 6px 20px rgba(240, 180, 41, 0.35);
+}
+/* gate clears on arrival */
+.pp-rail[data-arrived="1"] .pp-node.dst {
+  border-color: color-mix(in srgb, var(--ok) 55%, var(--edge));
+  box-shadow: 0 0 28px -6px color-mix(in srgb, var(--ok) 45%, transparent);
+}
+.pp-rail[data-arrived="1"] .pp-gate { color: var(--ok); }
+
+.pp-kite {
+  font-size: clamp(19px, 2.2vw, 30px);
+  color: var(--text);
+  max-width: 20em;
+}
+.pp-kite::first-line { color: var(--accent-hi); }
+.pp-hint { font-size: 9px; letter-spacing: 2.4px; color: var(--faint); margin-top: 1vh; }
+
+@media (max-width: 720px) {
+  .pp-rail { flex-direction: column; gap: 26px; }
+  .pp-line { width: 2px; height: 60px; }
+  .pp-stamp { top: 0; left: -15px !important; }
+  .pp-sweep { transform-origin: top center; }
 }
 
 /* ---------------- S5 tweak ---------------- */
@@ -255,6 +345,45 @@
   .problem2 { padding-top: 12vh; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .m-stamp { animation: none; left: calc(50% - 20px); opacity: 1; }
+/* ---------------- hero passport artifact (replaces the orphan score chip) ---------------- */
+.hero-passport {
+  position: absolute;
+  right: max(5vw, calc(50% - 590px));
+  top: 19vh;
+  width: 232px;
+  z-index: 3;
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: color-mix(in srgb, var(--card-solid) 78%, transparent);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  border: 1px solid var(--edge);
+  box-shadow: 0 24px 60px -24px var(--shadow), inset 0 1px 0 color-mix(in srgb, var(--text) 8%, transparent);
 }
+.hp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.hp-agent { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1.4px; color: var(--muted); }
+.hp-status { font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px; color: var(--faint); display: flex; align-items: center; gap: 6px; }
+.hp-status.ok { color: var(--ok); }
+.hp-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.hp-seal {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid var(--edge);
+  border-bottom: 1px solid var(--edge);
+}
+.hp-vg {
+  font-family: "BioRhyme", var(--font-display);
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: 1px;
+  color: var(--stamp-amber);
+}
+.hp-score { font-family: var(--font-display); font-stretch: 70%; font-weight: 800; font-size: 40px; line-height: 1; color: var(--text); }
+.hp-foot { display: flex; align-items: center; justify-content: space-between; font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.4px; color: var(--faint); }
+@media (max-width: 1100px) { .hero-passport { display: none; } }

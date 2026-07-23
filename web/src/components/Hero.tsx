@@ -54,17 +54,17 @@ export function Hero({
       </div>
 
       <div className="hero-block">
-        <p className="kicker hero-anim">{t("s1_kicker")}</p>
+        <p className="kicker hero-anim">{t("hero_kicker")}</p>
         <h1>
           <span className="hero-anim" style={{ display: "block" }}>
-            {t("s1_h1a")}
+            {t("hero_l1")}
           </span>
-          <span className="l2 hero-anim">{t("s1_h1b")}</span>
+          <span className="l2 hero-anim">{t("hero_l2")}</span>
         </h1>
         <p className="subline hero-anim">
-          {t("s1_sub_1")}
-          <b>{t("s1_sub_b")}</b>
-          {t("s1_sub_2")}
+          {t("hero_sub_1")}
+          <b>{t("hero_sub_b")}</b>
+          {t("hero_sub_2")}
         </p>
 
         <div className="hero-ctas hero-anim">
@@ -90,10 +90,28 @@ export function Hero({
         </div>
       </div>
 
-      <div className="stampmark hero-anim" aria-hidden="true" data-ice-glow>
-        <span className="score">100</span>
-        <span className="of">SCORE</span>
-      </div>
+      {/* The passport artifact — the moat, previewed. Replaces the orphan
+          amber score chip: the same seal, now anchored to the hero as the
+          thing the whole page is about. */}
+      <aside className="hero-passport hero-anim" aria-hidden="true" data-ice-glow>
+        <div className="hp-head">
+          <span className="hp-agent">
+            {t("hero_agent")} #{FUJI_DEPLOYMENT.agentId.toString()}
+          </span>
+          <span className={`hp-status ${cleared ? "ok" : ""}`}>
+            <span className="dot" />
+            {cleared === null ? "· · ·" : cleared ? t("hero_cleared") : t("hero_not_cleared")}
+          </span>
+        </div>
+        <div className="hp-seal">
+          <span className="hp-vg">VG</span>
+          <span className="hp-score">100</span>
+        </div>
+        <div className="hp-foot">
+          <span>{t("hp_sealed")}</span>
+          <span>{cleared && expires ? expires : t("hero_live")}</span>
+        </div>
+      </aside>
     </header>
   );
 }
