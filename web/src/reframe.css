@@ -170,7 +170,7 @@
 
 .ts-steps { display: flex; flex-direction: column; gap: 5vh; }
 .ts-step { opacity: 0; transform: translateY(24px); max-width: 24em; }
-.ts-num { font-size: 10px; letter-spacing: 2.4px; color: var(--accent); }
+.ts-num { font-size: 10px; letter-spacing: 2.4px; color: var(--accent-hi); }
 .ts-step h3 { font-family: var(--font-display); font-stretch: 80%; font-weight: 800; font-size: clamp(22px, 2.2vw, 32px); margin: 6px 0 8px; }
 .ts-step p { color: var(--muted); font-size: 15px; }
 .ts-hint { font-size: 9px; letter-spacing: 2.4px; color: var(--faint); }
@@ -191,7 +191,7 @@
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
-.m-tag { font-size: 10px; letter-spacing: 2.4px; color: var(--accent); }
+.m-tag { font-size: 10px; letter-spacing: 2.4px; color: var(--accent-hi); }
 .m-card p { margin-top: 10px; font-size: 16px; }
 
 /* ---------------- S3b · passport (the moat, full-bleed pinned) ---------------- */
@@ -217,7 +217,7 @@
   text-align: center;
   gap: 22px;
 }
-.passport .ptag { color: var(--accent); }
+.passport .ptag { color: var(--accent-hi); }
 .pp-h {
   font-family: var(--font-display);
   font-stretch: 72%;
@@ -332,7 +332,7 @@
 .door p { color: var(--muted); font-size: 16px; }
 .door-cta { margin-top: auto; padding-top: 18px; font-size: 11px; letter-spacing: 2px; }
 .door-biz { border-color: color-mix(in srgb, var(--accent) 40%, var(--edge)); }
-.door-biz:hover { box-shadow: 0 12px 40px rgba(232, 65, 66, 0.15); border-color: var(--accent); }
+.door-biz:hover { box-shadow: 0 12px 40px rgba(193, 31, 46, 0.15); border-color: var(--accent); }
 .door-biz .door-cta { color: var(--accent-hi); }
 .door-dev:hover { border-color: var(--text); }
 .door-dev .door-cta { color: var(--muted); }

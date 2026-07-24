@@ -117,7 +117,8 @@ function Console() {
   const [theme, setTheme] = useState<string>(() => {
     const saved = localStorage.getItem("verglas-theme");
     if (saved === "light" || saved === "dark") return saved;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    // Paper canvas is the brand default; dark stays one toggle away.
+    return "light";
   });
 
   useEffect(() => {

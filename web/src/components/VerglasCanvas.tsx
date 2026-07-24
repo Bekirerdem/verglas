@@ -253,7 +253,7 @@ export function VerglasCanvas({ theme }: { theme: string }) {
         if (alpha <= 0.004) return;
         ctx.strokeStyle =
           inSweep && sweepRed && !e.horizontal
-            ? `rgba(232, 65, 66, ${Math.min(0.6, alpha)})`
+            ? `rgba(193, 31, 46, ${Math.min(0.6, alpha)})`
             : `rgba(${lineBase}, ${Math.min(0.55, alpha)})`;
         ctx.lineWidth = e.horizontal ? 1 : 1 + railK * 0.7;
         ctx.beginPath();

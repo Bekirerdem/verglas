@@ -5,25 +5,27 @@
    Dark = night ice, light = ice in daylight. TR/EN via i18n. */
 
 :root {
-  --bg: #0b0b10;
-  --bg2: #08080c;
-  --card: rgba(255, 255, 255, 0.05);
-  --card-solid: #16161c;
-  --edge: rgba(255, 255, 255, 0.11);
-  --text: #f4f5f7;
-  --muted: #a6abb7;
-  --faint: #6a7080;
-  --accent: #e84142;
-  --accent-hi: #ff5f60;
-  --on-accent: #ffffff;
-  --ok: #4fd08c;
+  /* ported from the console's "işletme bankacılığı" palette (app.css):
+     warm black ground, deep crimson accent, off-white ink — one brand. */
+  --bg: #0e0d0b;
+  --bg2: #0b0b0b;
+  --card: rgba(245, 242, 237, 0.05);
+  --card-solid: #171511;
+  --edge: rgba(245, 242, 237, 0.1);
+  --text: #f0ece3;
+  --muted: #b0a898;
+  --faint: #7d766a;
+  --accent: #a81524;
+  --accent-hi: #c11f2e;
+  --on-accent: #f5f2ed;
+  --ok: #34c98e;
   --warn: #ffb020;
   --stamp-amber: #f0b429;
   --stamp-amber-hi: #ffd070;
   --stamp-amber-lo: #c68a12;
   --stamp-ink: #241a05;
-  --overlay-a: rgba(11, 11, 16, 0.42);
-  --overlay-b: rgba(11, 11, 16, 0.6);
+  --overlay-a: rgba(14, 13, 11, 0.42);
+  --overlay-b: rgba(14, 13, 11, 0.6);
   --tex-blend: screen;
   --tex-opacity: 0.13;
   --shadow: rgba(0, 0, 0, 0.55);
@@ -34,24 +36,25 @@
 }
 
 :root[data-theme="light"] {
-  --bg: #eef1f6;
-  --bg2: #e4e9f0;
-  --card: rgba(255, 255, 255, 0.6);
-  --card-solid: #ffffff;
-  --edge: rgba(12, 14, 20, 0.14);
-  --text: #0d0f14;
-  --muted: #48505e;
-  --faint: #8d95a3;
-  --accent: #e84142;
-  --accent-hi: #c3282a;
-  --on-accent: #ffffff;
-  --ok: #157a4b;
+  /* console's paper canvas, verbatim */
+  --bg: #f5f2ed;
+  --bg2: #ece7de;
+  --card: rgba(255, 253, 249, 0.6);
+  --card-solid: #fffdf9;
+  --edge: rgba(22, 19, 15, 0.12);
+  --text: #16130f;
+  --muted: #5b544a;
+  --faint: #8d857f;
+  --accent: #8b0d1a;
+  --accent-hi: #a81524;
+  --on-accent: #f5f2ed;
+  --ok: #1d7a4f;
   --warn: #b26a00;
-  --overlay-a: rgba(238, 241, 246, 0.25);
-  --overlay-b: rgba(238, 241, 246, 0.72);
+  --overlay-a: rgba(245, 242, 237, 0.25);
+  --overlay-b: rgba(245, 242, 237, 0.72);
   --tex-blend: multiply;
   --tex-opacity: 0.1;
-  --shadow: rgba(30, 40, 60, 0.18);
+  --shadow: rgba(35, 28, 18, 0.16);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -114,10 +117,10 @@ a { color: inherit; }
   font-family: "BioRhyme", var(--font-display);
   font-weight: 800; letter-spacing: 3px; font-size: 14px;
 }
-.hero .brand sup { font-family: var(--font-mono); font-size: 8px; letter-spacing: 2px; color: var(--accent); margin-left: 6px; font-weight: 400; }
+.hero .brand sup { font-family: var(--font-mono); font-size: 8px; letter-spacing: 2px; color: var(--accent-hi); margin-left: 6px; font-weight: 400; }
 .hero .navlinks { display: flex; align-items: center; gap: 32px; margin: 0 auto; padding: 0 3vw; }
 .hero .navlinks a { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2.4px; color: var(--muted); text-decoration: none; }
-.hero .navlinks a:hover { color: var(--accent); }
+.hero .navlinks a:hover { color: var(--accent-hi); }
 .hero .toggles { display: flex; align-items: center; gap: 10px; padding-right: 2vw; }
 .tgl {
   font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1.6px;
@@ -137,7 +140,7 @@ a { color: inherit; }
 @media (max-width: 900px) { .hero .navlinks { display: none; } }
 
 .hero .hero-block { max-width: 1020px; position: relative; z-index: 2; }
-.hero .kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: 3.6px; color: var(--accent); margin-bottom: 26px; text-shadow: 0 1px 12px var(--shadow); }
+.hero .kicker { font-family: var(--font-mono); font-size: 11px; letter-spacing: 3.6px; color: var(--accent-hi); margin-bottom: 26px; text-shadow: 0 1px 12px var(--shadow); }
 .hero h1 {
   font-weight: 800;
   font-stretch: 64%;
@@ -189,11 +192,11 @@ a { color: inherit; }
   font-family: var(--font-mono); font-size: 12px; letter-spacing: 2.4px; text-decoration: none;
   color: var(--text); border: 1px solid var(--edge); border-radius: 999px; padding: 15px 30px;
 }
-.cta-ghost:hover { border-color: var(--accent); color: var(--accent); }
+.cta-ghost:hover { border-color: var(--accent-hi); color: var(--accent); }
 
 /* ================= S2 — THE PROBLEM ================= */
 .problem { max-width: 880px; padding: 16vh 6vw 12vh; }
-.ptag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 3px; color: var(--accent); margin-bottom: 26px; }
+.ptag { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 3px; color: var(--accent-hi); margin-bottom: 26px; }
 .problem h2 {
   font-family: var(--font-serif); font-style: italic; font-weight: 500;
   font-size: clamp(26px, 3.2vw, 42px); line-height: 1.3; letter-spacing: -0.3px;
@@ -215,7 +218,7 @@ a { color: inherit; }
 .sol-steps li { opacity: 0.32; transition: opacity 0.45s ease; border-left: 2px solid var(--edge); padding-left: 22px; }
 .sol-steps li.on { opacity: 1; border-left-color: var(--accent); }
 .sol-steps li.done { opacity: 0.62; border-left-color: var(--ok); }
-.sol-steps .sk { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.6px; color: var(--accent); }
+.sol-steps .sk { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.6px; color: var(--accent-hi); }
 .sol-steps h3 { font-weight: 700; font-stretch: 90%; font-size: clamp(18px, 1.8vw, 24px); margin: 8px 0 8px; }
 .sol-steps p { font-size: 14.5px; line-height: 1.6; color: var(--muted); max-width: 40ch; }
 
@@ -230,7 +233,7 @@ a { color: inherit; }
 .solution[data-phase="2"] .vign.receipt,
 .solution[data-phase="3"] .vign.crossing { opacity: 1; transform: none; }
 .sol-stage .vcap { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.6px; color: var(--faint); }
-.sol-stage .vcap.hint { color: var(--accent); animation: pulse 2.4s ease-in-out infinite; }
+.sol-stage .vcap.hint { color: var(--accent-hi); animation: pulse 2.4s ease-in-out infinite; }
 
 .vault-box {
   border: 1px solid var(--edge); border-radius: 18px; background: var(--card);
@@ -239,7 +242,7 @@ a { color: inherit; }
 }
 .vault-box .vrule { font-family: var(--font-mono); font-size: 12px; letter-spacing: 2.2px; color: var(--text); border-bottom: 1px dashed var(--edge); padding-bottom: 12px; }
 .vault-box .vrule:last-child { border-bottom: 0; padding-bottom: 0; }
-.vault-box .vrule.brake { color: var(--accent); }
+.vault-box .vrule.brake { color: var(--accent-hi); }
 
 .seal-big {
   width: 140px; height: 140px; border-radius: 26px; transform: rotate(-6deg);
@@ -259,7 +262,7 @@ a { color: inherit; }
   width: 60px; height: 60px; margin: 0 auto 12px; border-radius: 14px;
   border: 1px solid var(--edge); background: var(--card);
   display: flex; align-items: center; justify-content: center;
-  color: var(--accent); font-family: var(--font-mono); font-size: 20px;
+  color: var(--accent-hi); font-family: var(--font-mono); font-size: 20px;
 }
 .route .terminus .tname { font-weight: 700; font-stretch: 108%; font-size: 15.5px; }
 .route .path { position: relative; height: 2px; background: var(--edge); }
@@ -309,7 +312,7 @@ a { color: inherit; }
 .slive { display: flex; flex-wrap: wrap; gap: 10px 26px; font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); border-top: 1px solid var(--edge); padding-top: 18px; margin-top: 6px; }
 .slive b { color: var(--text); }
 .scode { font-family: var(--font-mono); font-size: 12.5px; color: var(--text); background: var(--bg2); border: 1px solid var(--edge); border-radius: 10px; padding: 14px 16px; overflow-x: auto; }
-.scard .sfoot { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.2px; color: var(--accent); margin-top: auto; }
+.scard .sfoot { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.2px; color: var(--accent-hi); margin-top: auto; }
 
 /* ================= S5 — LIVE RIGHT NOW ================= */
 .liveband { border-block: 1px solid var(--edge); background: var(--bg2); padding: 9vh 5vw; }
@@ -322,7 +325,7 @@ a { color: inherit; }
 .liveband .diffs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 1240px; margin: 0 auto; }
 .diff { border-left: 2px solid var(--edge); padding-left: 18px; }
 .diff h4 { font-weight: 800; font-stretch: 72%; text-transform: uppercase; font-size: 17px; letter-spacing: 0.4px; }
-.diff h4 b { color: var(--accent); font-weight: 800; }
+.diff h4 b { color: var(--accent-hi); font-weight: 800; }
 .diff p { margin-top: 8px; font-size: 13px; line-height: 1.55; color: var(--muted); }
 
 /* ================= S6 — THE CLOSE ================= */
@@ -360,14 +363,14 @@ a { color: inherit; }
   padding: 18px 22px; font-family: var(--font-mono); font-size: 12px; line-height: 1.9; color: var(--muted);
   overflow-x: auto;
 }
-.foot pre .hl { color: var(--accent); }
+.foot pre .hl { color: var(--accent-hi); }
 .foot .legal {
   margin-top: 9vh; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 14px;
   font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1.8px; color: var(--faint);
 }
 .foot .legal .links { display: flex; gap: 22px; }
 .foot .legal a { color: var(--muted); text-decoration: none; }
-.foot .legal a:hover { color: var(--accent); }
+.foot .legal a:hover { color: var(--accent-hi); }
 
 .loading { min-height: 100svh; display: flex; align-items: center; justify-content: center; color: var(--faint); font-family: var(--font-mono); font-size: 12px; letter-spacing: 3px; }
 .err { padding: 12px 6vw; color: var(--warn); font-family: var(--font-mono); font-size: 12px; }

@@ -3,6 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      // Stamp the theme before first paint (light is the brand default);
+      // React re-reads the same key after mount and takes over.
+      document.documentElement.dataset.theme =
+        localStorage.getItem("verglas-theme") === "dark" ? "dark" : "light";
+    </script>
+    <meta name="theme-color" content="#f5f2ed" />
     <title>Verglas — agent trust that travels</title>
     <meta name="description" content="Prove an AI agent's policy compliance once on Avalanche C-Chain; the attestation travels over ICM and clears gates on every L1." />
 

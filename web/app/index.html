@@ -3,9 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      // Stamp the theme before first paint (light is the brand default);
+      // React re-reads the same key after mount and takes over.
+      document.documentElement.dataset.theme =
+        localStorage.getItem("verglas-theme") === "dark" ? "dark" : "light";
+    </script>
     <title>Verglas Console — your vault, under glass</title>
     <meta name="description" content="Owner console for Verglas vaults: live balance, FX circuit breaker, freeze lever, ZK receipts and the interchain passport — on Avalanche." />
-    <meta name="theme-color" content="#0b0b10" />
+    <meta name="theme-color" content="#f5f2ed" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
