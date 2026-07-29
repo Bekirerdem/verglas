@@ -20,8 +20,12 @@ on one chain is a stranger on every other. Verglas fixes that:
 
 ## Status
 
-M1 (Fuji) — in progress. `VerglasAccount` + tests ✅ · circuit #1 (policy compliance) · Hub +
-Validation Registry deploy · Gate + ICM E2E → KeeperHub "Agents Onchain" demo.
+**M1 complete — live on Fuji.** Full pipeline verified end-to-end on testnet: vault → real
+spends → ZK proof (Groth16, ~86k constraints) → attestation in the Validation Registry →
+ICM carry → gate clearance on a second L1 (Dispatch).
+
+- Console: https://verglas.xyz/app · Landing: https://verglas.xyz · Docs: https://verglas.xyz/docs
+- Live Fuji addresses: [`deployments/fuji-testnet.md`](deployments/fuji-testnet.md)
 
 ## Development
 
