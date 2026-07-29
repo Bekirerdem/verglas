@@ -7,7 +7,8 @@
   "scripts": {
     "test": "node --test",
     "backtest": "node src/backtest/run.ts",
-    "tick": "node --env-file=../.env src/tick.ts"
+    "tick": "node --env-file=../.env src/tick.ts",
+    "push-fx": "node --env-file=../.env src/push-fx.ts"
   },
   "dependencies": {
     "viem": "^2.55.1"
