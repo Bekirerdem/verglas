@@ -31,6 +31,13 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 export const D = FUJI_DEPLOYMENT;
 const CHUNK = 2000n;
 
+/** Explicit gas and fees for every keeper write: Fuji's RPC intermittently
+ *  feeds viem estimation values that build an unsendable tx (seen live:
+ *  ~1.5e16 gas limit, sub-gwei fees → "exceeds block gas limit"). */
+const TX_FEES = { maxFeePerGas: 30_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n } as const;
+const SUBMIT_GAS = 900_000n; // Groth16 verify ~290k + bindings + registry write
+const CARRY_GAS = 400_000n; // Teleporter send measured ~160k live
+
 const spendEvent = parseAbiItem(
   "event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment)",
 );
@@ -181,6 +188,8 @@ export async function stampAgent(
     ],
     chain: fujiC,
     account: wallet.account!,
+    gas: SUBMIT_GAS,
+    ...TX_FEES,
   });
   const rc = await pub.waitForTransactionReceipt({ hash: submitHash });
   if (rc.status !== "success") throw new Error(`submitProof reverted: ${submitHash}`);
@@ -194,6 +203,8 @@ export async function stampAgent(
       args: [agentId, BLOCKCHAIN_IDS.dispatch, D.gateOnDispatch],
       chain: fujiC,
       account: wallet.account!,
+      gas: CARRY_GAS,
+      ...TX_FEES,
     });
     const rc2 = await pub.waitForTransactionReceipt({ hash: carryHash });
     if (rc2.status !== "success") throw new Error(`carry reverted: ${carryHash}`);

@@ -35,9 +35,11 @@ export const TELEPORTER_ADDRESS = "0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf" a
  */
 export const IDENTITY_REGISTRY_ADDRESS = "0x8004A818BFB912233c491871b3d84c89A494BD9e" as const;
 
-/** Live Fuji v2 deployment of 2026-07-16 (see deployments/fuji-testnet.md). */
+/** Live Fuji v3 deployment of 2026-07-30 (see deployments/fuji-testnet.md).
+ *  v3 = the redeploy wave: Hub with the bindAccount ownership fix and the
+ *  treasurer fed by the VerglasOracle shim instead of Pyth. */
 export const FUJI_DEPLOYMENT = {
-  hub: "0xE963114E7549167b340dC05b173A2597bf14CC7C",
+  hub: "0x17C273c8edEd16C5e9f7a7525f74AcE15bb5d81E",
   /** The canonical ERC-8004 Validation Registry — not a Verglas deployment. */
   validationRegistry: "0x8004Cb1BF31DAf7788923b405b754f57acEB4272",
   verifier: "0xD8A0b54325B52345E390A4B297bC0629000960DE",
@@ -56,11 +58,13 @@ export const FUJI_DEPLOYMENT = {
 
 /** The V2 vertical: the treasurer and its own vault + canonical agentId. */
 export const TREASURER_DEPLOYMENT = {
-  treasurer: "0xfEa6a384A7eAFA63760F3C00bB518d76A90491D3",
-  account: "0x135a08223c5aBEAb6F6482aB08E85086f6265981",
+  treasurer: "0xf9098c210C5918F7dE01aA7E96b997C819Fb4614",
+  account: "0xec9fb95C029980B80F63FfA27c20b98f586c564c",
   agentId: 220n,
-  /** Pyth price-feed contract on Fuji. */
-  pyth: "0x23f0e8FAeE7bbb405E7A7C3d60138FCfd43d7509",
-  /** Pyth FX.USD/TRY price feed id. */
+  /** IPyth-compatible price source. Since the July 2026 Pyth cutover this is
+   *  the VerglasOracle shim (keeper-signed independent FX sources), kept under
+   *  the same field name because every consumer reads it through the IPyth ABI. */
+  pyth: "0x11a5Bd2295B316eEB53101cdB8B16D7A61A3bF4E",
+  /** USD/TRY feed id (Pyth's id kept as the shim's storage key). */
   usdTryPriceId: "0x032a2eba1c2635bf973e95fb62b2c0705c1be2603b9572cc8d5edeaf8744e058",
 } as const;
