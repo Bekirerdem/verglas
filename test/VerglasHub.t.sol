@@ -89,7 +89,7 @@ contract VerglasHubTest is Test {
         verifier = new Groth16Verifier();
         registry = new ValidationRegistry(identity);
         teleporter = new MockTeleporterMessenger();
-        hub = new VerglasHub(registry, verifier, ITeleporterMessenger(address(teleporter)));
+        hub = new VerglasHub(registry, identity, verifier, ITeleporterMessenger(address(teleporter)));
 
         address[] memory wl = new address[](2);
         wl[0] = dexA;

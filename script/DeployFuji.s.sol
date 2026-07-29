@@ -3,7 +3,7 @@ pragma solidity 0.8.25;
 
 import {Script, console} from "forge-std/Script.sol";
 import {Groth16Verifier} from "../src/Groth16Verifier.sol";
-import {ValidationRegistry} from "../src/ValidationRegistry.sol";
+import {ValidationRegistry, IIdentityRegistry} from "../src/ValidationRegistry.sol";
 import {VerglasHub} from "../src/VerglasHub.sol";
 import {VerglasAccount} from "../src/VerglasAccount.sol";
 import {ITeleporterMessenger} from "../src/interfaces/ITeleporterMessenger.sol";
@@ -53,7 +53,8 @@ contract DeployFuji is Script {
 
         Groth16Verifier verifier = new Groth16Verifier();
         ValidationRegistry registry = ValidationRegistry(VALIDATION_REGISTRY);
-        VerglasHub hub = new VerglasHub(registry, verifier, ITeleporterMessenger(TELEPORTER));
+        VerglasHub hub =
+            new VerglasHub(registry, IIdentityRegistry(IDENTITY_REGISTRY), verifier, ITeleporterMessenger(TELEPORTER));
 
         // Whitelist mirrors scripts/prove.js so the pre-generated proof binds.
         address[] memory wl = new address[](2);

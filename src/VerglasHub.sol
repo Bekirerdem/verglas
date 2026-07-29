@@ -36,6 +36,12 @@ contract VerglasHub {
     uint256 public constant CARRY_GAS_LIMIT = 250_000;
 
     ValidationRegistry public immutable registry;
+    /// @dev Held directly, not resolved through the validation registry: the
+    ///      canonical ERC-8004 Validation Registry exposes the link as
+    ///      getIdentityRegistry() while our own deploy uses an immutable getter —
+    ///      binding must not depend on either ABI (found live on Fuji: the
+    ///      indirect call made every bindAccount revert).
+    IIdentityRegistry public immutable identityRegistry;
     Groth16Verifier public immutable verifier;
     ITeleporterMessenger public immutable teleporter;
 
@@ -61,8 +67,14 @@ contract VerglasHub {
     error InvalidProof();
     error NoAttestation();
 
-    constructor(ValidationRegistry registry_, Groth16Verifier verifier_, ITeleporterMessenger teleporter_) {
+    constructor(
+        ValidationRegistry registry_,
+        IIdentityRegistry identityRegistry_,
+        Groth16Verifier verifier_,
+        ITeleporterMessenger teleporter_
+    ) {
         registry = registry_;
+        identityRegistry = identityRegistry_;
         verifier = verifier_;
         teleporter = teleporter_;
     }
@@ -74,7 +86,7 @@ contract VerglasHub {
     ///      Without the identity check any account owner could hijack an agentId's
     ///      attestation by rebinding accountOf[agentId] to their own vault.
     function bindAccount(uint256 agentId, address account) external {
-        if (msg.sender != registry.identityRegistry().ownerOf(agentId)) revert NotIdentityOwner();
+        if (msg.sender != identityRegistry.ownerOf(agentId)) revert NotIdentityOwner();
         if (msg.sender != VerglasAccount(account).owner()) revert NotAccountOwner();
         accountOf[agentId] = account;
         emit AccountBound(agentId, account);
