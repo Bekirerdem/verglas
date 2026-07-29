@@ -1,4 +1,44 @@
-# Verglas — Fuji Testnet Deployment v2 (2026-07-16)
+# Verglas — Fuji Testnet Deployment v3 (2026-07-30)
+
+The redeploy wave: the Hub ships the bindAccount ownership fix (and holds
+the Identity Registry directly — the canonical Validation Registry's getter
+is `getIdentityRegistry()`, which the previous indirect lookup missed), and
+the treasurer is fed by the VerglasOracle shim instead of Pyth (whose free
+Hermes endpoint died with the July 2026 protocol migration).
+
+## Fuji C-Chain (43113) — v3
+
+| Contract                    | Address                                      |
+| --------------------------- | -------------------------------------------- |
+| VerglasHub (bindAccount fix) | 0x17C273c8edEd16C5e9f7a7525f74AcE15bb5d81E  |
+| VerglasOracle (keeper-signed IPyth shim) | 0x11a5Bd2295B316eEB53101cdB8B16D7A61A3bF4E |
+| VerglasAccount (treasury v3) | 0xec9fb95C029980B80F63FfA27c20b98f586c564c  |
+| VerglasTreasurer (shim-fed) | 0xf9098c210C5918F7dE01aA7E96b997C819Fb4614   |
+
+Unchanged from v2: Groth16Verifier, VerglasAccount (demo, #219), canonical
+registries, USDC, VerglasFactory, VerglasDispenser — see the table below.
+The USD/TRY feed keeps Pyth's id as the shim's storage key.
+
+Agent identities were KEPT: **#219** rebound to its existing demo vault on
+the new Hub, **#220** rebound to the fresh treasury vault (the old vault's
+agent is immutable, so the treasurer swap needed a new vault; its 6 USDC
+was reclaimed by owner exit and 7 USDC funded the new one). **#221**
+(external owner) rebinds through the console's stamp-line flow.
+
+v3 live run (2026-07-30): first payFX through the shim at 47.392141 USD/TRY
+(tx 0x70c4bc2f…), strategy tick convert (tx 0x51cc37d1…), both agents
+re-stamped on the canonical registry — #219 3-spend window (0xb63cf8bc…),
+#220 shim-fed window (0xb61862a6…). Groth16Verifier reused, proof pipeline
+byte-identical.
+
+⚠️ VerglasGate on Dispatch: redeploy pending — the Dispatch public RPC was
+down (blockNumber=0, state methods 500) during the wave. Until the new Gate
+ships, the v2 Gate keeps trusting the OLD Hub, so cross-chain clearance
+reflects v2 attestations only.
+
+---
+
+# Historical: Fuji Deployment v2 (2026-07-16, superseded)
 
 The stand-ins are gone: this deployment runs on the canonical ERC-8004
 registries and real Circle USDC, and adds the V2 vertical — a live

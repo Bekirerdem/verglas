@@ -35,7 +35,7 @@ One call, `createVault(...)`, deploys a fresh `VerglasAccount` whose owner is th
 
 ### VerglasTreasurer — *the treasury brain*
 
-The first real resident of a vault. The treasurer *is* an account's `agent`, so it adds two treasury-grade rules the vault itself does not know about — a **per-calendar-day cap** and an **FX circuit-breaker** checked against a live Pyth USD/TRY price — then delegates to `account.spend()`, where the whitelist, limit, budget and freeze still apply. Composition, not modification: `VerglasAccount` stays untouched, so the treasurer's vault inherits the weekly proof machinery unchanged. If the owner freezes the vault directly, the treasurer's payments stop no matter what — the vault's brake always wins.
+The first real resident of a vault. The treasurer *is* an account's `agent`, so it adds two treasury-grade rules the vault itself does not know about — a **per-calendar-day cap** and an **FX circuit-breaker** checked against a live USD/TRY price (read through the `IPyth` interface, served by the VerglasOracle shim since the July 2026 Pyth cutover) — then delegates to `account.spend()`, where the whitelist, limit, budget and freeze still apply. Composition, not modification: `VerglasAccount` stays untouched, so the treasurer's vault inherits the weekly proof machinery unchanged. If the owner freezes the vault directly, the treasurer's payments stop no matter what — the vault's brake always wins.
 
 ### VerglasDispenser — *the tap*
 
@@ -121,7 +121,7 @@ Canonical contracts and interfaces Verglas builds on rather than owns.
 | **ICM / Teleporter** | Avalanche's native Interchain Messaging — how a passport crosses from C-Chain to another L1. |
 | `ITeleporterMessenger` | Interface for *sending* an ICM message (used by the Hub's `carryAttestation`). |
 | `ITeleporterReceiver` | Interface for *receiving* one (implemented by `VerglasGate`). |
-| `IPyth` | Interface to the Pyth oracle — the treasurer's live USD/TRY price feed. |
+| `IPyth` | The Pyth-compatible oracle interface the treasurer reads its live USD/TRY price through. Since the July 2026 Pyth cutover it is implemented by **VerglasOracle**, a keeper-signed shim fed from independent FX references. |
 | **Poseidon / BN254** | The ZK-friendly hash and elliptic-curve field the commitment and circuit are built on. |
 
 Every contract lives in [`src/`](https://github.com/Bekirerdem/verglas) — Solidity 0.8.25, no proxies, no upgradability, custom errors, Foundry-tested. See [Contracts & Addresses](/contracts) for the live Fuji deployment.
