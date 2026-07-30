@@ -40,6 +40,21 @@ creation + Hub bind all verified) before spending anything real.
 - The Hub checkpoint advanced to (commitment, 2), so the same window cannot be
   proven twice.
 
+### Second mainnet vault: real payments to real people
+
+`0x0Fa458415FECA9d25b438aAC31C1EAD6Ba86Ad68`, agent **#1784**, whitelist of
+three (two ecosystem contacts plus the owner), rules 0.5 per payment / 1.2
+lifetime. **Four real USDC payments** to two different people exhausted the
+budget exactly (1.2/1.2), and the window proved in one shot: tx `0x0f29a119…`,
+627,905 gas, score 100 (request `0xcb1412d0…`), checkpoint advanced to
+(commitment, 4).
+
+This is the stronger artifact of the two: money that actually left the owner's
+control, to more than one recipient, under contract-enforced rules, with a
+single zero-knowledge receipt covering the whole window. The vault came from
+the refillable-budget factory, so an exhausted budget is a top-up rather than a
+new vault.
+
 Note: the mainnet Hub carries the proven vault inside the attestation (the
 07-30 security fix); Fuji's Hub predates it. The SDK decodes
 `latestAttestation` by return length so one code path serves both.
