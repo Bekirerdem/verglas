@@ -7,7 +7,7 @@ export function LiveBand({ data, treasurer }: { data: DashboardData | null; trea
   const { t } = useI18n();
   // A live, moving rate is better landing proof than a stale payment — and
   // it needs no eth_getLogs, so the fallback RPCs never 500 on the landing.
-  const rate = treasurer ? (treasurer.hermesRateUsdTry ?? treasurer.pythRateUsdTry) : null;
+  const rate = treasurer ? treasurer.pythRateUsdTry : null;
   const cleared = data?.cleared ?? false;
   return (
     <section className="liveband" id="live">

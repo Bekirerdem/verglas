@@ -640,33 +640,12 @@ export interface TreasurerData {
   vaultBalance: bigint;
   vaultFrozen: boolean;
   vaultTxCount: bigint;
-  /** Last on-chain written Pyth USD/TRY (updates only when someone pushes),
+  /** Live USD/TRY read from the VerglasOracle shim — the keeper pushes it from
+      independent FX references (Hermes died with the July 2026 Pyth cutover),
       normalized to 1e8 like the policy reference. */
   pythRateUsdTry: bigint;
   pythPublishTime: bigint;
-  /** True live USD/TRY straight from Hermes; null when Hermes is unreachable
-      (e.g. after the July 31 paywall) — the UI then falls back honestly. */
-  hermesRateUsdTry: bigint | null;
   payments: FxPaymentEvent[];
-}
-
-async function fetchHermesRate(): Promise<bigint | null> {
-  try {
-    const res = await fetch(
-      `https://hermes.pyth.network/v2/updates/price/latest?ids[]=${TREASURER_DEPLOYMENT.usdTryPriceId}`,
-    );
-    if (!res.ok) return null;
-    const body = (await res.json()) as {
-      parsed?: { price?: { price: string; expo: number } }[];
-    };
-    const p = body.parsed?.[0]?.price;
-    if (!p) return null;
-    const shift = p.expo - RATE_TARGET_EXPO;
-    const raw = BigInt(p.price);
-    return shift >= 0 ? raw * 10n ** BigInt(shift) : raw / 10n ** BigInt(-shift);
-  } catch {
-    return null;
-  }
 }
 
 const T = TREASURER_DEPLOYMENT;
@@ -678,7 +657,7 @@ export async function fetchTreasurer(): Promise<TreasurerData> {
   // Point reads only — no eth_getLogs. The public fallback RPCs 500 on
   // full-range getLogs, and both callers (landing status + console policy)
   // need only current state, never the FX payment history.
-  const [policy, spentToday, paused, operator, vaultBalance, vaultFrozen, vaultTxCount, pythPrice, hermesRateUsdTry] =
+  const [policy, spentToday, paused, operator, vaultBalance, vaultFrozen, vaultTxCount, pythPrice] =
     await Promise.all([
       chain.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "policy" }),
       chain.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "spentToday" }),
@@ -693,7 +672,6 @@ export async function fetchTreasurer(): Promise<TreasurerData> {
         functionName: "getPriceUnsafe",
         args: [T.usdTryPriceId],
       }),
-      fetchHermesRate(),
     ]);
 
   const payments: FxPaymentEvent[] = [];
@@ -716,7 +694,6 @@ export async function fetchTreasurer(): Promise<TreasurerData> {
     vaultTxCount,
     pythRateUsdTry,
     pythPublishTime: publishTime,
-    hermesRateUsdTry,
     payments,
   };
 }

@@ -47,7 +47,7 @@ export function TreasurerScene({ treasurer }: { treasurer: TreasurerData | null 
     return () => ctx.revert();
   }, []);
 
-  const live = treasurer ? rate4(treasurer.hermesRateUsdTry ?? treasurer.pythRateUsdTry) : "47.05";
+  const live = treasurer ? rate4(treasurer.pythRateUsdTry) : "47.05";
   const ref = treasurer ? rate4(treasurer.referenceRateUsdTry) : "47.05";
   const cap = treasurer ? usd(treasurer.dailyLimit) : "10.00";
 

@@ -433,7 +433,7 @@ function Console() {
                   <div className="bgrid">
                     <BalanceCard
                       view={view}
-                      rateUsdTry={treasurer ? (treasurer.hermesRateUsdTry ?? treasurer.pythRateUsdTry) : null}
+                      rateUsdTry={treasurer ? treasurer.pythRateUsdTry : null}
                     />
                     <GuvenceCard
                       view={view}
