@@ -57,7 +57,12 @@ contract VerglasOracleTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, digest);
         return abi.encode(
             VerglasOracle.PricePayload({
-                id: id, price: price, conf: conf, expo: expo, publishTime: publishTime, signature: abi.encodePacked(r, s, v)
+                id: id,
+                price: price,
+                conf: conf,
+                expo: expo,
+                publishTime: publishTime,
+                signature: abi.encodePacked(r, s, v)
             })
         );
     }
@@ -118,9 +123,7 @@ contract VerglasOracleTest is Test {
         // Same publishTime again — replaying the very same signed payload.
         bytes[] memory update = new bytes[](1);
         update[0] = _signed(PRICE_ID, RATE, 0, -8, block.timestamp, keeperKey);
-        vm.expectRevert(
-            abi.encodeWithSelector(VerglasOracle.NotMonotonic.selector, block.timestamp, block.timestamp)
-        );
+        vm.expectRevert(abi.encodeWithSelector(VerglasOracle.NotMonotonic.selector, block.timestamp, block.timestamp));
         oracle.updatePriceFeeds(update);
     }
 
