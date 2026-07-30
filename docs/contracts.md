@@ -12,6 +12,7 @@ Live Fuji v3 deployment (2026-07-30). Everything below is real and verifiable on
 | VerglasAccount (demo vault) | `0x8Ede2dB4a519B260944EE58125d6ecfA33CfaE72` |
 | VerglasAccount (treasury vault) | `0xec9fb95C029980B80F63FfA27c20b98f586c564c` |
 | VerglasTreasurer | `0xf9098c210C5918F7dE01aA7E96b997C819Fb4614` |
+| VerglasFactory (refillable-budget vaults) | `0x54Ea4db6Ba394B5853BB2271c8C1838549c7aE2B` |
 
 ## Canonical infrastructure we build on
 

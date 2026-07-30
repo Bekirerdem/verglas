@@ -14,6 +14,10 @@ Hermes endpoint died with the July 2026 protocol migration).
 | VerglasOracle (keeper-signed IPyth shim) | 0x11a5Bd2295B316eEB53101cdB8B16D7A61A3bF4E |
 | VerglasAccount (treasury v3) | 0xec9fb95C029980B80F63FfA27c20b98f586c564c  |
 | VerglasTreasurer (shim-fed) | 0xf9098c210C5918F7dE01aA7E96b997C819Fb4614   |
+| VerglasFactory (refillable-budget vaults) | 0x54Ea4db6Ba394B5853BB2271c8C1838549c7aE2B |
+
+The 07-18 factory (0x770e72fc…) stays queried as a legacy source for
+"my vaults"; its vaults carry an immutable budget (no refuel).
 
 Unchanged from v2: Groth16Verifier, VerglasAccount (demo, #219), canonical
 registries, USDC, VerglasFactory, VerglasDispenser — see the table below.
