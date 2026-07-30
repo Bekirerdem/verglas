@@ -72,6 +72,18 @@ export function sendVaultAction(account: Address, from: Address, fn: VaultAction
   });
 }
 
+/** Refuel: raise the vault's lifetime allowance (current-factory vaults only). */
+export function sendIncreaseBudget(account: Address, from: Address, amount: bigint): Promise<Hex> {
+  return walletClient().writeContract({
+    address: account,
+    abi: verglasAccountAbi,
+    functionName: "increaseBudget",
+    args: [amount],
+    account: from,
+    chain: fujiC,
+  });
+}
+
 export function sendTreasurerAction(treasurer: Address, from: Address, fn: TreasurerAction): Promise<Hex> {
   return walletClient().writeContract({
     address: treasurer,

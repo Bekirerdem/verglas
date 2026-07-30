@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import type { Address, Hex } from "viem";
-import { latestStamp, type VaultView } from "../../lib/data";
+import { latestStamp, migratableIdentities, type VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { remaining, short, utcDate } from "../../lib/format";
 import { useAudit } from "../lib/useAudit";
@@ -22,7 +23,25 @@ interface Props {
     as one trust line, not as the interface. */
 export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh, onOpenAudit }: Props) {
   const { t } = useI18n();
-  const { step, actErr, activate, renew } = useAudit(view, wallet, isOwner, run, onRefresh);
+  const { step, actErr, activate, renew, migrate } = useAudit(view, wallet, isOwner, run, onRefresh);
+
+  const [migratable, setMigratable] = useState<bigint[]>([]);
+  useEffect(() => {
+    if (view.agentId !== null || !wallet || !isOwner) {
+      setMigratable([]);
+      return;
+    }
+    let live = true;
+    migratableIdentities(wallet, view.account).then(
+      (ids) => {
+        if (live) setMigratable(ids);
+      },
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, [view.agentId, view.account, wallet, isOwner]);
 
   if (view.agentId === null) {
     return (
@@ -31,9 +50,28 @@ export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh, onOpenA
         <p style={{ fontSize: 13.5, color: "var(--ink2)", marginBottom: 14 }}>{t("b_open_audit_p")}</p>
         {actErr && <div className="berr">{t("w_error")}</div>}
         {isOwner ? (
-          <button className="bbtn" disabled={step !== 0} onClick={activate}>
-            {step === 0 ? t("b_open_audit") : `${step}/3 · ${t("b_pending")}`}
-          </button>
+          <>
+            <button className="bbtn" disabled={step !== 0} onClick={activate}>
+              {step === 0 ? t("b_open_audit") : `${step}/3 · ${t("b_pending")}`}
+            </button>
+            {migratable.length > 0 && (
+              <div style={{ marginTop: 10 }}>
+                <p className="bhint" style={{ marginBottom: 6 }}>
+                  {t("b_migrate_p")}
+                </p>
+                {migratable.map((id) => (
+                  <button
+                    key={id.toString()}
+                    className="bmore"
+                    disabled={busy !== null}
+                    onClick={() => void migrate(id)}
+                  >
+                    {busy === "migrate" ? t("b_pending") : `${t("b_migrate_do")} №${id.toString()} →`}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <p className="bhint">{t("app_owner_needed")}</p>
         )}

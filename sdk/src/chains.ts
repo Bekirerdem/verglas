@@ -50,8 +50,12 @@ export const FUJI_DEPLOYMENT = {
   agentId: 219n,
   /** C-Chain block of the deployment — the earliest block worth scanning for events. */
   deployBlock: 0x3666514n,
-  /** VerglasFactory (2026-07-18) — the console's "create your vault" door. */
-  factory: "0x770e72fcedadf61940e6e70630664f50ad8eac7b",
+  /** VerglasFactory (2026-07-30, refillable-budget vaults) — the console's
+   *  "create your vault" door. */
+  factory: "0x54Ea4db6Ba394B5853BB2271c8C1838549c7aE2B",
+  /** Earlier factories whose vaults must stay visible in "my vaults" —
+   *  their VerglasAccounts have an immutable budget (no refuel). */
+  legacyFactories: ["0x770e72fcedadf61940e6e70630664f50ad8eac7b"],
   /** VerglasDispenser (2026-07-19) — workshop USDC tap, 2 USDC / 24h. */
   dispenser: "0x29C0Dd6DEf26BaC92FDB19DD338089A9396F0EDb",
 } as const;

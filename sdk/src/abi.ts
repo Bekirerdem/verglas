@@ -16,9 +16,11 @@ export const verglasAccountAbi = parseAbi([
   "function freeze()",
   "function unfreeze()",
   "function withdraw(address to, uint256 amount)",
+  "function increaseBudget(uint256 addedBudget)",
   "event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment)",
   "event Frozen()",
   "event Unfrozen()",
+  "event BudgetIncreased(uint256 added, uint256 newBudget)",
 ]);
 
 export const verglasFactoryAbi = parseAbi([

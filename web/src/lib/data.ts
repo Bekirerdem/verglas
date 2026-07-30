@@ -11,12 +11,15 @@ import {
 import {
   fujiC,
   FUJI_DEPLOYMENT,
+  IDENTITY_REGISTRY_ADDRESS,
   TREASURER_DEPLOYMENT,
+  identityRegistryAbi,
   pythAbi,
   validationRegistryAbi,
   verglasAccountAbi,
   verglasFactoryAbi,
   verglasGateAbi,
+  verglasHubAbi,
   verglasTreasurerAbi,
   VerglasClient,
   type AccountState,
@@ -171,6 +174,53 @@ function readAgentHint(account: Address): bigint | null {
   } catch {
     return null;
   }
+}
+
+const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
+
+/** Identities this browser has activation hints for that the wallet still owns
+ *  and that are not already bound to the given vault — the "migrate your
+ *  identity here" candidates a fresh vault offers instead of minting anew. */
+export async function migratableIdentities(wallet: Address, account: Address): Promise<bigint[]> {
+  const ids = new Set<string>();
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k?.startsWith("vg-agent-hint-")) continue;
+      const v = localStorage.getItem(k);
+      if (v) ids.add(v);
+    }
+  } catch {
+    return [];
+  }
+  const out: bigint[] = [];
+  await Promise.all(
+    [...ids].map(async (raw) => {
+      try {
+        const id = BigInt(raw);
+        const [holder, boundTo] = await Promise.all([
+          client.hubChain.readContract({
+            address: IDENTITY_REGISTRY_ADDRESS,
+            abi: identityRegistryAbi,
+            functionName: "ownerOf",
+            args: [id],
+          }),
+          client.hubChain.readContract({
+            address: D.hub,
+            abi: verglasHubAbi,
+            functionName: "accountOf",
+            args: [id],
+          }),
+        ]);
+        if (holder.toLowerCase() === wallet.toLowerCase() && boundTo.toLowerCase() !== account.toLowerCase()) {
+          out.push(id);
+        }
+      } catch {
+        // burned/unknown id or a read failure — just not a candidate
+      }
+    }),
+  );
+  return out.sort((a, b) => (a < b ? -1 : 1));
 }
 
 /** Creation block via binary search over eth_getCode — point reads, no
@@ -593,7 +643,27 @@ export async function fetchVaultView(
   onUpdate?: (view: VaultView) => void,
 ): Promise<VaultView> {
   const cached = peekVaultLogs(account);
-  const knownId = agentId ?? cached?.agentId ?? readAgentHint(account);
+  let knownId = agentId ?? cached?.agentId ?? readAgentHint(account);
+
+  // Ghost-identity guard: a hint (or an old discovery) goes stale when the
+  // identity is migrated to ANOTHER vault — without this check the old vault
+  // would keep rendering the migrated identity's attestations as its own.
+  // accountOf == 0x0 (not bound anywhere, e.g. right after a Hub redeploy)
+  // deliberately keeps the hint: the renew flow restores that binding itself.
+  if (agentId === null && knownId !== null) {
+    const boundTo = await client.hubChain
+      .readContract({ address: D.hub, abi: verglasHubAbi, functionName: "accountOf", args: [knownId] })
+      .catch(() => null);
+    if (boundTo !== null && boundTo !== ZERO_ADDR && boundTo.toLowerCase() !== account.toLowerCase()) {
+      knownId = null;
+      try {
+        localStorage.removeItem(agentHintKey(account));
+      } catch {
+        // private mode
+      }
+      if (cached) cached.agentId = null;
+    }
+  }
 
   const scan = getVaultLogs(account, knownId).then(async (store) => {
     await extendVaultLogs(store, account);
@@ -618,14 +688,26 @@ export async function fetchVaultView(
   return view;
 }
 
-/** Factory-born vaults of a wallet — the console's "my vaults" list. */
-export function fetchMyVaults(owner: Address): Promise<readonly Address[]> {
-  return client.hubChain.readContract({
-    address: FUJI_DEPLOYMENT.factory,
-    abi: verglasFactoryAbi,
-    functionName: "vaultsOf",
-    args: [owner],
-  });
+/** Vaults born from the CURRENT factory support increaseBudget; legacy-factory
+ *  vaults (and the showcase vaults) carry the old bytecode and cannot refuel. */
+const refillableVaults = new Set<string>();
+export const isRefillable = (account: Address) => refillableVaults.has(account.toLowerCase());
+
+/** Factory-born vaults of a wallet — the console's "my vaults" list.
+ *  Legacy factories are queried too (their vaults must not vanish from the UI
+ *  after a factory redeploy) and come FIRST: callers rely on "last element =
+ *  newest vault" right after createVault. */
+export async function fetchMyVaults(owner: Address): Promise<readonly Address[]> {
+  const factories = [...FUJI_DEPLOYMENT.legacyFactories, FUJI_DEPLOYMENT.factory];
+  const lists = await Promise.all(
+    factories.map((address) =>
+      client.hubChain
+        .readContract({ address, abi: verglasFactoryAbi, functionName: "vaultsOf", args: [owner] })
+        .catch(() => [] as readonly Address[]),
+    ),
+  );
+  for (const v of lists[lists.length - 1]) refillableVaults.add(v.toLowerCase());
+  return lists.flat();
 }
 
 

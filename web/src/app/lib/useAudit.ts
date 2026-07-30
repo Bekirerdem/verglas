@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { concat, keccak256, toHex, type Address, type Hex } from "viem";
 import { FUJI_DEPLOYMENT, verglasHubAbi } from "@verglas/sdk";
-import { hubChain, type VaultView } from "../../lib/data";
+import { agentHintKey, hubChain, type VaultView } from "../../lib/data";
 import { activateStampLine } from "./activate";
 import { sendBindAccount, sendValidationRequest } from "./wallet";
 
@@ -54,5 +54,24 @@ export function useAudit(
     });
   };
 
-  return { step, actErr, activate, renew };
+  /** Move an existing identity onto this vault (bind + fresh window, two
+      signatures) — the ERC-8004 identity is permanent, vaults come and go. */
+  const migrate = async (agentId: bigint) => {
+    if (!wallet || !isOwner) return;
+    const okBind = await run("migrate", () => sendBindAccount(wallet, agentId, view.account));
+    if (!okBind) return;
+    try {
+      localStorage.setItem(agentHintKey(view.account), agentId.toString());
+    } catch {
+      // private mode: the incremental scan will rediscover it
+    }
+    const rand = new Uint8Array(32);
+    crypto.getRandomValues(rand);
+    const requestHash = keccak256(concat([view.account, toHex(rand)]));
+    void run("migrate", () => sendValidationRequest(wallet, agentId, requestHash)).then((ok) => {
+      if (ok) onRefresh();
+    });
+  };
+
+  return { step, actErr, activate, renew, migrate };
 }

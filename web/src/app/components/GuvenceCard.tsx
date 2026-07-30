@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import type { Address, Hex } from "viem";
-import type { TreasurerData, VaultView } from "../../lib/data";
+import { parseUnits, type Address, type Hex } from "viem";
+import { isRefillable, type TreasurerData, type VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { usd } from "../../lib/format";
-import { sendVaultAction } from "../lib/wallet";
+import { sendIncreaseBudget, sendVaultAction } from "../lib/wallet";
 
 interface Props {
   view: VaultView;
@@ -42,6 +42,24 @@ export function GuvenceCard({ view, treasurer, wallet, isOwner, busy, run, onFro
     if (ok && fn === "freeze") onFroze();
   };
 
+  const [refuelOpen, setRefuelOpen] = useState(false);
+  const [refuelAmount, setRefuelAmount] = useState("");
+  const refuel = async () => {
+    if (!isOwner || busy) return;
+    let amount: bigint;
+    try {
+      amount = parseUnits(refuelAmount, 6);
+    } catch {
+      return;
+    }
+    if (amount <= 0n) return;
+    const ok = await run("refuel", () => sendIncreaseBudget(view.account, wallet!, amount));
+    if (ok) {
+      setRefuelOpen(false);
+      setRefuelAmount("");
+    }
+  };
+
   const budgetPct = s.totalBudget > 0n ? Number((s.totalSpent * 1000n) / s.totalBudget) / 10 : 0;
   const stopLabel =
     busy === "freeze" || busy === "unfreeze"
@@ -74,6 +92,29 @@ export function GuvenceCard({ view, treasurer, wallet, isOwner, busy, run, onFro
       <div className="bmeter">
         <i style={{ width: `${budgetPct}%` }} />
       </div>
+      {isOwner && isRefillable(view.account) && (
+        <div style={{ marginTop: 6 }}>
+          {refuelOpen ? (
+            <div style={{ display: "flex", gap: 6 }}>
+              <input
+                className="binput"
+                style={{ flex: 1, minWidth: 0 }}
+                inputMode="decimal"
+                placeholder={t("b_refuel_ph")}
+                value={refuelAmount}
+                onChange={(e) => setRefuelAmount(e.target.value)}
+              />
+              <button className="bbtn" disabled={busy !== null} onClick={refuel}>
+                {busy === "refuel" ? t("b_pending") : t("b_refuel_do")}
+              </button>
+            </div>
+          ) : (
+            <button className="bmore" onClick={() => setRefuelOpen(true)}>
+              {t("b_refuel")} →
+            </button>
+          )}
+        </div>
+      )}
       {treasurer && (
         <div className="brow">
           <span className="k">{t("b_daily")}</span>
