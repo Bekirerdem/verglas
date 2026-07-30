@@ -12,6 +12,9 @@ import {ITeleporterMessenger, TeleporterMessageInput, TeleporterFeeInfo} from ".
 ///         only be written after (1) the proof's public inputs are bound to the
 ///         live VerglasAccount state and (2) the Groth16 proof verifies on-chain.
 ///         Anyone may submit a proof — the attestation is objective.
+/// @dev Caveat while on testnet: soundness also rests on the circuit's trusted
+///      setup, which currently has a single phase-2 contribution (see
+///      docs/proofs.md). A multi-party ceremony is a mainnet prerequisite.
 /// @dev Public signal layout of circuit #1 (policy_compliance, N=64, WL=8):
 ///        [0] initialCommitment  [1] finalCommitment  [2] txCount
 ///        [3..10] whitelist      [11] perTxLimit
@@ -22,6 +25,10 @@ contract VerglasHub {
     }
 
     struct Attestation {
+        /// @dev The vault that was proven. An attestation certifies "this agent's
+        ///      vault obeyed its policy", so it is meaningless without naming the
+        ///      vault — the identity can be rebound later.
+        address account;
         bytes32 requestHash;
         uint256 finalCommitment;
         uint256 txCount;
@@ -50,6 +57,7 @@ contract VerglasHub {
     mapping(uint256 => Attestation) public latestAttestation;
 
     event AccountBound(uint256 indexed agentId, address indexed account);
+    event AttestationInvalidated(uint256 indexed agentId, address indexed previousAccount);
     event AttestationIssued(
         uint256 indexed agentId, bytes32 indexed requestHash, uint256 finalCommitment, uint256 txCount
     );
@@ -85,10 +93,20 @@ contract VerglasHub {
     ///      account (so the identity points only at a vault its owner controls).
     ///      Without the identity check any account owner could hijack an agentId's
     ///      attestation by rebinding accountOf[agentId] to their own vault.
+    /// @dev Moving an identity to a different vault invalidates what its current
+    ///      attestation certified (the new vault has its own policy and its own
+    ///      unproven history), so the attestation is deleted here. A copy already
+    ///      carried to a Gate cannot be recalled — that is why the packet names
+    ///      the vault it proved, and why gates age attestations out.
     function bindAccount(uint256 agentId, address account) external {
         if (msg.sender != identityRegistry.ownerOf(agentId)) revert NotIdentityOwner();
         if (msg.sender != VerglasAccount(account).owner()) revert NotAccountOwner();
+        address previous = accountOf[agentId];
         accountOf[agentId] = account;
+        if (previous != account && latestAttestation[agentId].issuedAt != 0) {
+            delete latestAttestation[agentId];
+            emit AttestationInvalidated(agentId, previous);
+        }
         emit AccountBound(agentId, account);
     }
 
@@ -111,6 +129,7 @@ contract VerglasHub {
             _verifyWindow(VerglasAccount(account), pA, pB, pC, publicSignals);
 
         Attestation storage att = latestAttestation[agentId];
+        att.account = account;
         att.requestHash = requestHash;
         att.finalCommitment = provenCommitment;
         att.txCount = provenCount;
@@ -134,6 +153,7 @@ contract VerglasHub {
         bytes memory packet = abi.encode(
             AttestationPacket({
                 agentId: agentId,
+                account: att.account,
                 requestHash: att.requestHash,
                 finalCommitment: att.finalCommitment,
                 txCount: att.txCount,

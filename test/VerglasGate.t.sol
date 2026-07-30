@@ -15,15 +15,21 @@ contract VerglasGateTest is Test {
     uint64 internal constant MAX_AGE = 7 days;
 
     uint256 internal constant AGENT_ID = 1599;
+    address internal vault = makeAddr("vault");
 
     function setUp() public {
         gate = new VerglasGate(teleporter, HUB_CHAIN, hub, MIN_SCORE, MAX_AGE);
     }
 
-    function _packet(uint8 score, uint64 issuedAt) internal pure returns (bytes memory) {
+    function _packet(uint8 score, uint64 issuedAt) internal view returns (bytes memory) {
+        return _packet(score, issuedAt, vault);
+    }
+
+    function _packet(uint8 score, uint64 issuedAt, address account) internal pure returns (bytes memory) {
         return abi.encode(
             AttestationPacket({
                 agentId: AGENT_ID,
+                account: account,
                 requestHash: keccak256("verglas-window-1"),
                 finalCommitment: 0x26c9,
                 txCount: 3,
@@ -56,17 +62,28 @@ contract VerglasGateTest is Test {
     }
 
     function test_StoresAttestationAndEmits() public {
-        vm.expectEmit(true, true, false, true);
-        emit VerglasGate.AttestationReceived(AGENT_ID, keccak256("verglas-window-1"), 100, 42);
+        vm.expectEmit(true, true, true, true);
+        emit VerglasGate.AttestationReceived(AGENT_ID, keccak256("verglas-window-1"), vault, 100, 42);
         _deliver(_packet(100, 42));
 
-        (bytes32 requestHash, uint256 finalCommitment, uint256 txCount, uint8 score, uint64 issuedAt) =
+        (address account, bytes32 requestHash, uint256 finalCommitment, uint256 txCount, uint8 score, uint64 issuedAt) =
             gate.attestationOf(AGENT_ID);
+        assertEq(account, vault);
         assertEq(requestHash, keccak256("verglas-window-1"));
         assertEq(finalCommitment, 0x26c9);
         assertEq(txCount, 3);
         assertEq(score, 100);
         assertEq(issuedAt, 42);
+    }
+
+    /// @notice The strict check separates "this identity is cleared" from
+    ///         "this identity is cleared FOR THIS VAULT" — the distinction that
+    ///         survives an identity being rebound on the Hub after the carry.
+    function test_IsClearedForOnlyMatchesTheProvenVault() public {
+        _deliver(_packet(100, uint64(block.timestamp)));
+        assertTrue(gate.isCleared(AGENT_ID));
+        assertTrue(gate.isClearedFor(AGENT_ID, vault));
+        assertFalse(gate.isClearedFor(AGENT_ID, makeAddr("otherVault")));
     }
 
     function test_RevertWhen_PacketNotNewer() public {

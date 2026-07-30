@@ -78,7 +78,7 @@ How the receipt becomes a passport that a *different* chain accepts at its borde
 
 ### VerglasHub — *the border authority*
 
-The validator that cannot vouch for anyone by choice. A validation response is written **only** after (1) the proof's public inputs are bound to the *live* vault state — the window must start at the last checkpoint and end exactly at the current chain head, over the account's real whitelist and limit — and (2) the Groth16 proof verifies on-chain. Anyone may submit a proof; the attestation is objective. The Hub also `bindAccount`s an ERC-8004 identity to its vault and `carryAttestation`s the result to gates over ICM.
+The validator that cannot vouch for anyone by choice. A validation response is written **only** after (1) the proof's public inputs are bound to the *live* vault state — the window must start at the last checkpoint and end exactly at the current chain head, over the account's real whitelist and limit — and (2) the Groth16 proof verifies on-chain. Anyone may submit a proof; the attestation is objective. The Hub also `bindAccount`s an ERC-8004 identity to its vault and `carryAttestation`s the result to gates over ICM. Rebinding an identity to a *different* vault deletes its attestation, because the claim named the old vault. (Trusted-setup caveat: see [Proof System](/proofs).)
 
 ### ValidationRegistry — *the stamp book*
 

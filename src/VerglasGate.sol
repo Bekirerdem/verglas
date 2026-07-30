@@ -16,6 +16,12 @@ import {AttestationPacket} from "./AttestationPacket.sol";
 ///      the Hub contract itself.
 contract VerglasGate is ITeleporterReceiver {
     struct CarriedAttestation {
+        /// @notice The vault on the Hub chain that this clearance was proven for.
+        ///         Local contracts that care about a specific vault (rather than
+        ///         the identity alone) must check this: an identity can be rebound
+        ///         to another vault on the Hub, and a carried packet cannot be
+        ///         recalled — it only ages out.
+        address account;
         bytes32 requestHash;
         uint256 finalCommitment;
         uint256 txCount;
@@ -35,7 +41,9 @@ contract VerglasGate is ITeleporterReceiver {
 
     mapping(uint256 => CarriedAttestation) public attestationOf;
 
-    event AttestationReceived(uint256 indexed agentId, bytes32 indexed requestHash, uint8 score, uint64 issuedAt);
+    event AttestationReceived(
+        uint256 indexed agentId, bytes32 indexed requestHash, address indexed account, uint8 score, uint64 issuedAt
+    );
 
     error OnlyTeleporter();
     error WrongSourceChain();
@@ -64,13 +72,14 @@ contract VerglasGate is ITeleporterReceiver {
         CarriedAttestation storage att = attestationOf[packet.agentId];
         if (packet.issuedAt <= att.issuedAt) revert StaleAttestation();
 
+        att.account = packet.account;
         att.requestHash = packet.requestHash;
         att.finalCommitment = packet.finalCommitment;
         att.txCount = packet.txCount;
         att.score = packet.score;
         att.issuedAt = packet.issuedAt;
 
-        emit AttestationReceived(packet.agentId, packet.requestHash, packet.score, packet.issuedAt);
+        emit AttestationReceived(packet.agentId, packet.requestHash, packet.account, packet.score, packet.issuedAt);
     }
 
     /// @notice True when the agent holds an attestation meeting this L1's
@@ -78,5 +87,15 @@ contract VerglasGate is ITeleporterReceiver {
     function isCleared(uint256 agentId) external view returns (bool) {
         CarriedAttestation storage att = attestationOf[agentId];
         return att.issuedAt != 0 && att.score >= minScore && block.timestamp <= uint256(att.issuedAt) + maxAge;
+    }
+
+    /// @notice The strict form: cleared AND proven for this exact vault. A local
+    ///         contract extending trust to funds held in a specific vault should
+    ///         ask this, because an identity's binding can change on the Hub after
+    ///         the attestation was carried here.
+    function isClearedFor(uint256 agentId, address account) external view returns (bool) {
+        CarriedAttestation storage att = attestationOf[agentId];
+        return att.account == account && att.issuedAt != 0 && att.score >= minScore
+            && block.timestamp <= uint256(att.issuedAt) + maxAge;
     }
 }

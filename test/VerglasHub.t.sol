@@ -208,6 +208,47 @@ contract VerglasHubTest is Test {
         hub.bindAccount(AGENT_ID, address(otherAccount));
     }
 
+    /// @notice Moving an identity to another vault must not leave the old
+    ///         attestation standing: the new vault has its own policy and an
+    ///         unproven history, so a stale score-100 must not be carryable.
+    function test_RebindingToAnotherVaultInvalidatesTheAttestation() public {
+        _replaySpends();
+        hub.submitProof(AGENT_ID, REQUEST_HASH, pA, pB, pC, _publicSignals(), "ipfs://response", keccak256("resp"));
+        (address attAccount,,,, uint8 score, uint64 issuedAt) = hub.latestAttestation(AGENT_ID);
+        assertEq(attAccount, address(account));
+        assertEq(score, 100);
+        assertGt(issuedAt, 0);
+
+        address[] memory wl = new address[](1);
+        wl[0] = dexA;
+        VerglasAccount freshVault = new VerglasAccount(owner, agent, address(token), PER_TX, BUDGET, wl);
+
+        vm.expectEmit(address(hub));
+        emit VerglasHub.AttestationInvalidated(AGENT_ID, address(account));
+        vm.prank(owner);
+        hub.bindAccount(AGENT_ID, address(freshVault));
+
+        (,,,,, uint64 issuedAfter) = hub.latestAttestation(AGENT_ID);
+        assertEq(issuedAfter, 0, "attestation must be gone after a rebind");
+        vm.expectRevert(VerglasHub.NoAttestation.selector);
+        hub.carryAttestation(AGENT_ID, keccak256("dispatch"), makeAddr("gate"));
+    }
+
+    /// @notice Rebinding to the SAME vault (e.g. restoring a binding after a Hub
+    ///         redeploy) must keep the attestation — nothing changed about what
+    ///         was proven.
+    function test_RebindingToTheSameVaultKeepsTheAttestation() public {
+        _replaySpends();
+        hub.submitProof(AGENT_ID, REQUEST_HASH, pA, pB, pC, _publicSignals(), "ipfs://response", keccak256("resp"));
+
+        vm.prank(owner);
+        hub.bindAccount(AGENT_ID, address(account));
+
+        (,,,, uint8 score, uint64 issuedAt) = hub.latestAttestation(AGENT_ID);
+        assertEq(score, 100);
+        assertGt(issuedAt, 0);
+    }
+
     function test_Registry_OnlyRequestedValidatorResponds() public {
         vm.prank(owner);
         vm.expectRevert(ValidationRegistry.NotRequestedValidator.selector);
@@ -249,6 +290,7 @@ contract VerglasHubTest is Test {
 
         AttestationPacket memory packet = abi.decode(teleporter.lastMessage(), (AttestationPacket));
         assertEq(packet.agentId, AGENT_ID);
+        assertEq(packet.account, address(account), "packet must name the vault it proved");
         assertEq(packet.requestHash, REQUEST_HASH);
         assertEq(packet.finalCommitment, FINAL_COMMITMENT);
         assertEq(packet.txCount, 3);
