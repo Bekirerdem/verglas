@@ -179,13 +179,26 @@ export const NETWORKS: Record<VerglasNetwork["key"], VerglasNetwork> = {
     kind: "mainnet",
     chain: avalanche,
     explorer: "https://snowtrace.io",
-    // Not deployed yet — M1's mainnet leg. Filling this in is what switches
-    // mainnet on across the console, keeper and SDK. Identity/USDC are already
-    // live on mainnet (canonical 8004 + Circle); what we still deploy is our
-    // own stack plus a Validation Registry, since no chain has a canonical one
-    // (that spec section is still being revised with the TEE community).
-    // Deploy with script/DeployMainnet.s.sol, then fill this object in.
-    deployment: null,
+    // Live since 2026-07-30 (script/DeployMainnet.s.sol, block 91597965).
+    // Identity comes from the canonical ERC-8004 registry already on mainnet;
+    // Validation is ours because no chain has a canonical one (that spec
+    // section is still being revised with the TEE community).
+    deployment: {
+      hub: "0x2b6466EC93C064f67C260c30613593460252169C",
+      validationRegistry: "0x332fc886dd6ab933c89a1149e7D938a6B4214a01",
+      identityRegistry: IDENTITY_REGISTRY_MAINNET,
+      verifier: "0xa24972871B987cC7feD401Ea8e46F6D85F88a24C",
+      usdc: USDC_MAINNET,
+      factory: "0xc07ef259Eb88742e00113d9F460F5D2081078960",
+      legacyFactories: [],
+      deployBlock: 0x575ac8dn,
+      // No showcase vault yet and no treasurer vertical on mainnet — the
+      // console shows "create your vault" instead of borrowed rows.
+      // The oracle lives at 0x31900CA6bBd05ac2516feB6798f6aeB86FD41239
+      // (owner: the project wallet, keeper: the service key); it gets wired in
+      // with the treasurer.
+      // No gate either: cross-chain clearance is M3, per L1 operator.
+    },
   },
 };
 

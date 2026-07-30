@@ -1,6 +1,30 @@
 # Contracts & Addresses
 
-Live Fuji v3 deployment (2026-07-30). Everything below is real and verifiable on-chain — no stand-ins.
+Verglas runs on two networks. Everything below is real and verifiable on-chain — no stand-ins.
+
+## Avalanche C-Chain mainnet (43114)
+
+| Contract | Address |
+| --- | --- |
+| VerglasHub | `0x2b6466EC93C064f67C260c30613593460252169C` |
+| ValidationRegistry (Verglas) | `0x332fc886dd6ab933c89a1149e7D938a6B4214a01` |
+| Groth16Verifier | `0xa24972871B987cC7feD401Ea8e46F6D85F88a24C` |
+| VerglasOracle | `0x31900CA6bBd05ac2516feB6798f6aeB86FD41239` |
+| VerglasFactory | `0xc07ef259Eb88742e00113d9F460F5D2081078960` |
+| ERC-8004 Identity Registry (canonical) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` |
+| USDC (Circle official) | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` |
+
+::: info Why our own Validation Registry?
+Identity is the canonical ERC-8004 registry — already live on Avalanche mainnet,
+and note it sits at a **different address than on Fuji** (the reference
+deployment mines a separate vanity address per network). The Validation Registry
+is a Verglas deployment because **no chain has a canonical one**: the reference
+repository lists no Validation address for any network and that section of the
+spec is still under revision with the TEE community. Ours is event- and
+interface-compatible with ERC-8004.
+:::
+
+## Fuji testnet (43113)
 
 ## Fuji C-Chain (43113)
 

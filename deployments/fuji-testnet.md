@@ -1,4 +1,38 @@
-# Verglas — Fuji Testnet Deployment v3 (2026-07-30)
+# Verglas — deployments
+
+## Avalanche C-Chain MAINNET (43114) — live 2026-07-30, block 91,597,965
+
+| Contract | Address |
+| --- | --- |
+| VerglasHub | 0x2b6466EC93C064f67C260c30613593460252169C |
+| ValidationRegistry (ours) | 0x332fc886dd6ab933c89a1149e7D938a6B4214a01 |
+| Groth16Verifier | 0xa24972871B987cC7feD401Ea8e46F6D85F88a24C |
+| VerglasOracle | 0x31900CA6bBd05ac2516feB6798f6aeB86FD41239 |
+| VerglasFactory | 0xc07ef259Eb88742e00113d9F460F5D2081078960 |
+| PoseidonT3 (library) | 0xb1e607958ef01f82a224ef05243041190d7a3d7d |
+| Identity Registry (canonical ERC-8004) | 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 |
+| USDC (Circle official) | 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E |
+
+Identity is the canonical ERC-8004 registry, already live on mainnet — note it
+is a DIFFERENT address than Fuji's (the reference deployment mines a separate
+vanity address per network). The Validation Registry is ours because no chain
+has a canonical one: the reference repo lists none anywhere and that part of the
+spec is still being revised with the TEE community.
+
+Oracle owner = the project wallet (0x39AEfbC8…5794); keeper = the service key.
+The owner is passed at construction so the deploy key never keeps the
+keeper-rotation privilege.
+
+Total deploy cost: 7,856,126 gas = **0.000429 AVAX (~$0.003)** at a 0.052 gwei
+base fee. Rehearsed on an anvil mainnet fork first (identity mint + vault
+creation + Hub bind all verified) before spending anything real.
+
+Not yet on mainnet: the treasurer vertical, a showcase vault, and any Gate
+(cross-chain clearance is M3, deployed per L1 operator).
+
+---
+
+# Fuji Testnet Deployment v3 (2026-07-30)
 
 The redeploy wave: the Hub ships the bindAccount ownership fix (and holds
 the Identity Registry directly — the canonical Validation Registry's getter

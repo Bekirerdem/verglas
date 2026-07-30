@@ -41,15 +41,24 @@ interface VaultEntry {
   agentId: bigint | null;
 }
 
+const ZERO = "0x0000000000000000000000000000000000000000" as Address;
+
 function resolveEntry(selKey: string, myVaults: readonly Address[]): VaultEntry {
   if (selKey.startsWith("own-")) {
     const account = selKey.slice(4) as Address;
     if (myVaults.includes(account)) return { key: selKey, account, agentId: null };
   }
-  if (selKey === "demo") {
+  if (selKey === "demo" && SHOWCASE_ACCOUNT !== ZERO) {
     return { key: "demo", account: SHOWCASE_ACCOUNT, agentId: SHOWCASE_AGENT_ID };
   }
-  return { key: "treasurer", account: TREASURER?.account ?? SHOWCASE_ACCOUNT, agentId: TREASURER?.agentId ?? SHOWCASE_AGENT_ID };
+  if (TREASURER) {
+    return { key: "treasurer", account: TREASURER.account, agentId: TREASURER.agentId };
+  }
+  // A network with no showcase and no own vault yet: fall back to the first own
+  // vault if one exists, otherwise report "nothing selected" so the console
+  // renders the create-your-vault state instead of reading the zero address.
+  if (myVaults.length > 0) return { key: `own-${myVaults[0]}`, account: myVaults[0], agentId: null };
+  return { key: "none", account: ZERO, agentId: null };
 }
 
 const NAV = [
@@ -69,9 +78,14 @@ function pageFromHash(): Page {
   return (NAV.some((n) => n.key === h) ? h : "overview") as Page;
 }
 
+/** Networks without showcase vaults (mainnet today) must not open on a borrowed
+    row — they land on the visitor's own first vault, or on the empty state. */
+const hasShowcase = SHOWCASE_ACCOUNT !== "0x0000000000000000000000000000000000000000";
+const DEFAULT_SEL = TREASURER ? "treasurer" : hasShowcase ? "demo" : "own-none";
+
 function Console() {
   const { t, lang, setLang } = useI18n();
-  const [selKey, setSelKeyState] = useState(() => localStorage.getItem("verglas-vault") ?? "treasurer");
+  const [selKey, setSelKeyState] = useState(() => localStorage.getItem("verglas-vault") ?? DEFAULT_SEL);
   const setSelKey = (key: string) => {
     setSelKeyState(key);
     localStorage.setItem("verglas-vault", key);
@@ -315,21 +329,30 @@ function Console() {
                 <span className="v num">{balanceOf(a)}</span>
               </button>
             ))}
-            <button
-              className={`bacct${sel.key === "treasurer" ? " on" : ""}`}
-              onClick={() => setSelKey("treasurer")}
-            >
-              <span>
-                Haznedar<span className="showcase">{t("b_showcase_lc")}</span>
-              </span>
-              <span className="v num">{balanceOf(TREASURER?.account ?? SHOWCASE_ACCOUNT)}</span>
-            </button>
-            <button className={`bacct${sel.key === "demo" ? " on" : ""}`} onClick={() => setSelKey("demo")}>
-              <span>
-                Demo Agent<span className="showcase">{t("b_showcase_lc")}</span>
-              </span>
-              <span className="v num">{balanceOf(SHOWCASE_ACCOUNT)}</span>
-            </button>
+            {TREASURER && (
+              <button
+                className={`bacct${sel.key === "treasurer" ? " on" : ""}`}
+                onClick={() => setSelKey("treasurer")}
+              >
+                <span>
+                  Haznedar<span className="showcase">{t("b_showcase_lc")}</span>
+                </span>
+                <span className="v num">{balanceOf(TREASURER.account)}</span>
+              </button>
+            )}
+            {hasShowcase && (
+              <button className={`bacct${sel.key === "demo" ? " on" : ""}`} onClick={() => setSelKey("demo")}>
+                <span>
+                  Demo Agent<span className="showcase">{t("b_showcase_lc")}</span>
+                </span>
+                <span className="v num">{balanceOf(SHOWCASE_ACCOUNT)}</span>
+              </button>
+            )}
+            {!TREASURER && !hasShowcase && myVaults.length === 0 && (
+              <p className="bhint" style={{ margin: "2px 4px 0" }}>
+                {t("b_no_showcase")}
+              </p>
+            )}
           </div>
           <button className="bside-new" onClick={() => setWizardOpen(true)}>
             + {t("w_new")}
