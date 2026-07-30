@@ -7,6 +7,7 @@ import {
   fetchTreasurer,
   fetchVaultView,
   hubChain,
+  latestStamp,
   type HistoryKind,
   type TreasurerData,
   type VaultView,
@@ -267,7 +268,7 @@ function Console() {
   };
 
   const frozen = view?.state.frozen ?? false;
-  const lastStamp = view?.stamps.find((s) => s.score > 0);
+  const lastStamp = view ? latestStamp(view.stamps) : undefined;
 
   return (
     <div className={`console${frozen ? " is-frozen" : ""}${justFroze ? " just-froze" : ""}`}>

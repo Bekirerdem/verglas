@@ -54,6 +54,14 @@ export interface Stamp {
   lastUpdate: bigint;
 }
 
+/** The newest scored stamp. The registry lists requests in creation order, so
+ *  a plain `.find()` returns the OLDEST stamp once an agent has re-attested. */
+export function latestStamp(stamps: Stamp[]): Stamp | undefined {
+  return stamps
+    .filter((s) => s.score > 0)
+    .reduce<Stamp | undefined>((best, s) => (!best || s.lastUpdate > best.lastUpdate ? s : best), undefined);
+}
+
 export interface SpendEvent {
   to: Address;
   amount: bigint;

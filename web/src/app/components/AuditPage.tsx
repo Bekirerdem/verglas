@@ -1,5 +1,5 @@
 import type { Address, Hex } from "viem";
-import type { VaultView } from "../../lib/data";
+import { latestStamp, type VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { remaining, short, utcDate } from "../../lib/format";
 import { useAudit } from "../lib/useAudit";
@@ -40,7 +40,7 @@ export function AuditPage({ view, wallet, isOwner, busy, run, onRefresh }: Props
   }
 
   const att = view.attestation;
-  const lastStamp = view.stamps.find((s) => s.score > 0);
+  const lastStamp = latestStamp(view.stamps);
   const deadline = att && view.gateMaxAge > 0n ? att.issuedAt + view.gateMaxAge : null;
   const left = deadline ? remaining(deadline) : "";
   const now = BigInt(Math.floor(Date.now() / 1000));
