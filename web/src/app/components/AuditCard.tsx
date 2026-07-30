@@ -4,7 +4,7 @@ import { latestStamp, migratableIdentities, type VaultView } from "../../lib/dat
 import { useI18n } from "../../lib/i18n";
 import { remaining, short, utcDate } from "../../lib/format";
 import { useAudit } from "../lib/useAudit";
-import { txUrl } from "../../lib/network";
+import { DEPLOYMENT, txUrl } from "../../lib/network";
 
 
 
@@ -112,7 +112,11 @@ export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh, onOpenA
       <div className="brow">
         <span className="k">{t("b_border")}</span>
         <span className={view.cleared ? "" : "k"} style={view.cleared ? { color: "var(--pos)", fontWeight: 650 } : undefined}>
-          {view.cleared ? `${t("b_border_ok")} · ${left} ${t("b_valid_left")}` : t("b_border_wait")}
+          {!DEPLOYMENT.gate
+            ? t("b_gate_none")
+            : view.cleared
+              ? `${t("b_border_ok")} · ${left} ${t("b_valid_left")}`
+              : t("b_border_wait")}
         </span>
       </div>
       {proofTx && (

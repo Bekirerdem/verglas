@@ -3,7 +3,7 @@ import { latestStamp, type VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { remaining, short, utcDate } from "../../lib/format";
 import { useAudit } from "../lib/useAudit";
-import { txUrl } from "../../lib/network";
+import { DEPLOYMENT, txUrl } from "../../lib/network";
 
 
 
@@ -50,6 +50,7 @@ export function AuditPage({ view, wallet, isOwner, busy, run, onRefresh }: Props
       ? Number(((deadline - now) * 100n) / view.gateMaxAge)
       : 0;
   const lastCarry = view.carried[0] ?? null;
+  const gate = DEPLOYMENT.gate ?? null;
 
   const stampDone = !!lastStamp;
   const carryDone = view.cleared;
@@ -75,11 +76,20 @@ export function AuditPage({ view, wallet, isOwner, busy, run, onRefresh }: Props
             <span className="psub">{stampDone ? `${t("b_compliance")} %${lastStamp.score}` : t("b_border_wait")}</span>
           </div>
           <div className={`pline${carryDone ? " done" : ""}`} />
-          <div className={`pstop${carryDone ? " done" : ""}`}>
-            <span className="pdot">{carryDone ? "✓" : "…"}</span>
+          <div className={`pstop${carryDone ? " done" : ""}${gate ? "" : " absent"}`}>
+            {/* Two different states share this stop and must not look alike:
+                "no gate on this network" (mainnet — cross-chain clearance is a
+                later milestone) is not the same as "carried, waiting". */}
+            <span className="pdot">{carryDone ? "✓" : gate ? "…" : "—"}</span>
             <b>{t("b_pass_gate")}</b>
-            <span>Dispatch</span>
-            <span className="psub">{carryDone ? `${t("b_border_ok")} · ${left} ${t("b_valid_left")}` : t("b_border_wait")}</span>
+            <span>{gate?.chainLabel ?? t("b_gate_none_where")}</span>
+            <span className="psub">
+              {!gate
+                ? t("b_gate_none")
+                : carryDone
+                  ? `${t("b_border_ok")} · ${left} ${t("b_valid_left")}`
+                  : t("b_border_wait")}
+            </span>
           </div>
         </div>
         {carryDone && (

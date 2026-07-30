@@ -204,6 +204,9 @@
 .envmenu button:hover:not(:disabled) { background: var(--raise); }
 .envmenu button:disabled { cursor: default; color: var(--ink2); }
 .envmenu .envtag { font-size: 10.5px; color: var(--ink2); white-space: nowrap; }
+.pstop.absent { opacity: .45; }
+.pstop.absent .pdot { background: transparent; border: 1px dashed var(--edge); color: var(--ink2); }
+
 .envwrap { position: relative; align-self: center; }
 /* In the sidebar the switch sits at the bottom, so its menu opens upward. */
 .bside-net { margin: 10px 4px 2px; }
