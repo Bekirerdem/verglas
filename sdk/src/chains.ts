@@ -33,10 +33,30 @@ export const TELEPORTER_ADDRESS = "0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf" a
 
 /**
  * Canonical ERC-8004 Identity Registry on Fuji (vanity CREATE2 deployment).
- * Verglas agentIds are real ERC-721 tokens minted here; the SDK never calls
- * it directly, but every consumer should know where identities come from.
+ * Verglas agentIds are real ERC-721 tokens minted here.
+ *
+ * ⚠️ The canonical registries use a DIFFERENT vanity address per network — the
+ * mainnet one is not this address (see IDENTITY_REGISTRY_MAINNET). Always read
+ * the address from the network registry rather than assuming one is global.
  */
 export const IDENTITY_REGISTRY_ADDRESS = "0x8004A818BFB912233c491871b3d84c89A494BD9e" as const;
+
+/**
+ * Canonical ERC-8004 Identity Registry on Avalanche C-Chain MAINNET. Verified
+ * live on 2026-07-30: name() = "AgentIdentity", owner = the 8004 reference
+ * team, register() returns the next agentId (1783 at the time of checking).
+ * Source: erc-8004/erc-8004-contracts README.
+ */
+export const IDENTITY_REGISTRY_MAINNET = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" as const;
+
+/**
+ * Canonical ERC-8004 Reputation Registry on Avalanche mainnet (live, unused by
+ * Verglas today — recorded so the mainnet picture is complete).
+ */
+export const REPUTATION_REGISTRY_MAINNET = "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63" as const;
+
+/** Circle's official USDC on Avalanche C-Chain mainnet, 6 decimals. */
+export const USDC_MAINNET = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E" as const;
 
 /** Live Fuji v3 deployment of 2026-07-30 (see deployments/fuji-testnet.md).
  *  v3 = the redeploy wave: Hub with the bindAccount ownership fix and the
@@ -160,7 +180,11 @@ export const NETWORKS: Record<VerglasNetwork["key"], VerglasNetwork> = {
     chain: avalanche,
     explorer: "https://snowtrace.io",
     // Not deployed yet — M1's mainnet leg. Filling this in is what switches
-    // mainnet on across the console, keeper and SDK.
+    // mainnet on across the console, keeper and SDK. Identity/USDC are already
+    // live on mainnet (canonical 8004 + Circle); what we still deploy is our
+    // own stack plus a Validation Registry, since no chain has a canonical one
+    // (that spec section is still being revised with the TEE community).
+    // Deploy with script/DeployMainnet.s.sol, then fill this object in.
     deployment: null,
   },
 };

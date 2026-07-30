@@ -39,7 +39,7 @@ contract VerglasOracleTest is Test {
     function setUp() public {
         (keeper, keeperKey) = makeAddrAndKey("keeper");
         (stranger, strangerKey) = makeAddrAndKey("stranger");
-        oracle = new VerglasOracle(keeper);
+        oracle = new VerglasOracle(address(this), keeper);
         vm.warp(1_770_000_000); // realistic clock so publishTime math is honest
     }
 
@@ -237,7 +237,7 @@ contract VerglasOracleTreasurerIntegrationTest is Test {
 
     function setUp() public {
         (keeper, keeperKey) = makeAddrAndKey("keeper");
-        oracle = new VerglasOracle(keeper);
+        oracle = new VerglasOracle(address(this), keeper);
         token = new MockToken();
         vm.warp(1_770_000_000);
 

@@ -67,9 +67,14 @@ contract VerglasOracle {
     error PriceUnavailable(bytes32 id);
     error StalePrice();
 
-    constructor(address keeper_) {
-        if (keeper_ == address(0)) revert ZeroAddress();
-        owner = msg.sender;
+    /// @param owner_  Holds the only privilege here: rotating the keeper. Passed
+    ///                explicitly so a throwaway deploy key never keeps authority
+    ///                (the treasurer's `pyth` is immutable, so losing the ability
+    ///                to rotate the keeper would mean redeploying the treasurer).
+    /// @param keeper_ The key whose signature authorizes price pushes.
+    constructor(address owner_, address keeper_) {
+        if (owner_ == address(0) || keeper_ == address(0)) revert ZeroAddress();
+        owner = owner_;
         keeper = keeper_;
         emit KeeperSet(keeper_);
     }

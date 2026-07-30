@@ -14,7 +14,7 @@ contract DeployOracleFuji is Script {
         address deployer = vm.addr(pk);
 
         vm.startBroadcast(pk);
-        VerglasOracle oracle = new VerglasOracle(deployer);
+        VerglasOracle oracle = new VerglasOracle(vm.envOr("OWNER", deployer), deployer);
         vm.stopBroadcast();
 
         console.log("VerglasOracle:", address(oracle));
