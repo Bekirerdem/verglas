@@ -150,6 +150,15 @@ function Console() {
   const currentKey = useRef("");
 
   const load = useCallback((entry: VaultEntry) => {
+    // A network with no showcase and no own vault yet has nothing to read —
+    // reading the zero address would surface a raw RPC error to a visitor
+    // whose only sensible next step is "create your vault".
+    if (entry.account === ZERO) {
+      setView(null);
+      setError(null);
+      setSwitching(false);
+      return;
+    }
     const key = entry.account.toLowerCase();
     const apply = (v: VaultView) => {
       viewCache.current[key] = v;
@@ -165,7 +174,7 @@ function Console() {
       setError(e instanceof Error ? e.message : String(e));
       setSwitching(false);
     });
-    fetchTreasurer().then(setTreasurer, () => {});
+    if (TREASURER) fetchTreasurer().then(setTreasurer, () => {});
   }, []);
 
   // Stale-while-revalidate: keep the current vault on screen (dimmed) and
@@ -241,7 +250,8 @@ function Console() {
 
   const vaultLabel = (account: Address): string => {
     if (TREASURER && account.toLowerCase() === TREASURER.account.toLowerCase()) return "Haznedar";
-    if (account.toLowerCase() === SHOWCASE_ACCOUNT.toLowerCase()) return "Demo Agent";
+    if (account === ZERO) return "—";
+    if (hasShowcase && account.toLowerCase() === SHOWCASE_ACCOUNT.toLowerCase()) return "Demo Agent";
     const i = myVaults.findIndex((a) => a.toLowerCase() === account.toLowerCase());
     return vaultNames()[account.toLowerCase()] ?? `${t("app_vault_mine")} ${i + 1}`;
   };
@@ -407,7 +417,16 @@ function Console() {
               RPC: {error} {t("err_retry")}
             </div>
           )}
-          {!view && !error && <div className="loading">{t("app_loading")}</div>}
+          {!view && !error && sel.account === ZERO && (
+            <div className="bcard brise" style={{ maxWidth: 480, margin: "40px auto", textAlign: "center" }}>
+              <h3>{t("b_empty_h")}</h3>
+              <p style={{ fontSize: 13.5, color: "var(--ink2)", marginBottom: 14 }}>{t("b_empty_p")}</p>
+              <button className="bbtn" onClick={() => setWizardOpen(true)}>
+                + {t("w_new")}
+              </button>
+            </div>
+          )}
+          {!view && !error && sel.account !== ZERO && <div className="loading">{t("app_loading")}</div>}
 
           {view && (
             <div className={switching ? "bswitching" : undefined}>
