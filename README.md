@@ -59,16 +59,9 @@ Full ledger — including the Fuji testnet deployment and its cross-chain gate �
 
 ## How it works
 
-```mermaid
-flowchart LR
-    A[Owner sets policy] --> B[VerglasAccount<br/>agent spends inside rules]
-    B --> C[Poseidon hash chain<br/>every spend committed]
-    C --> D[Groth16 proof<br/>policy compliance]
-    D --> E[VerglasHub · C-Chain<br/>on-chain verify]
-    E --> F[ValidationRegistry<br/>ERC-8004 attestation]
-    F --> G[ICM carry]
-    G --> H[VerglasGate · any L1<br/>isCleared]
-```
+<div align="center">
+<img src="assets/architecture.svg" alt="Verglas architecture — the owner sets rules in a VerglasAccount, the agent spends inside them, every payment folds into a Poseidon chain, the keeper proves the window with Groth16, VerglasHub verifies on-chain and writes an ERC-8004 attestation, and ICM carries it to a VerglasGate on any Avalanche L1" width="960" />
+</div>
 
 1. **Vault** — the owner deploys a `VerglasAccount` with hard rules: per-payment limit,
    lifetime budget, payee whitelist, kill-switch. The agent spends inside them and cannot
@@ -88,16 +81,17 @@ flowchart LR
 
 ## The console
 
-<img src="assets/screenshots/console-overview.png" alt="Verglas console — balance, assurance and audit at a glance" width="900" />
+<img src="assets/screenshots/console-overview.png" alt="Verglas console on Avalanche mainnet — vault balance, the rules in plain words, and a score-100 audit card over three real transactions" width="900" />
 
-Business language on the surface, contracts underneath: balance with a live FX reading, the
-rules in plain words with a two-step brake, and the audit card that turns a ZK proof into
-"weekly proof ready · independent verification passed".
+*The live mainnet vault — agent #1783, real USDC.* Business language on the surface,
+contracts underneath: the balance with its live FX reading, the rules in plain words with a
+two-step brake, and an audit card that turns a Groth16 proof into "weekly proof ready ·
+independent verification passed".
 
-<img src="assets/screenshots/audit-passport.png" alt="Audit page — the passport band from vault to ZK seal to border gate, and the seal shelf" width="900" />
+<img src="assets/screenshots/audit-passport.png" alt="Audit page — the passport band from vault to ZK seal to border gate, and the shelf of amber seals" width="900" />
 
-The audit page tells the whole story: vault → ZK seal → border gate, with the shelf of
-amber seals each attestation left behind.
+*The audit page, on Fuji.* It shows the leg mainnet does not have yet: vault → ZK seal →
+**border gate on a second L1**. Cross-chain clearance is M3, deployed per L1 operator.
 
 ## Contracts
 

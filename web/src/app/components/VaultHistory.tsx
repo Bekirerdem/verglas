@@ -40,21 +40,27 @@ export function VaultHistory({ view, vaultLabel, query, limit, kind = null, with
   const { t } = useI18n();
   const [, bump] = useState(0);
 
+  /** Who the other side of a movement is, by name when the address book knows
+      them. Better than a guess about what kind of business this is. */
+  const who = (addr: string | null) => contactName(addr) ?? (addr ? short(addr, 6, 4) : "—");
+
   const describe = (item: HistoryItem): { title: string; sub: string; badge: string; color: string } => {
     switch (item.kind) {
       case "spend": {
         const name = contactName(item.counterparty);
         return {
           title: name ?? short(item.counterparty ?? "0x", 6, 4),
-          sub: t("b_h_payment_sub"),
+          // The vault's own guarantee, not an assumption about the payee's
+          // role — a memo replaces it when the owner wrote one.
+          sub: memoFor(item.txHash) || t("b_h_payment_sub"),
           badge: initials(name, item.counterparty ?? "0x00"),
           color: colorFor(item.counterparty ?? "0x00"),
         };
       }
       case "deposit":
-        return { title: t("b_h_deposit"), sub: t("b_h_deposit_sub"), badge: "⇧", color: "#1d7a4f" };
+        return { title: t("b_h_deposit"), sub: who(item.counterparty), badge: "⇧", color: "#1d7a4f" };
       case "withdraw":
-        return { title: t("b_h_withdraw"), sub: t("b_h_withdraw_sub"), badge: "⇩", color: "#4c463d" };
+        return { title: t("b_h_withdraw"), sub: who(item.counterparty), badge: "⇩", color: "#4c463d" };
       case "freeze":
         return { title: t("b_h_freeze"), sub: t("b_h_by_owner"), badge: "■", color: "#8b0d1a" };
       case "thaw":

@@ -192,11 +192,14 @@ export const NETWORKS: Record<VerglasNetwork["key"], VerglasNetwork> = {
       factory: "0xc07ef259Eb88742e00113d9F460F5D2081078960",
       legacyFactories: [],
       deployBlock: 0x575ac8dn,
-      // No showcase vault yet and no treasurer vertical on mainnet — the
-      // console shows "create your vault" instead of borrowed rows.
+      // The first mainnet vault, shown to visitors so the console has
+      // something real on it before they connect a wallet: agent #1783, two
+      // USDC payments, one score-100 attestation.
+      account: "0x004cd1dAc729a1E4A05e235A56985c368E94C3c5",
+      agentId: 1783n,
       // The oracle lives at 0x31900CA6bBd05ac2516feB6798f6aeB86FD41239
       // (owner: the project wallet, keeper: the service key); it gets wired in
-      // with the treasurer.
+      // with the treasurer vertical, which is not on mainnet yet.
       // No gate either: cross-chain clearance is M3, per L1 operator.
     },
   },

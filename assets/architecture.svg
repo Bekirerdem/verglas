@@ -1,0 +1,114 @@
+<svg viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg" font-family="Consolas, 'IBM Plex Mono', ui-monospace, monospace">
+  <defs>
+    <marker id="aInk" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8a8480"/>
+    </marker>
+    <marker id="aCrim" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#D33F4B"/>
+    </marker>
+    <marker id="aAmb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#F0B429"/>
+    </marker>
+    <radialGradient id="glow" cx="34%" cy="0%" r="70%">
+      <stop offset="0%" stop-color="#D33F4B" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#D33F4B" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="1199" height="699" rx="18" fill="#0B0B0B" stroke="rgba(255,255,255,0.10)"/>
+  <rect x="0.5" y="0.5" width="1199" height="699" rx="18" fill="url(#glow)"/>
+
+  <text x="48" y="56" font-family="Georgia, serif" font-size="26" fill="#F5F2ED">Verglas <tspan fill="#5f5b57" font-size="20">— architecture</tspan></text>
+  <text x="48" y="82" font-size="11.5" letter-spacing="2.2" fill="#9a9691">AGENT TRUST THAT TRAVELS · AVALANCHE</text>
+  <text x="1152" y="56" text-anchor="end" font-size="11" fill="#5f5b57">non-custodial · every rule on-chain</text>
+  <text x="1152" y="76" text-anchor="end" font-size="11" fill="#5f5b57">prove once · pass every gate</text>
+
+  <!-- chain bands -->
+  <rect x="300" y="120" width="600" height="470" rx="14" fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.07)" stroke-dasharray="4 5"/>
+  <text x="318" y="144" font-size="10.5" letter-spacing="2" fill="#5f5b57">AVALANCHE C-CHAIN</text>
+
+  <rect x="928" y="120" width="224" height="470" rx="14" fill="rgba(255,255,255,0.015)" stroke="rgba(255,255,255,0.07)" stroke-dasharray="4 5"/>
+  <text x="946" y="144" font-size="10.5" letter-spacing="2" fill="#5f5b57">ANY AVALANCHE L1</text>
+
+  <!-- OWNER -->
+  <rect x="48" y="168" width="212" height="98" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.16)"/>
+  <text x="70" y="200" font-size="14" font-weight="bold" fill="#F5F2ED">OWNER</text>
+  <text x="70" y="222" font-size="11.5" fill="#9a9691">wallet · root of trust</text>
+  <text x="70" y="244" font-size="11" fill="#5f5b57">sets rules · funds · freezes</text>
+
+  <!-- AGENT -->
+  <rect x="48" y="452" width="212" height="98" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.16)"/>
+  <text x="70" y="484" font-size="14" font-weight="bold" fill="#F5F2ED">AI AGENT</text>
+  <text x="70" y="506" font-size="11.5" fill="#9a9691">any model, any framework</text>
+  <text x="70" y="528" font-size="11" fill="#5f5b57">spends — never holds funds</text>
+
+  <!-- VAULT -->
+  <rect x="330" y="200" width="300" height="318" rx="14" fill="rgba(211,63,75,0.045)" stroke="#D33F4B" stroke-opacity="0.6"/>
+  <text x="356" y="234" font-size="14" font-weight="bold" fill="#F5F2ED">VerglasAccount</text>
+  <text x="356" y="255" font-size="11.5" fill="#9a9691">the rule engine, on-chain</text>
+
+  <rect x="356" y="274" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.12)"/>
+  <text x="370" y="295" font-size="11" fill="#F5F2ED">whitelist <tspan fill="#5f5b57">— approved payees only</tspan></text>
+  <rect x="356" y="316" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.12)"/>
+  <text x="370" y="337" font-size="11" fill="#F5F2ED">per-payment limit <tspan fill="#5f5b57">— welded shut</tspan></text>
+  <rect x="356" y="358" width="248" height="34" rx="8" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.12)"/>
+  <text x="370" y="379" font-size="11" fill="#F5F2ED">budget <tspan fill="#5f5b57">— owner may refuel</tspan></text>
+  <rect x="356" y="400" width="248" height="34" rx="8" fill="rgba(211,63,75,0.10)" stroke="#D33F4B" stroke-opacity="0.45"/>
+  <text x="370" y="421" font-size="11" fill="#D33F4B">freeze <tspan fill="#9a9691">— the owner's brake, always wins</tspan></text>
+
+  <rect x="356" y="450" width="248" height="46" rx="9" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="370" y="470" font-size="11" font-weight="bold" fill="#F5F2ED">POSEIDON CHAIN</text>
+  <text x="370" y="487" font-size="10" fill="#5f5b57">c = P(c_prev, P(to, amount)) — completeness</text>
+
+  <!-- owner + agent into the vault -->
+  <line x1="260" y1="217" x2="322" y2="217" stroke="#8a8480" stroke-width="1.3" marker-end="url(#aInk)"/>
+  <text x="266" y="206" font-size="10" fill="#5f5b57">deploy · fund</text>
+  <line x1="260" y1="501" x2="322" y2="501" stroke="#8a8480" stroke-width="1.3" marker-end="url(#aInk)"/>
+  <text x="266" y="490" font-size="10" fill="#5f5b57">spend()</text>
+  <line x1="154" y1="266" x2="154" y2="444" stroke="#D33F4B" stroke-opacity="0.5" stroke-width="1.2" stroke-dasharray="3 4" marker-end="url(#aCrim)"/>
+  <text x="164" y="358" font-size="10" fill="#9a9691">grants a bounded</text>
+  <text x="164" y="372" font-size="10" fill="#9a9691">spending seat</text>
+
+  <!-- KEEPER -->
+  <rect x="664" y="200" width="212" height="92" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.16)"/>
+  <text x="686" y="230" font-size="13.5" font-weight="bold" fill="#F5F2ED">KEEPER</text>
+  <text x="686" y="251" font-size="11" fill="#9a9691">rebuilds the window</text>
+  <text x="686" y="270" font-size="10.5" fill="#5f5b57">Groth16 · 86k constraints · ≤64 spends</text>
+  <line x1="630" y1="246" x2="656" y2="246" stroke="#8a8480" stroke-width="1.3" marker-end="url(#aInk)"/>
+
+  <!-- HUB -->
+  <rect x="664" y="316" width="212" height="98" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.16)"/>
+  <text x="686" y="346" font-size="13.5" font-weight="bold" fill="#F5F2ED">VerglasHub</text>
+  <text x="686" y="367" font-size="11" fill="#9a9691">verifies on-chain (~290k gas)</text>
+  <text x="686" y="386" font-size="10.5" fill="#5f5b57">binds proof to live vault state</text>
+  <text x="686" y="403" font-size="10.5" fill="#5f5b57">no valid proof → no attestation</text>
+  <line x1="770" y1="292" x2="770" y2="308" stroke="#8a8480" stroke-width="1.3" marker-end="url(#aInk)"/>
+
+  <!-- REGISTRY -->
+  <rect x="664" y="438" width="212" height="92" rx="12" fill="rgba(240,180,41,0.06)" stroke="#F0B429" stroke-opacity="0.5"/>
+  <text x="686" y="468" font-size="13.5" font-weight="bold" fill="#F0B429">ERC-8004</text>
+  <text x="686" y="488" font-size="11" fill="#F5F2ED">Validation Registry</text>
+  <text x="686" y="507" font-size="10.5" fill="#9a9691">score 100 · verglas:policy-compliance</text>
+  <line x1="770" y1="414" x2="770" y2="430" stroke="#F0B429" stroke-width="1.3" marker-end="url(#aAmb)"/>
+
+  <!-- GATE -->
+  <rect x="952" y="316" width="176" height="120" rx="12" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.16)"/>
+  <text x="974" y="346" font-size="13.5" font-weight="bold" fill="#F5F2ED">VerglasGate</text>
+  <text x="974" y="367" font-size="11" fill="#9a9691">the border checkpoint</text>
+  <text x="974" y="388" font-size="10.5" fill="#5f5b57">teleporter · source · hub</text>
+  <text x="974" y="406" font-size="10.5" fill="#5f5b57">score · freshness</text>
+  <rect x="974" y="414" width="132" height="0.8" fill="rgba(255,255,255,0.10)"/>
+  <text x="974" y="428" font-size="11" fill="#D33F4B">isCleared(agentId)</text>
+
+  <line x1="876" y1="365" x2="944" y2="365" stroke="#F0B429" stroke-width="1.4" marker-end="url(#aAmb)"/>
+  <text x="882" y="354" font-size="10" fill="#F0B429">ICM carry</text>
+
+  <text x="952" y="474" font-size="10.5" fill="#9a9691">the L1 admits a stranger agent</text>
+  <text x="952" y="492" font-size="10.5" fill="#9a9691">on one view call — no bridge,</text>
+  <text x="952" y="510" font-size="10.5" fill="#9a9691">no custodian, no second trust</text>
+
+  <!-- footer -->
+  <rect x="48" y="620" width="1104" height="0.8" fill="rgba(255,255,255,0.08)"/>
+  <text x="48" y="650" font-size="10.5" fill="#5f5b57">The agent can only spend inside the policy · only the owner withdraws · rules are bound into every proof</text>
+  <text x="1152" y="650" text-anchor="end" font-size="10.5" fill="#5f5b57">verglas.xyz</text>
+</svg>
