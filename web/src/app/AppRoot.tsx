@@ -303,7 +303,7 @@ function Console() {
       <div className="bshell">
         <aside className="bside">
           <a className="bside-brand" href="/">
-            <img src="/icon-192.png" alt="" />
+            <img src="/mark.png" alt="" />
             <b>VERGLAS</b>
           </a>
 

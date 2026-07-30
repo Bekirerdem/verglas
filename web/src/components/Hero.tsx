@@ -23,7 +23,7 @@ export function Hero({
     <header className="hero">
       <div className="topbar">
         <div className="brand">
-          <img className="mark" src="/icon-192.png" alt="" aria-hidden="true" />
+          <img className="mark" src="/mark.png" alt="" aria-hidden="true" />
           <span className="logotype">
             VERGLAS<sup>ICM</sup>
           </span>
