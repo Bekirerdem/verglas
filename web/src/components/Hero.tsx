@@ -1,4 +1,4 @@
-import { DEPLOYMENT, SHOWCASE_AGENT_ID } from "../lib/network";
+import { SHOWCASE_AGENT_ID, gateUrl } from "../lib/network";
 import type { DashboardData } from "../lib/data";
 import { remaining } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -45,7 +45,7 @@ export function Hero({
         </div>
         <a
           className="cta-pill"
-          href={`https://subnets-test.avax.network/dispatch/address/${DEPLOYMENT.gate?.address ?? ""}`}
+          href={gateUrl()}
           target="_blank"
           rel="noreferrer"
         >

@@ -1,4 +1,4 @@
-import { DEPLOYMENT, NET } from "../lib/network";
+import { DEPLOYMENT, NET, gateUrl } from "../lib/network";
 import { useI18n } from "../lib/i18n";
 
 /** S7 — the type wall and the operator's on-ramp. */
@@ -43,7 +43,7 @@ export function FooterWall() {
             HUB
           </a>
           <a
-            href={`https://subnets-test.avax.network/dispatch/address/${DEPLOYMENT.gate?.address ?? ""}`}
+            href={gateUrl()}
             target="_blank"
             rel="noreferrer"
           >

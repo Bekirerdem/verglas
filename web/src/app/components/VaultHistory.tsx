@@ -4,8 +4,9 @@ import { useI18n } from "../../lib/i18n";
 import { short, usd, utcDate } from "../../lib/format";
 import { contactName, initials } from "../lib/contacts";
 import { memoFor, setMemo } from "../lib/memos";
+import { txUrl } from "../../lib/network";
 
-const TX = "https://testnet.snowtrace.io/tx/";
+
 
 const COLORS = ["#4c3b2a", "#2a3a4c", "#3c2a4c", "#2a4c3b", "#4c463d", "#5c2a2a"];
 const colorFor = (addr: string) => COLORS[parseInt(addr.slice(-2), 16) % COLORS.length];
@@ -141,7 +142,7 @@ export function VaultHistory({ view, vaultLabel, query, limit, kind = null, with
                     </span>
                   </td>
                   <td style={{ textAlign: "right" }}>
-                    <a className="breceipt" href={TX + item.txHash} target="_blank" rel="noreferrer">
+                    <a className="breceipt" href={txUrl(item.txHash)} target="_blank" rel="noreferrer">
                       {t(security ? "b_detail" : "b_receipt")} ↗
                     </a>
                   </td>

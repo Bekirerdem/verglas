@@ -4,8 +4,9 @@ import { latestStamp, migratableIdentities, type VaultView } from "../../lib/dat
 import { useI18n } from "../../lib/i18n";
 import { remaining, short, utcDate } from "../../lib/format";
 import { useAudit } from "../lib/useAudit";
+import { txUrl } from "../../lib/network";
 
-const TX = "https://testnet.snowtrace.io/tx/";
+
 
 interface Props {
   view: VaultView;
@@ -117,7 +118,7 @@ export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh, onOpenA
       {proofTx && (
         <div className="bchain">
           ⛓ {t("b_proof_chain")}{" "}
-          <a href={TX + proofTx} target="_blank" rel="noreferrer">
+          <a href={txUrl(proofTx)} target="_blank" rel="noreferrer">
             {short(proofTx)}
           </a>
         </div>

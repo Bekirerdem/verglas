@@ -3,8 +3,9 @@ import { latestStamp, type VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { remaining, short, utcDate } from "../../lib/format";
 import { useAudit } from "../lib/useAudit";
+import { txUrl } from "../../lib/network";
 
-const TX = "https://testnet.snowtrace.io/tx/";
+
 
 interface Props {
   view: VaultView;
@@ -93,7 +94,7 @@ export function AuditPage({ view, wallet, isOwner, busy, run, onRefresh }: Props
         {lastCarry && (
           <div className="bchain">
             ⛓ {t("b_carry_tx")}{" "}
-            <a href={TX + lastCarry.txHash} target="_blank" rel="noreferrer">
+            <a href={txUrl(lastCarry.txHash)} target="_blank" rel="noreferrer">
               {short(lastCarry.txHash)}
             </a>
             {" · "}
