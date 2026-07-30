@@ -261,7 +261,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
             </div>
 
             <span className="mono rail-tag">{t("w_fund")}</span>
-            <p className="rail-hint">{t("w_fund_p")}</p>
+            <p className="rail-hint">{t(NET.kind === "testnet" ? "w_fund_p_test" : "w_fund_p")}</p>
             <div className="wiz-two">
               <label>
                 {t("w_amount")}

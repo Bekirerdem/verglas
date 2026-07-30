@@ -443,6 +443,19 @@ function blockTime(chain: PublicClient, blockNumber: bigint): Promise<bigint> {
   return hit;
 }
 
+/** The gate's freshness window, or 0 when this network has no gate deployed
+ *  (mainnet today — cross-chain clearance ships per L1 operator). Reading
+ *  `client.gateChain` unguarded threw synchronously, which no `.catch()` could
+ *  rescue and which took the whole vault view down. */
+function gateMaxAgeOf(): Promise<bigint> {
+  const gate = DEPLOYMENT.gate;
+  if (!gate || !client.gateChain) return Promise.resolve(0n);
+  return client.gateChain
+    .readContract({ address: gate.address, abi: verglasGateAbi, functionName: "maxAge" })
+    .then((v) => BigInt(v))
+    .catch(() => 0n);
+}
+
 export async function fetchDashboard(): Promise<DashboardData> {
   const chain = client.hubChain;
 
@@ -462,10 +475,7 @@ export async function fetchDashboard(): Promise<DashboardData> {
       functionName: "getAgentValidations",
       args: [SHOWCASE_AGENT_ID],
     }),
-    client
-      .gateChain!.readContract({ address: D.gateOnDispatch, abi: verglasGateAbi, functionName: "maxAge" })
-      .then((v) => BigInt(v))
-      .catch(() => 0n),
+    gateMaxAgeOf(),
   ]);
 
   // Stamp shelf comes from the registry (full history), not from log scans.
@@ -583,12 +593,7 @@ async function readVaultCore(
           functionName: "getAgentValidations",
           args: [agentId],
         }),
-    agentId === null
-      ? Promise.resolve(0n)
-      : client
-          .gateChain!.readContract({ address: D.gateOnDispatch, abi: verglasGateAbi, functionName: "maxAge" })
-          .then((v) => BigInt(v))
-          .catch(() => 0n),
+    agentId === null ? Promise.resolve(0n) : gateMaxAgeOf(),
   ]);
 
   const whitelist = await Promise.all(
