@@ -25,6 +25,22 @@ function walletClient() {
   return createWalletClient({ chain: CHAIN, transport: custom(provider()) });
 }
 
+/** Make sure the wallet is on the network the console is running on. The
+    console can switch networks on its own (a page reload), but an
+    already-connected wallet stays where it was — and then every write fails
+    with a chain-mismatch the user cannot act on. Called before each write. */
+export async function ensureChain(): Promise<void> {
+  const wc = walletClient();
+  const current = await wc.getChainId();
+  if (current === CHAIN.id) return;
+  try {
+    await wc.switchChain({ id: CHAIN.id });
+  } catch {
+    await wc.addChain({ chain: CHAIN });
+    await wc.switchChain({ id: CHAIN.id });
+  }
+}
+
 /** Prompt the wallet; make sure it ends up on the console's network. */
 export async function connect(): Promise<Address> {
   const wc = walletClient();

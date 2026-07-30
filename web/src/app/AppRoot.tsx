@@ -15,7 +15,7 @@ import {
 } from "../lib/data";
 import { I18nProvider, useI18n } from "../lib/i18n";
 import { short, usd, utcDate } from "../lib/format";
-import { connect, getConnected } from "./lib/wallet";
+import { connect, ensureChain, getConnected } from "./lib/wallet";
 import { contactName, initials } from "./lib/contacts";
 import { memoFor } from "./lib/memos";
 import { vaultNames } from "./lib/activate";
@@ -223,6 +223,7 @@ function Console() {
     if (busy) return false;
     setBusy(label);
     try {
+      await ensureChain();
       const hash = await send();
       const rc = await hubChain.waitForTransactionReceipt({ hash });
       if (rc.status !== "success") throw new Error("reverted");

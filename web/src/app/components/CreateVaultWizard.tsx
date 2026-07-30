@@ -3,7 +3,7 @@ import { isAddress, parseUnits, type Address } from "viem";
 import { fetchMyVaults, hubChain } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short } from "../../lib/format";
-import { sendCreateVault, sendUsdc } from "../lib/wallet";
+import { ensureChain, sendCreateVault, sendUsdc } from "../lib/wallet";
 import { activateStampLine, setVaultName } from "../lib/activate";
 import { contacts, setContactName } from "../lib/contacts";
 import { NET } from "../../lib/network";
@@ -89,6 +89,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
     setBusy("create");
     setError(null);
     try {
+      await ensureChain();
       const hash = await sendCreateVault(wallet!, {
         agent: agent as Address,
         ...amounts!,
@@ -115,6 +116,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
     setBusy("fund");
     setError(null);
     try {
+      await ensureChain();
       const hash = await sendUsdc(wallet, created, parseUnits(fundAmt, 6));
       await hubChain.waitForTransactionReceipt({ hash });
       setFundedTx(true);
@@ -129,6 +131,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
     setBusy("activate");
     setError(null);
     try {
+      await ensureChain();
       const agentId = await activateStampLine(wallet, created, setActStep);
       setActAgentId(agentId);
     } catch (e) {
