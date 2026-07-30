@@ -27,6 +27,23 @@ Total deploy cost: 7,856,126 gas = **0.000429 AVAX (~$0.003)** at a 0.052 gwei
 base fee. Rehearsed on an anvil mainnet fork first (identity mint + vault
 creation + Hub bind all verified) before spending anything real.
 
+## The mainnet live run (2026-07-30) — M1's criterion, closed
+
+- **Agent #1783** on the canonical ERC-8004 Identity Registry (a real ERC-721),
+  bound to vault `0x004cd1dAc729a1E4A05e235A56985c368E94C3c5`.
+- Vault funded with **real Circle USDC**; rules: 0.5 per payment, 1.5 lifetime.
+- **Two real payments** (1.0 USDC total, tx `0x87adae1c…`) folded into the
+  Poseidon commitment chain.
+- **One Groth16 proof verified on-chain** — tx `0x3419e9d3…`, 621,090 gas — and a
+  score-100 response written to our Validation Registry with tag
+  `verglas:policy-compliance` (request `0x8abf4fe0…`).
+- The Hub checkpoint advanced to (commitment, 2), so the same window cannot be
+  proven twice.
+
+Note: the mainnet Hub carries the proven vault inside the attestation (the
+07-30 security fix); Fuji's Hub predates it. The SDK decodes
+`latestAttestation` by return length so one code path serves both.
+
 Not yet on mainnet: the treasurer vertical, a showcase vault, and any Gate
 (cross-chain clearance is M3, deployed per L1 operator).
 
