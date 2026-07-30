@@ -163,6 +163,38 @@ contract VerglasAccountTest is Test {
         assertEq(acc.whitelistLength(), 2);
     }
 
+    /// @notice The refuel path: a budget-exhausted vault comes back to life with an
+    ///         owner top-up instead of being abandoned (fuel, not structure).
+    function test_OwnerIncreasesBudgetAndAgentSpendsAgain() public {
+        _spend(dexA, 200e6);
+        _spend(dexB, 200e6);
+        _spend(dexA, 100e6); // budget now exactly exhausted (500/500)
+        vm.prank(agent);
+        vm.expectRevert(abi.encodeWithSelector(VerglasAccount.BudgetExceeded.selector, 501e6, BUDGET));
+        account.spend(dexA, 1e6);
+
+        vm.expectEmit(address(account));
+        emit VerglasAccount.BudgetIncreased(250e6, 750e6);
+        vm.prank(owner);
+        account.increaseBudget(250e6);
+
+        assertEq(account.totalBudget(), 750e6);
+        _spend(dexB, 150e6); // spending resumes inside the raised allowance
+        assertEq(account.totalSpent(), 650e6);
+    }
+
+    function test_RevertWhen_IncreaseBudgetCallerNotOwner() public {
+        vm.prank(agent);
+        vm.expectRevert(VerglasAccount.NotOwner.selector);
+        account.increaseBudget(1e6);
+    }
+
+    function test_RevertWhen_IncreaseBudgetZero() public {
+        vm.prank(owner);
+        vm.expectRevert(VerglasAccount.ZeroAmount.selector);
+        account.increaseBudget(0);
+    }
+
     function test_RevertWhen_TransferFails() public {
         // Drain the account via owner withdraw, then agent spend must revert.
         vm.prank(owner);

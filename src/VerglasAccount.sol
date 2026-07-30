@@ -20,6 +20,12 @@ interface IERC20 {
 ///      Total-budget and tx-count policies are enforced on-chain instantly via public
 ///      counters and are therefore NOT part of the circuit; only privacy-sensitive
 ///      checks (destination membership, per-tx amount) are proven in ZK.
+///
+///      Structure vs fuel: the whitelist and per-tx limit are STRUCTURE — they are
+///      bound into every proof window as public inputs, so they are fixed at birth.
+///      The total budget is FUEL — it lives outside the circuit, so the owner may
+///      top it up (never mid-window semantics to break) instead of abandoning the
+///      vault once the initial allowance is spent.
 contract VerglasAccount {
     /// @dev BN254 scalar field — Poseidon inputs must stay below this.
     uint256 internal constant SNARK_SCALAR_FIELD =
@@ -32,7 +38,11 @@ contract VerglasAccount {
     address public immutable agent;
     IERC20 public immutable token;
     uint256 public immutable perTxLimit;
-    uint256 public immutable totalBudget;
+
+    /// @notice The agent's lifetime spending allowance. Owner-increasable (fuel,
+    ///         not structure — see the contract-level note); never decreasable,
+    ///         the brake for "stop spending" is freeze().
+    uint256 public totalBudget;
 
     address[] public whitelist;
     mapping(address => bool) public isWhitelisted;
@@ -47,6 +57,7 @@ contract VerglasAccount {
     event Frozen();
     event Unfrozen();
     event OwnerWithdraw(address indexed to, uint256 amount);
+    event BudgetIncreased(uint256 added, uint256 newBudget);
 
     error NotOwner();
     error NotAgent();
@@ -56,6 +67,7 @@ contract VerglasAccount {
     error BudgetExceeded(uint256 wouldBe, uint256 budget);
     error BadWhitelistLength();
     error ZeroAddress();
+    error ZeroAmount();
     error LimitAboveField();
     error TransferFailed();
 
@@ -124,6 +136,14 @@ contract VerglasAccount {
     function unfreeze() external onlyOwner {
         frozen = false;
         emit Unfrozen();
+    }
+
+    /// @notice Refuel: raise the agent's lifetime allowance. Increase-only — the
+    ///         way to spend less is freeze(), not a retroactive budget cut.
+    function increaseBudget(uint256 addedBudget) external onlyOwner {
+        if (addedBudget == 0) revert ZeroAmount();
+        totalBudget += addedBudget;
+        emit BudgetIncreased(addedBudget, totalBudget);
     }
 
     /// @notice Owner exit — funds are never locked away from their owner, frozen or not.
