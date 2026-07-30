@@ -1,5 +1,6 @@
 import {
   createPublicClient,
+  encodeFunctionData,
   fallback,
   http,
   type Address,
@@ -156,14 +157,32 @@ export class VerglasClient {
 
   /** Latest Hub attestation for an agent, or null if none was ever issued. */
   async getAttestation(agentId: bigint): Promise<Attestation | null> {
-    const [requestHash, finalCommitment, txCount, score, issuedAt] = await this.hubChain.readContract({
-      address: this.addresses.hub,
-      abi: verglasHubAbi,
-      functionName: "latestAttestation",
-      args: [agentId],
+    // Two Hub generations are live at once: the mainnet Hub records the vault
+    // the attestation was proven for (6 fields), the older Fuji Hub does not
+    // (5). Decoding by RETURN LENGTH keeps one code path working against both
+    // and keeps working after Fuji is redeployed — no per-network config, and
+    // no silent mis-decode (which is what a fixed ABI would do here).
+    const data = await this.hubChain.call({
+      to: this.addresses.hub,
+      data: encodeFunctionData({ abi: verglasHubAbi, functionName: "latestAttestation", args: [agentId] }),
     });
+    const raw = data.data ?? "0x";
+    const words = (raw.length - 2) / 64;
+    const at = (i: number) => `0x${raw.slice(2 + i * 64, 2 + (i + 1) * 64)}` as Hex;
+    const num = (i: number) => BigInt(at(i));
+
+    const hasAccount = words >= 6;
+    const o = hasAccount ? 1 : 0;
+    const issuedAt = num(o + 4);
     if (issuedAt === 0n) return null;
-    return { requestHash, finalCommitment, txCount, score, issuedAt };
+    return {
+      account: hasAccount ? (`0x${at(0).slice(26)}` as Address) : undefined,
+      requestHash: at(o),
+      finalCommitment: num(o + 1),
+      txCount: num(o + 2),
+      score: Number(num(o + 3)),
+      issuedAt,
+    };
   }
 
   async getValidationStatus(requestHash: Hex) {
