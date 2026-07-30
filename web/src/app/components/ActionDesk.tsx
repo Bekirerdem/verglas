@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { isAddress, parseUnits, type Address, type Hex } from "viem";
-import { FUJI_DEPLOYMENT } from "@verglas/sdk";
+import { DEPLOYMENT } from "../../lib/network";
 import type { VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd } from "../../lib/format";
@@ -70,7 +70,7 @@ export function ActionDesk({ view, wallet, isOwner, isAgent, busy, open, onToggl
   const wdDest = wdTo.trim() === "" ? view.state.owner : wdTo.trim();
   // Guard against the classic loss: pasting the token CONTRACT address
   // (what MetaMask shows on the token page) instead of your own account.
-  const wdIsTokenContract = wdDest.toLowerCase() === FUJI_DEPLOYMENT.usdc.toLowerCase();
+  const wdIsTokenContract = wdDest.toLowerCase() === DEPLOYMENT.usdc.toLowerCase();
   const wdValid = wdParsed !== null && isAddress(wdDest) && !wdIsTokenContract;
   const withdraw = async () => {
     if (!isOwner || busy || !wdValid) return;

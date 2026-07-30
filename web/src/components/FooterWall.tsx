@@ -1,4 +1,4 @@
-import { FUJI_DEPLOYMENT } from "@verglas/sdk";
+import { DEPLOYMENT, NET } from "../lib/network";
 import { useI18n } from "../lib/i18n";
 
 /** S7 — the type wall and the operator's on-ramp. */
@@ -39,11 +39,11 @@ export function FooterWall() {
             GITHUB
           </a>
           <a href="/docs/">DOCS</a>
-          <a href={`https://testnet.snowtrace.io/address/${FUJI_DEPLOYMENT.hub}`} target="_blank" rel="noreferrer">
+          <a href={`${NET.explorer}/address/${DEPLOYMENT.hub}`} target="_blank" rel="noreferrer">
             HUB
           </a>
           <a
-            href={`https://subnets-test.avax.network/dispatch/address/${FUJI_DEPLOYMENT.gateOnDispatch}`}
+            href={`https://subnets-test.avax.network/dispatch/address/${DEPLOYMENT.gate?.address ?? ""}`}
             target="_blank"
             rel="noreferrer"
           >

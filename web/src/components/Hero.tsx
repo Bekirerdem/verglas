@@ -1,4 +1,4 @@
-import { FUJI_DEPLOYMENT } from "@verglas/sdk";
+import { DEPLOYMENT, SHOWCASE_AGENT_ID } from "../lib/network";
 import type { DashboardData } from "../lib/data";
 import { remaining } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -45,7 +45,7 @@ export function Hero({
         </div>
         <a
           className="cta-pill"
-          href={`https://subnets-test.avax.network/dispatch/address/${FUJI_DEPLOYMENT.gateOnDispatch}`}
+          href={`https://subnets-test.avax.network/dispatch/address/${DEPLOYMENT.gate?.address ?? ""}`}
           target="_blank"
           rel="noreferrer"
         >
@@ -78,7 +78,7 @@ export function Hero({
 
         <div className="clearance hero-anim" role="status">
           <span className="cell agent">
-            {t("hero_agent")} <b>#{FUJI_DEPLOYMENT.agentId.toString()}</b>
+            {t("hero_agent")} <b>#{SHOWCASE_AGENT_ID.toString()}</b>
           </span>
           <span className={`cell status ${cleared === null ? "" : cleared ? "ok" : "no"}`}>
             <span className="dot" />
@@ -96,7 +96,7 @@ export function Hero({
       <aside className="hero-passport hero-anim" aria-hidden="true" data-ice-glow>
         <div className="hp-head">
           <span className="hp-agent">
-            {t("hero_agent")} #{FUJI_DEPLOYMENT.agentId.toString()}
+            {t("hero_agent")} #{SHOWCASE_AGENT_ID.toString()}
           </span>
           <span className={`hp-status ${cleared ? "ok" : ""}`}>
             <span className="dot" />

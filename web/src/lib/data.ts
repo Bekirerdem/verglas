@@ -9,10 +9,6 @@ import {
   type PublicClient,
 } from "viem";
 import {
-  fujiC,
-  FUJI_DEPLOYMENT,
-  IDENTITY_REGISTRY_ADDRESS,
-  TREASURER_DEPLOYMENT,
   identityRegistryAbi,
   pythAbi,
   validationRegistryAbi,
@@ -25,6 +21,7 @@ import {
   type AccountState,
   type Attestation,
 } from "@verglas/sdk";
+import { DEPLOYMENT, NET, SHOWCASE_ACCOUNT, SHOWCASE_AGENT_ID, TREASURER } from "./network";
 
 const spendEvent = parseAbiItem(
   "event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment)",
@@ -94,8 +91,13 @@ export interface DashboardData {
   fetchedAt: number;
 }
 
-const client = VerglasClient.fuji();
-const D = FUJI_DEPLOYMENT;
+// Every address and chain below comes from the network selected at page load
+// (see lib/network.ts) — the console is network-agnostic; switching reloads.
+const client = VerglasClient.forNetwork(NET);
+const D = {
+  ...DEPLOYMENT,
+  gateOnDispatch: DEPLOYMENT.gate?.address ?? "0x0000000000000000000000000000000000000000",
+} as const;
 
 /** History scanning (M1, pre-indexer). Three rules keep the console
     responsive and the visitor's devtools clean:
@@ -119,10 +121,15 @@ const LOG_CACHE_V = 1;
 // history entirely. publicnode handles our small 2k-block chunks; its
 // rare 500 just halts the scan until the next refresh.
 const logsChain = createPublicClient({
-  chain: fujiC,
+  chain: NET.chain,
   transport: fallback([
     http(undefined, { retryCount: 0, timeout: 10_000 }),
-    http("https://avalanche-fuji-c-chain-rpc.publicnode.com", { retryCount: 0, timeout: 10_000 }),
+    http(
+      NET.key === "fuji"
+        ? "https://avalanche-fuji-c-chain-rpc.publicnode.com"
+        : "https://avalanche-c-chain-rpc.publicnode.com",
+      { retryCount: 0, timeout: 10_000 },
+    ),
   ]),
 });
 
@@ -200,7 +207,7 @@ export async function migratableIdentities(wallet: Address, account: Address): P
         const id = BigInt(raw);
         const [holder, boundTo] = await Promise.all([
           client.hubChain.readContract({
-            address: IDENTITY_REGISTRY_ADDRESS,
+            address: DEPLOYMENT.identityRegistry,
             abi: identityRegistryAbi,
             functionName: "ownerOf",
             args: [id],
@@ -257,7 +264,7 @@ async function getVaultLogs(account: Address, agentIdHint: bigint | null): Promi
   const key = account.toLowerCase();
   let store = logStores.get(key) ?? loadVaultLogs(account);
   if (!store) {
-    const known = key === D.account.toLowerCase() || key === T.account.toLowerCase();
+    const known = key === SHOWCASE_ACCOUNT.toLowerCase() || key === (T?.account ?? ZERO_ADDR).toLowerCase();
     const creationBlock = known ? D.deployBlock : await findCreationBlock(account);
     store = {
       creationBlock,
@@ -441,19 +448,19 @@ export async function fetchDashboard(): Promise<DashboardData> {
 
   const [account, attestation, cleared, balance, requestHashes, gateMaxAge] = await Promise.all([
     client.getAccountState(),
-    client.getAttestation(D.agentId),
-    client.isCleared(D.agentId).catch(() => false),
+    client.getAttestation(SHOWCASE_AGENT_ID),
+    client.isCleared(SHOWCASE_AGENT_ID).catch(() => false),
     chain.readContract({
       address: D.usdc,
       abi: erc20Abi,
       functionName: "balanceOf",
-      args: [D.account],
+      args: [SHOWCASE_ACCOUNT],
     }),
     chain.readContract({
       address: D.validationRegistry,
       abi: validationRegistryAbi,
       functionName: "getAgentValidations",
-      args: [D.agentId],
+      args: [SHOWCASE_AGENT_ID],
     }),
     client
       .gateChain!.readContract({ address: D.gateOnDispatch, abi: verglasGateAbi, functionName: "maxAge" })
@@ -698,7 +705,7 @@ export const isRefillable = (account: Address) => refillableVaults.has(account.t
  *  after a factory redeploy) and come FIRST: callers rely on "last element =
  *  newest vault" right after createVault. */
 export async function fetchMyVaults(owner: Address): Promise<readonly Address[]> {
-  const factories = [...FUJI_DEPLOYMENT.legacyFactories, FUJI_DEPLOYMENT.factory];
+  const factories = [...DEPLOYMENT.legacyFactories, DEPLOYMENT.factory];
   const lists = await Promise.all(
     factories.map((address) =>
       client.hubChain
@@ -738,10 +745,11 @@ export interface TreasurerData {
   payments: FxPaymentEvent[];
 }
 
-const T = TREASURER_DEPLOYMENT;
+const T = TREASURER;
 const RATE_TARGET_EXPO = -8;
 
 export async function fetchTreasurer(): Promise<TreasurerData> {
+  if (!T) throw new Error(`${NET.label} has no treasurer deployment`);
   const chain = client.hubChain;
 
   // Point reads only — no eth_getLogs. The public fallback RPCs 500 on

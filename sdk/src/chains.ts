@@ -1,8 +1,11 @@
 import { defineChain } from "viem";
-import { avalancheFuji } from "viem/chains";
+import { avalanche, avalancheFuji } from "viem/chains";
 
 /** Fuji C-Chain (43113) — where the Verglas Hub lives on testnet. */
 export const fujiC = avalancheFuji;
+
+/** Avalanche C-Chain (43114) — mainnet. */
+export const avalancheC = avalanche;
 
 /** Dispatch test L1 (779672) — the second chain of the live demo. */
 export const dispatch = defineChain({
@@ -72,3 +75,98 @@ export const TREASURER_DEPLOYMENT = {
   /** USD/TRY feed id (Pyth's id kept as the shim's storage key). */
   usdTryPriceId: "0x032a2eba1c2635bf973e95fb62b2c0705c1be2603b9572cc8d5edeaf8744e058",
 } as const;
+
+/** A Verglas deployment, whatever chain it sits on. Mirrors FUJI_DEPLOYMENT's
+ *  shape so a consumer written against one network works on the other. */
+type Hex40 = `0x${string}`;
+
+export interface VerglasDeployment {
+  hub: Hex40;
+  validationRegistry: Hex40;
+  identityRegistry: Hex40;
+  verifier: Hex40;
+  usdc: Hex40;
+  factory: Hex40;
+  legacyFactories: readonly Hex40[];
+  /** Earliest block worth scanning for this deployment's events. */
+  deployBlock: bigint;
+  /** Showcase vault + agent the console lists for visitors, if any. */
+  account?: Hex40;
+  agentId?: bigint;
+  /** The treasurer vertical, when deployed on this network. */
+  treasurer?: {
+    treasurer: Hex40;
+    account: Hex40;
+    agentId: bigint;
+    pyth: Hex40;
+    usdTryPriceId: Hex40;
+  };
+  /** Workshop USDC tap — testnet only. */
+  dispenser?: Hex40;
+  /** A VerglasGate on a second L1, when one is live. */
+  gate?: { address: Hex40; blockchainId: Hex40; chainLabel: string };
+}
+
+/** One network Verglas can run on. `deployment: null` means "supported by the
+ *  code, not deployed yet" — the console offers it but marks it unavailable
+ *  instead of pretending addresses exist. */
+export interface VerglasNetwork {
+  key: "fuji" | "avalanche";
+  label: string;
+  /** Short human tag the UI shows next to the balance ("Test ortamı"). */
+  kind: "testnet" | "mainnet";
+  chain: typeof avalancheFuji | typeof avalanche;
+  explorer: string;
+  deployment: VerglasDeployment | null;
+}
+
+export const NETWORKS: Record<VerglasNetwork["key"], VerglasNetwork> = {
+  fuji: {
+    key: "fuji",
+    label: "Fuji",
+    kind: "testnet",
+    chain: avalancheFuji,
+    explorer: "https://testnet.snowtrace.io",
+    deployment: {
+      hub: FUJI_DEPLOYMENT.hub,
+      validationRegistry: FUJI_DEPLOYMENT.validationRegistry,
+      identityRegistry: IDENTITY_REGISTRY_ADDRESS,
+      verifier: FUJI_DEPLOYMENT.verifier,
+      usdc: FUJI_DEPLOYMENT.usdc,
+      factory: FUJI_DEPLOYMENT.factory,
+      legacyFactories: FUJI_DEPLOYMENT.legacyFactories,
+      deployBlock: FUJI_DEPLOYMENT.deployBlock,
+      account: FUJI_DEPLOYMENT.account,
+      agentId: FUJI_DEPLOYMENT.agentId,
+      treasurer: {
+        treasurer: TREASURER_DEPLOYMENT.treasurer,
+        account: TREASURER_DEPLOYMENT.account,
+        agentId: TREASURER_DEPLOYMENT.agentId,
+        pyth: TREASURER_DEPLOYMENT.pyth,
+        usdTryPriceId: TREASURER_DEPLOYMENT.usdTryPriceId,
+      },
+      dispenser: FUJI_DEPLOYMENT.dispenser,
+      gate: {
+        address: FUJI_DEPLOYMENT.gateOnDispatch,
+        blockchainId: BLOCKCHAIN_IDS.dispatch,
+        chainLabel: "Dispatch",
+      },
+    },
+  },
+  avalanche: {
+    key: "avalanche",
+    label: "Avalanche",
+    kind: "mainnet",
+    chain: avalanche,
+    explorer: "https://snowtrace.io",
+    // Not deployed yet — M1's mainnet leg. Filling this in is what switches
+    // mainnet on across the console, keeper and SDK.
+    deployment: null,
+  },
+};
+
+export const DEFAULT_NETWORK: VerglasNetwork["key"] = "fuji";
+
+export function networkOf(key: string | null | undefined): VerglasNetwork {
+  return key === "avalanche" ? NETWORKS.avalanche : NETWORKS.fuji;
+}

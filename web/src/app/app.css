@@ -187,6 +187,25 @@
   border: 1px solid var(--edge); background: var(--card); border-radius: 999px; padding: 5px 12px;
 }
 
+.envchip.envswitch { cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.envchip.envswitch:hover { border-color: var(--crimson); color: var(--ink); }
+.envchip .envdot { width: 6px; height: 6px; border-radius: 50%; background: var(--pos); }
+.envchip.is-main .envdot { background: var(--crimson); }
+.envmenu {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; min-width: 210px;
+  border: 1px solid var(--edge); background: var(--card); border-radius: 12px; padding: 6px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.28);
+}
+.envmenu button {
+  display: flex; width: 100%; justify-content: space-between; align-items: center; gap: 10px;
+  background: none; border: 0; color: var(--ink); font: inherit; font-size: 12.5px;
+  padding: 9px 10px; border-radius: 8px; cursor: pointer; text-align: left;
+}
+.envmenu button:hover:not(:disabled) { background: var(--raise); }
+.envmenu button:disabled { cursor: default; color: var(--ink2); }
+.envmenu .envtag { font-size: 10.5px; color: var(--ink2); white-space: nowrap; }
+.envwrap { position: relative; align-self: center; }
+
 /* action pills */
 .bpills { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
 .bpill {

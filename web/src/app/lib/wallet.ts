@@ -1,8 +1,5 @@
 import { createWalletClient, custom, erc20Abi, type Address, type Hex } from "viem";
 import {
-  FUJI_DEPLOYMENT,
-  fujiC,
-  IDENTITY_REGISTRY_ADDRESS,
   identityRegistryAbi,
   validationRegistryAbi,
   verglasAccountAbi,
@@ -11,6 +8,10 @@ import {
   verglasHubAbi,
   verglasTreasurerAbi,
 } from "@verglas/sdk";
+import { DEPLOYMENT, NET } from "../../lib/network";
+
+/** Wallet writes always target the network the console is running on. */
+const CHAIN = NET.chain;
 
 type Provider = Parameters<typeof custom>[0];
 
@@ -21,18 +22,18 @@ function provider(): Provider {
 }
 
 function walletClient() {
-  return createWalletClient({ chain: fujiC, transport: custom(provider()) });
+  return createWalletClient({ chain: CHAIN, transport: custom(provider()) });
 }
 
-/** Prompt the wallet; make sure it ends up on Fuji C-Chain. */
+/** Prompt the wallet; make sure it ends up on the console's network. */
 export async function connect(): Promise<Address> {
   const wc = walletClient();
   const [address] = await wc.requestAddresses();
   try {
-    await wc.switchChain({ id: fujiC.id });
+    await wc.switchChain({ id: CHAIN.id });
   } catch {
-    await wc.addChain({ chain: fujiC });
-    await wc.switchChain({ id: fujiC.id }).catch(() => {});
+    await wc.addChain({ chain: CHAIN });
+    await wc.switchChain({ id: CHAIN.id }).catch(() => {});
   }
   return address;
 }
@@ -57,7 +58,7 @@ export function sendSpend(account: Address, from: Address, to: Address, amount: 
     functionName: "spend",
     args: [to, amount],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 export type TreasurerAction = "pause" | "unpause";
@@ -68,7 +69,7 @@ export function sendVaultAction(account: Address, from: Address, fn: VaultAction
     abi: verglasAccountAbi,
     functionName: fn,
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
@@ -80,7 +81,7 @@ export function sendIncreaseBudget(account: Address, from: Address, amount: bigi
     functionName: "increaseBudget",
     args: [amount],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
@@ -90,7 +91,7 @@ export function sendTreasurerAction(treasurer: Address, from: Address, fn: Treas
     abi: verglasTreasurerAbi,
     functionName: fn,
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
@@ -107,7 +108,7 @@ export function sendSetPolicy(treasurer: Address, from: Address, p: PolicyInput)
     functionName: "setPolicy",
     args: [p],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
@@ -118,7 +119,7 @@ export function sendSetOperator(treasurer: Address, from: Address, operator: Add
     functionName: "setOperator",
     args: [operator],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
@@ -129,7 +130,7 @@ export function sendWithdraw(account: Address, from: Address, to: Address, amoun
     functionName: "withdraw",
     args: [to, amount],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
@@ -142,68 +143,68 @@ export interface CreateVaultInput {
 
 export function sendCreateVault(from: Address, input: CreateVaultInput): Promise<Hex> {
   return walletClient().writeContract({
-    address: FUJI_DEPLOYMENT.factory,
+    address: DEPLOYMENT.factory,
     abi: verglasFactoryAbi,
     functionName: "createVault",
-    args: [input.agent, FUJI_DEPLOYMENT.usdc, input.perTxLimit, input.totalBudget, input.whitelist],
+    args: [input.agent, DEPLOYMENT.usdc, input.perTxLimit, input.totalBudget, input.whitelist],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
 /** Workshop tap: 2 test-USDC into the connected wallet, once per 24h. */
 export function sendClaimUsdc(from: Address): Promise<Hex> {
   return walletClient().writeContract({
-    address: FUJI_DEPLOYMENT.dispenser,
+    address: DEPLOYMENT.dispenser!,
     abi: verglasDispenserAbi,
     functionName: "claim",
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
 /** Stamp-line activation, tx 1/3: mint a fresh ERC-8004 agentId (ERC-721). */
 export function sendRegisterIdentity(from: Address): Promise<Hex> {
   return walletClient().writeContract({
-    address: IDENTITY_REGISTRY_ADDRESS,
+    address: DEPLOYMENT.identityRegistry,
     abi: identityRegistryAbi,
     functionName: "register",
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
 /** Stamp-line activation, tx 2/3: link the identity to the vault on the Hub. */
 export function sendBindAccount(from: Address, agentId: bigint, account: Address): Promise<Hex> {
   return walletClient().writeContract({
-    address: FUJI_DEPLOYMENT.hub,
+    address: DEPLOYMENT.hub,
     abi: verglasHubAbi,
     functionName: "bindAccount",
     args: [agentId, account],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
 /** Stamp-line activation, tx 3/3: open the validation window the keeper will prove. */
 export function sendValidationRequest(from: Address, agentId: bigint, requestHash: Hex): Promise<Hex> {
   return walletClient().writeContract({
-    address: FUJI_DEPLOYMENT.validationRegistry,
+    address: DEPLOYMENT.validationRegistry,
     abi: validationRegistryAbi,
     functionName: "validationRequest",
-    args: [FUJI_DEPLOYMENT.hub, agentId, "verglas:policy-compliance:window", requestHash],
+    args: [DEPLOYMENT.hub, agentId, "verglas:policy-compliance:window", requestHash],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }
 
 export function sendUsdc(from: Address, to: Address, amount: bigint): Promise<Hex> {
   return walletClient().writeContract({
-    address: FUJI_DEPLOYMENT.usdc,
+    address: DEPLOYMENT.usdc,
     abi: erc20Abi,
     functionName: "transfer",
     args: [to, amount],
     account: from,
-    chain: fujiC,
+    chain: CHAIN,
   });
 }

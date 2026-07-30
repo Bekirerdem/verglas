@@ -1,11 +1,17 @@
 export {
   fujiC,
+  avalancheC,
   dispatch,
   BLOCKCHAIN_IDS,
   TELEPORTER_ADDRESS,
   IDENTITY_REGISTRY_ADDRESS,
   FUJI_DEPLOYMENT,
   TREASURER_DEPLOYMENT,
+  NETWORKS,
+  DEFAULT_NETWORK,
+  networkOf,
+  type VerglasNetwork,
+  type VerglasDeployment,
 } from "./chains.js";
 export {
   verglasFactoryAbi,

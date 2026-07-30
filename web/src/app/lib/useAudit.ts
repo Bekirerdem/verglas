@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { concat, keccak256, toHex, type Address, type Hex } from "viem";
-import { FUJI_DEPLOYMENT, verglasHubAbi } from "@verglas/sdk";
+import { verglasHubAbi } from "@verglas/sdk";
+import { DEPLOYMENT } from "../../lib/network";
 import { agentHintKey, hubChain, type VaultView } from "../../lib/data";
 import { activateStampLine } from "./activate";
 import { sendBindAccount, sendValidationRequest } from "./wallet";
@@ -39,7 +40,7 @@ export function useAudit(
     // restore the link first (one extra owner signature) or the keeper would
     // see "no bound account" and never stamp.
     const bound = await hubChain
-      .readContract({ address: FUJI_DEPLOYMENT.hub, abi: verglasHubAbi, functionName: "accountOf", args: [agentId] })
+      .readContract({ address: DEPLOYMENT.hub, abi: verglasHubAbi, functionName: "accountOf", args: [agentId] })
       .catch(() => null);
     if (bound !== null && bound.toLowerCase() !== view.account.toLowerCase()) {
       const ok = await run("renew", () => sendBindAccount(wallet, agentId, view.account));

@@ -18,8 +18,7 @@ import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import {
   BLOCKCHAIN_IDS,
   dispatch,
-  FUJI_DEPLOYMENT,
-  fujiC,
+  networkOf,
   validationRegistryAbi,
   verglasAccountAbi,
   verglasGateAbi,
@@ -28,7 +27,14 @@ import {
 import { proveWindow, type Spend } from "@verglas/sdk/prove";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-export const D = FUJI_DEPLOYMENT;
+/** The keeper serves one network per process: VERGLAS_NETWORK=avalanche|fuji
+ *  (default fuji). Everything below reads addresses from that deployment. */
+export const NET = networkOf(process.env.VERGLAS_NETWORK ?? "fuji");
+if (!NET.deployment) throw new Error(`${NET.label} has no Verglas deployment yet`);
+export const D = {
+  ...NET.deployment,
+  gateOnDispatch: NET.deployment.gate?.address ?? "0x0000000000000000000000000000000000000000",
+} as const;
 const CHUNK = 2000n;
 
 /** Explicit gas and fees for every keeper write: Fuji's RPC intermittently
@@ -53,10 +59,10 @@ export function envKey(): `0x${string}` {
 }
 
 export function clients() {
-  const pub = createPublicClient({ chain: fujiC, transport: http() });
+  const pub = createPublicClient({ chain: NET.chain, transport: http() });
   const gatePub = createPublicClient({ chain: dispatch, transport: http() });
   const signer: PrivateKeyAccount = privateKeyToAccount(envKey());
-  const wallet = createWalletClient({ chain: fujiC, transport: http(), account: signer });
+  const wallet = createWalletClient({ chain: NET.chain, transport: http(), account: signer });
   return { pub, gatePub, wallet, signer };
 }
 
@@ -186,7 +192,7 @@ export async function stampAgent(
       "verglas:policy-compliance",
       responseHash,
     ],
-    chain: fujiC,
+    chain: NET.chain,
     account: wallet.account!,
     gas: SUBMIT_GAS,
     ...TX_FEES,
@@ -201,7 +207,7 @@ export async function stampAgent(
       abi: verglasHubAbi,
       functionName: "carryAttestation",
       args: [agentId, BLOCKCHAIN_IDS.dispatch, D.gateOnDispatch],
-      chain: fujiC,
+      chain: NET.chain,
       account: wallet.account!,
       gas: CARRY_GAS,
       ...TX_FEES,

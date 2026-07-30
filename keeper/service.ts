@@ -12,8 +12,8 @@
 //
 // Usage: npx tsx service.ts [--once] [--no-carry] [--tick <seconds>]
 import { createPublicClient, http } from "viem";
-import { TREASURER_DEPLOYMENT, fujiC, pythAbi, verglasTreasurerAbi } from "@verglas/sdk";
-import { clients, discoverAgents, stampAgent, validityOf } from "./lib.js";
+import { pythAbi, verglasTreasurerAbi } from "@verglas/sdk";
+import { NET, clients, discoverAgents, stampAgent, validityOf } from "./lib.js";
 
 const ONCE = process.argv.includes("--once");
 const CARRY = !process.argv.includes("--no-carry");
@@ -21,11 +21,12 @@ const tickArg = process.argv.indexOf("--tick");
 const TICK_S = tickArg >= 0 ? Number(process.argv[tickArg + 1]) : 300;
 const EXPIRY_WARN_S = 24 * 3600;
 
-const T = TREASURER_DEPLOYMENT;
+const T = NET.deployment!.treasurer;
 const stamp = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 const log = (msg: string) => console.log(`[${stamp()}] ${msg}`);
 
 async function observeTreasurer(pub: ReturnType<typeof createPublicClient>) {
+  if (!T) return; // no treasurer vertical on this network
   try {
     const [policy, spentToday, paused, price] = await Promise.all([
       pub.readContract({ address: T.treasurer, abi: verglasTreasurerAbi, functionName: "policy" }),

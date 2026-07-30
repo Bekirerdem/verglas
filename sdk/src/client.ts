@@ -7,7 +7,7 @@ import {
   type PublicClient,
   type WalletClient,
 } from "viem";
-import { BLOCKCHAIN_IDS, dispatch, FUJI_DEPLOYMENT, fujiC } from "./chains.js";
+import { BLOCKCHAIN_IDS, dispatch, FUJI_DEPLOYMENT, fujiC, type VerglasNetwork } from "./chains.js";
 import { validationRegistryAbi, verglasAccountAbi, verglasGateAbi, verglasHubAbi } from "./abi.js";
 
 export interface VerglasAddresses {
@@ -94,6 +94,31 @@ export class VerglasClient {
         validationRegistry: FUJI_DEPLOYMENT.validationRegistry,
         account: FUJI_DEPLOYMENT.account,
         gate: FUJI_DEPLOYMENT.gateOnDispatch,
+      },
+      walletClient: opts?.walletClient,
+    });
+  }
+
+  /** A client for any network in the SDK registry. Mainnet has no second-chain
+      gate yet, so `gateChain` is only wired when the deployment declares one. */
+  static forNetwork(network: VerglasNetwork, opts?: { walletClient?: WalletClient }): VerglasClient {
+    if (network.key === "fuji") return VerglasClient.fuji(opts);
+    const d = network.deployment;
+    if (!d) throw new Error(`${network.label} has no Verglas deployment yet`);
+    return new VerglasClient({
+      hubChain: createPublicClient({
+        chain: network.chain,
+        transport: fallback([
+          http(undefined, { retryCount: 1, timeout: 4_000 }),
+          http("https://avalanche-c-chain-rpc.publicnode.com", { retryCount: 1, timeout: 6_000 }),
+        ]),
+        batch: { multicall: true },
+      }),
+      addresses: {
+        hub: d.hub,
+        validationRegistry: d.validationRegistry,
+        account: d.account ?? d.hub,
+        gate: d.gate?.address ?? "0x0000000000000000000000000000000000000000",
       },
       walletClient: opts?.walletClient,
     });

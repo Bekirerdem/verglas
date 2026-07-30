@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address, Hex } from "viem";
-import { FUJI_DEPLOYMENT, TREASURER_DEPLOYMENT } from "@verglas/sdk";
+import { SHOWCASE_ACCOUNT, SHOWCASE_AGENT_ID, TREASURER } from "../lib/network";
+import { NetworkChip } from "./components/NetworkChip";
 import {
   fetchBalances,
   fetchMyVaults,
@@ -46,9 +47,9 @@ function resolveEntry(selKey: string, myVaults: readonly Address[]): VaultEntry 
     if (myVaults.includes(account)) return { key: selKey, account, agentId: null };
   }
   if (selKey === "demo") {
-    return { key: "demo", account: FUJI_DEPLOYMENT.account, agentId: FUJI_DEPLOYMENT.agentId };
+    return { key: "demo", account: SHOWCASE_ACCOUNT, agentId: SHOWCASE_AGENT_ID };
   }
-  return { key: "treasurer", account: TREASURER_DEPLOYMENT.account, agentId: TREASURER_DEPLOYMENT.agentId };
+  return { key: "treasurer", account: TREASURER?.account ?? SHOWCASE_ACCOUNT, agentId: TREASURER?.agentId ?? SHOWCASE_AGENT_ID };
 }
 
 const NAV = [
@@ -168,7 +169,7 @@ function Console() {
 
   // side-rail balances for every listed vault
   useEffect(() => {
-    const accounts = [...myVaults, TREASURER_DEPLOYMENT.account, FUJI_DEPLOYMENT.account];
+    const accounts = [...myVaults, ...(TREASURER ? [TREASURER.account] : []), SHOWCASE_ACCOUNT];
     fetchBalances(accounts).then(setBalances, () => {});
   }, [myVaults, view?.fetchedAt]);
 
@@ -225,8 +226,8 @@ function Console() {
   };
 
   const vaultLabel = (account: Address): string => {
-    if (account.toLowerCase() === TREASURER_DEPLOYMENT.account.toLowerCase()) return "Haznedar";
-    if (account.toLowerCase() === FUJI_DEPLOYMENT.account.toLowerCase()) return "Demo Agent";
+    if (TREASURER && account.toLowerCase() === TREASURER.account.toLowerCase()) return "Haznedar";
+    if (account.toLowerCase() === SHOWCASE_ACCOUNT.toLowerCase()) return "Demo Agent";
     const i = myVaults.findIndex((a) => a.toLowerCase() === account.toLowerCase());
     return vaultNames()[account.toLowerCase()] ?? `${t("app_vault_mine")} ${i + 1}`;
   };
@@ -321,13 +322,13 @@ function Console() {
               <span>
                 Haznedar<span className="showcase">{t("b_showcase_lc")}</span>
               </span>
-              <span className="v num">{balanceOf(TREASURER_DEPLOYMENT.account)}</span>
+              <span className="v num">{balanceOf(TREASURER?.account ?? SHOWCASE_ACCOUNT)}</span>
             </button>
             <button className={`bacct${sel.key === "demo" ? " on" : ""}`} onClick={() => setSelKey("demo")}>
               <span>
                 Demo Agent<span className="showcase">{t("b_showcase_lc")}</span>
               </span>
-              <span className="v num">{balanceOf(FUJI_DEPLOYMENT.account)}</span>
+              <span className="v num">{balanceOf(SHOWCASE_ACCOUNT)}</span>
             </button>
           </div>
           <button className="bside-new" onClick={() => setWizardOpen(true)}>
@@ -411,7 +412,7 @@ function Console() {
                     />
                   </div>
                 )}
-                <span className="envchip">{t("b_env")}</span>
+                <NetworkChip />
               </div>
 
               {txError && <div className="bnote">⚠ {t("app_tx_failed")}</div>}

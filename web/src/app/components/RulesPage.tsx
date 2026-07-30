@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { isAddress, parseUnits, type Address, type Hex } from "viem";
-import { TREASURER_DEPLOYMENT } from "@verglas/sdk";
+import { TREASURER } from "../../lib/network";
 import type { TreasurerData, VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
 import { short, usd } from "../../lib/format";
@@ -57,13 +57,13 @@ export function RulesPage({ view, treasurer, wallet, isOwner, busy, run, onFroze
   }
   const savePolicy = async () => {
     if (!parsed || !isOwner || busy) return;
-    const ok = await run("policy", () => sendSetPolicy(TREASURER_DEPLOYMENT.treasurer, wallet!, parsed!));
+    const ok = await run("policy", () => sendSetPolicy(TREASURER!.treasurer, wallet!, parsed!));
     if (ok) setEditing(false);
   };
   const rotate = async () => {
     if (!isOwner || busy || !isAddress(rotAddr)) return;
     const ok = await run("rotate", () =>
-      sendSetOperator(TREASURER_DEPLOYMENT.treasurer, wallet!, rotAddr as Address),
+      sendSetOperator(TREASURER!.treasurer, wallet!, rotAddr as Address),
     );
     if (ok) setRotAddr("");
   };
@@ -142,7 +142,7 @@ export function RulesPage({ view, treasurer, wallet, isOwner, busy, run, onFroze
                   onClick={() =>
                     run(treasurer.paused ? "unpause" : "pause", () =>
                       sendTreasurerAction(
-                        TREASURER_DEPLOYMENT.treasurer,
+                        TREASURER!.treasurer,
                         wallet!,
                         treasurer.paused ? "unpause" : "pause",
                       ),
