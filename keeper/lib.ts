@@ -16,15 +16,16 @@ import {
 } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import {
-  BLOCKCHAIN_IDS,
   dispatch,
   networkOf,
+  pythAbi,
   validationRegistryAbi,
   verglasAccountAbi,
   verglasGateAbi,
   verglasHubAbi,
 } from "@verglas/sdk";
 import { proveWindow, type Spend } from "@verglas/sdk/prove";
+import { buildOracleUpdate, fetchUsdTryIndependent } from "@verglas/sdk/fx";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 /** The keeper serves one network per process: VERGLAS_NETWORK=avalanche|fuji
@@ -43,6 +44,7 @@ const CHUNK = 2000n;
 const TX_FEES = { maxFeePerGas: 30_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n } as const;
 const SUBMIT_GAS = 900_000n; // Groth16 verify ~290k + bindings + registry write
 const CARRY_GAS = 400_000n; // Teleporter send measured ~160k live
+const PUSH_GAS = 150_000n; // oracle price push measured ~80k live
 
 const spendEvent = parseAbiItem(
   "event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment)",
@@ -201,30 +203,85 @@ export async function stampAgent(
   if (rc.status !== "success") throw new Error(`submitProof reverted: ${submitHash}`);
   log(`agent #${agentId}: STAMPED score 100 (${submitHash})`);
 
-  if (opts.carry) {
-    const carryHash = await wallet.writeContract({
-      address: D.hub,
-      abi: verglasHubAbi,
-      functionName: "carryAttestation",
-      args: [agentId, BLOCKCHAIN_IDS.dispatch, D.gateOnDispatch],
-      chain: NET.chain,
-      account: wallet.account!,
-      gas: CARRY_GAS,
-      ...TX_FEES,
-    });
-    const rc2 = await pub.waitForTransactionReceipt({ hash: carryHash });
-    if (rc2.status !== "success") throw new Error(`carry reverted: ${carryHash}`);
-    log(`agent #${agentId}: carried to Dispatch (${carryHash})`);
-  }
+  if (opts.carry && D.gate) await carryAttestation(pub, wallet, agentId, log);
   return "stamped";
 }
 
-/** Attestation freshness against the gate's maxAge; null if none. */
+/** Send the agent's current Hub attestation to this network's gate over ICM.
+    Permissionless and owner-free, so the keeper can also use it on its own to
+    refresh a clearance that is about to age out on the far side. */
+export async function carryAttestation(
+  pub: PublicClient,
+  wallet: WalletClient,
+  agentId: bigint,
+  log: (msg: string) => void,
+): Promise<void> {
+  if (!D.gate) throw new Error(`${NET.label} has no gate deployed`);
+  const carryHash = await wallet.writeContract({
+    address: D.hub,
+    abi: verglasHubAbi,
+    functionName: "carryAttestation",
+    args: [agentId, D.gate.blockchainId, D.gate.address],
+    chain: NET.chain,
+    account: wallet.account!,
+    gas: CARRY_GAS,
+    ...TX_FEES,
+  });
+  const rc = await pub.waitForTransactionReceipt({ hash: carryHash });
+  if (rc.status !== "success") throw new Error(`carry reverted: ${carryHash}`);
+  log(`agent #${agentId}: carried to ${D.gate.chainLabel} (${carryHash})`);
+}
+
+/** Push a fresh USD/TRY reading to the network's VerglasOracle shim. Returns
+    the rate pushed, or null when the treasurer vertical isn't deployed here.
+    Pyth's free feed died in July 2026; this is what keeps `payFX` alive. */
+export async function pushFxPrice(
+  pub: PublicClient,
+  wallet: WalletClient,
+  log: (msg: string) => void,
+): Promise<number | null> {
+  const t = NET.deployment!.treasurer;
+  if (!t) return null;
+
+  const reading = await fetchUsdTryIndependent();
+  const update = await buildOracleUpdate({
+    privateKey: envKey(),
+    oracle: t.pyth,
+    chainId: NET.chain.id,
+    priceId: t.usdTryPriceId,
+    rate: reading.rate,
+    conf: reading.conf,
+  });
+  const hash = await wallet.writeContract({
+    address: t.pyth,
+    abi: pythAbi,
+    functionName: "updatePriceFeeds",
+    args: [[update]],
+    chain: NET.chain,
+    account: wallet.account!,
+    gas: PUSH_GAS,
+    ...TX_FEES,
+  });
+  const rc = await pub.waitForTransactionReceipt({ hash });
+  if (rc.status !== "success") throw new Error(`oracle push reverted: ${hash}`);
+  log(
+    `oracle: USD/TRY ${reading.rate.toFixed(4)} pushed (${reading.sources.map((s) => s.name).join(" + ")})`,
+  );
+  return reading.rate;
+}
+
+/** The gate's configured window, used when the gate chain cannot be reached —
+    an L1 in maintenance must not stop the keeper from reporting Hub-side
+    freshness. Matches every Gate we deploy. */
+const FALLBACK_MAX_AGE = 7n * 24n * 3600n;
+
+/** Attestation freshness against the gate's maxAge; null if none. `gateSeen`
+    is false when the gate chain was unreachable and the fallback was assumed. */
 export async function validityOf(
   pub: PublicClient,
   gatePub: PublicClient,
   agentId: bigint,
-): Promise<{ issuedAt: bigint; expiresAt: bigint; secondsLeft: number } | null> {
+): Promise<{ issuedAt: bigint; expiresAt: bigint; secondsLeft: number; gateSeen: boolean } | null> {
   const att = await pub.readContract({
     address: D.hub,
     abi: verglasHubAbi,
@@ -232,12 +289,18 @@ export async function validityOf(
     args: [agentId],
   });
   if (att[4] === 0n) return null;
-  const maxAge = await gatePub.readContract({
-    address: D.gateOnDispatch,
-    abi: verglasGateAbi,
-    functionName: "maxAge",
-  });
+  let gateSeen = true;
+  let maxAge = FALLBACK_MAX_AGE;
+  if (D.gate) {
+    try {
+      maxAge = BigInt(
+        await gatePub.readContract({ address: D.gate.address, abi: verglasGateAbi, functionName: "maxAge" }),
+      );
+    } catch {
+      gateSeen = false; // gate chain down — assume our standard window
+    }
+  }
   const issuedAt = att[4];
-  const expiresAt = issuedAt + BigInt(maxAge);
-  return { issuedAt, expiresAt, secondsLeft: Number(expiresAt) - Math.floor(Date.now() / 1000) };
+  const expiresAt = issuedAt + maxAge;
+  return { issuedAt, expiresAt, secondsLeft: Number(expiresAt) - Math.floor(Date.now() / 1000), gateSeen };
 }

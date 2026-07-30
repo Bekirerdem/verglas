@@ -10,7 +10,7 @@
 import { createPublicClient, createWalletClient, http, parseAbi } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { avalancheFuji } from "viem/chains";
-import { buildOracleUpdate, fetchUsdTryIndependent } from "./fx.ts";
+import { buildOracleUpdate, fetchUsdTryIndependent } from "@verglas/sdk/fx";
 import { fetchUsdTryFromHermes, USD_TRY_FEED_ID } from "./pyth.ts";
 
 const oracleAbi = parseAbi([

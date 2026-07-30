@@ -16,7 +16,7 @@ import { createPublicClient, createWalletClient, http, parseAbi, formatUnits } f
 import { privateKeyToAccount } from "viem/accounts";
 import { avalancheFuji } from "viem/chains";
 import { decideConversion } from "./strategy.ts";
-import { buildOracleUpdate, fetchUsdTryIndependent } from "./fx.ts";
+import { buildOracleUpdate, fetchUsdTryIndependent } from "@verglas/sdk/fx";
 import { USD_TRY_FEED_ID } from "./pyth.ts";
 import { fetchUsdTry, ratesOf } from "./backtest/fetchRates.ts";
 

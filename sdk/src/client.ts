@@ -33,8 +33,9 @@ export interface AccountState {
 }
 
 export interface Attestation {
-  /** The vault this attestation was proven for — an identity can be rebound. */
-  account: Address;
+  /** The vault this attestation was proven for — populated once the Hub that
+   *  carries it in the attestation is deployed (see abi.ts note). */
+  account?: Address;
   requestHash: Hex;
   finalCommitment: bigint;
   txCount: bigint;
@@ -155,14 +156,14 @@ export class VerglasClient {
 
   /** Latest Hub attestation for an agent, or null if none was ever issued. */
   async getAttestation(agentId: bigint): Promise<Attestation | null> {
-    const [account, requestHash, finalCommitment, txCount, score, issuedAt] = await this.hubChain.readContract({
+    const [requestHash, finalCommitment, txCount, score, issuedAt] = await this.hubChain.readContract({
       address: this.addresses.hub,
       abi: verglasHubAbi,
       functionName: "latestAttestation",
       args: [agentId],
     });
     if (issuedAt === 0n) return null;
-    return { account, requestHash, finalCommitment, txCount, score, issuedAt };
+    return { requestHash, finalCommitment, txCount, score, issuedAt };
   }
 
   async getValidationStatus(requestHash: Hex) {

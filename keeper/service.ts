@@ -1,31 +1,64 @@
 // Verglas keeper service — the always-on heartbeat.
 //
 // Every tick it:
-//   1. discovers every agent ever bound to the Hub (AccountBound events),
-//   2. stamps any agent with an open validation window and ≥1 new spend
-//      (prove → submitProof → ICM carry),
-//   3. reports attestation freshness and warns when one is about to expire
-//      (a fresh stamp needs a new owner-signed window + at least one spend —
-//      the keeper cannot forge either, by design),
-//   4. observes the treasurer's FX breaker state (payment automation stays
-//      in the agent package; the service only reports here).
+//   1. refreshes the FX price on the VerglasOracle shim — the treasurer's
+//      circuit breaker rejects a stale price, so this is what keeps payFX
+//      alive now that Pyth's free feed is gone,
+//   2. discovers every agent ever bound to the Hub (AccountBound events),
+//   3. stamps any agent with an open validation window and >=1 new spend
+//      (prove -> submitProof -> ICM carry),
+//   4. re-carries an attestation whose gate clearance is about to lapse: the
+//      Hub's proof is still valid, only the far-side copy ages out, and
+//      carrying needs no owner signature,
+//   5. reports freshness and says plainly when only the owner can act (a new
+//      stamp needs an owner-signed window plus at least one spend — the
+//      keeper can forge neither, by design),
+//   6. observes the treasurer's FX breaker state.
 //
-// Usage: npx tsx service.ts [--once] [--no-carry] [--tick <seconds>]
-import { createPublicClient, http } from "viem";
+// Usage: npx tsx service.ts [--once] [--no-carry] [--no-oracle] [--tick <seconds>]
+// Env:   VERGLAS_NETWORK=fuji|avalanche (default fuji)
+import { createPublicClient } from "viem";
 import { pythAbi, verglasTreasurerAbi } from "@verglas/sdk";
-import { NET, clients, discoverAgents, stampAgent, validityOf } from "./lib.js";
+import { NET, carryAttestation, clients, discoverAgents, pushFxPrice, stampAgent, validityOf } from "./lib.js";
 
 const ONCE = process.argv.includes("--once");
 const CARRY = !process.argv.includes("--no-carry");
+const ORACLE = !process.argv.includes("--no-oracle");
 const tickArg = process.argv.indexOf("--tick");
 const TICK_S = tickArg >= 0 ? Number(process.argv[tickArg + 1]) : 300;
+
+/** Warn this far before a stamp expires — renewing needs the owner. */
 const EXPIRY_WARN_S = 24 * 3600;
+/** Re-carry this far before the gate copy lapses (keeper can fix this alone). */
+const RECARRY_S = 12 * 3600;
+/** Skip the push while the stored price is younger than this: ticking faster
+ *  than the feed's own resolution would only burn gas. */
+const PRICE_FRESH_S = 20 * 60;
 
 const T = NET.deployment!.treasurer;
 const stamp = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 const log = (msg: string) => console.log(`[${stamp()}] ${msg}`);
+const short = (e: unknown) => (e instanceof Error ? e.message.split("\n")[0].slice(0, 140) : String(e));
 
-async function observeTreasurer(pub: ReturnType<typeof createPublicClient>) {
+type Pub = ReturnType<typeof createPublicClient>;
+
+/** Age of the price currently on the shim, in seconds (Infinity if never pushed). */
+async function storedPriceAge(pub: Pub): Promise<number> {
+  if (!T) return Infinity;
+  try {
+    const price = await pub.readContract({
+      address: T.pyth,
+      abi: pythAbi,
+      functionName: "getPriceUnsafe",
+      args: [T.usdTryPriceId],
+    });
+    return Math.floor(Date.now() / 1000) - Number(price[3]);
+  } catch {
+    return Infinity; // never pushed, or the read failed — attempt a push
+  }
+}
+
+async function observeTreasurer(pub: Pub) {
   if (!T) return; // no treasurer vertical on this network
   try {
     const [policy, spentToday, paused, price] = await Promise.all([
@@ -40,8 +73,7 @@ async function observeTreasurer(pub: ReturnType<typeof createPublicClient>) {
       }),
     ]);
     const ref = policy[2];
-    const expo = price[2];
-    const shift = expo - -8;
+    const shift = price[2] - -8;
     const raw = BigInt(price[0]);
     const live = shift >= 0 ? raw * 10n ** BigInt(shift) : raw / 10n ** BigInt(-shift);
     const diff = live > ref ? live - ref : ref - live;
@@ -52,12 +84,24 @@ async function observeTreasurer(pub: ReturnType<typeof createPublicClient>) {
         `(${devBps.toFixed(1)}bps/${policy[1]}bps) · today ${(Number(spentToday) / 1e6).toFixed(2)}/${(Number(policy[0]) / 1e6).toFixed(2)} USDC`,
     );
   } catch (e) {
-    log(`treasurer observe failed: ${e instanceof Error ? e.message.slice(0, 80) : e}`);
+    log(`treasurer observe failed: ${short(e)}`);
   }
 }
 
 async function tick(): Promise<void> {
   const { pub, gatePub, wallet } = clients();
+
+  if (ORACLE && T) {
+    // A failed push must never stop stamping: the vault's rules are enforced
+    // on-chain whatever the FX feed is doing.
+    try {
+      const age = await storedPriceAge(pub);
+      if (age < PRICE_FRESH_S) log(`oracle: stored price ${Math.round(age / 60)} min old — no push needed`);
+      else await pushFxPrice(pub, wallet, log);
+    } catch (e) {
+      log(`oracle push FAILED: ${short(e)}`);
+    }
+  }
 
   const agents = await discoverAgents(pub);
   log(`tick — ${agents.size} bound agent(s): ${[...agents.keys()].map((a) => `#${a}`).join(", ")}`);
@@ -65,32 +109,43 @@ async function tick(): Promise<void> {
   for (const [agentId] of agents) {
     try {
       const result = await stampAgent(pub, wallet, agentId, { carry: CARRY, log });
-      if (result === "no-request") {
-        const v = await validityOf(pub, gatePub, agentId);
-        if (!v) {
-          log(`agent #${agentId}: no attestation and no open window — owner must open the stamp line`);
-        } else if (v.secondsLeft <= 0) {
-          log(`agent #${agentId}: attestation EXPIRED — owner must reopen a window (+1 spend) to re-stamp`);
-        } else if (v.secondsLeft < EXPIRY_WARN_S) {
-          log(`agent #${agentId}: expires in ${(v.secondsLeft / 3600).toFixed(1)}h — reopen a window soon`);
-        } else {
-          log(`agent #${agentId}: fresh (${(v.secondsLeft / 86400).toFixed(1)}d left)`);
-        }
+      if (result === "stamped") continue;
+
+      const v = await validityOf(pub, gatePub, agentId);
+      if (!v) {
+        log(`agent #${agentId}: no attestation and no open window — owner must open the stamp line`);
+      } else if (v.secondsLeft <= 0) {
+        log(`agent #${agentId}: attestation EXPIRED — owner must reopen a window (+1 spend) to re-stamp`);
       } else if (result === "empty-window") {
         log(`agent #${agentId}: window open but no new spends — waiting for payments`);
+      } else if (!v.gateSeen) {
+        log(
+          `agent #${agentId}: Hub stamp fresh (${(v.secondsLeft / 86400).toFixed(1)}d) but the gate chain is ` +
+            `unreachable — clearance unverified, re-carry deferred`,
+        );
+      } else if (CARRY && NET.deployment!.gate && v.secondsLeft < RECARRY_S) {
+        log(`agent #${agentId}: clearance lapses in ${(v.secondsLeft / 3600).toFixed(1)}h — re-carrying`);
+        await carryAttestation(pub, wallet, agentId, log);
+      } else if (v.secondsLeft < EXPIRY_WARN_S) {
+        log(`agent #${agentId}: expires in ${(v.secondsLeft / 3600).toFixed(1)}h — reopen a window soon`);
+      } else {
+        log(`agent #${agentId}: fresh (${(v.secondsLeft / 86400).toFixed(1)}d left)`);
       }
     } catch (e) {
-      log(`agent #${agentId}: ERROR ${e instanceof Error ? e.message.slice(0, 120) : e}`);
+      log(`agent #${agentId}: ERROR ${short(e)}`);
     }
   }
 
-  await observeTreasurer(pub as unknown as ReturnType<typeof createPublicClient>);
+  await observeTreasurer(pub);
 }
 
 async function main() {
-  log(`keeper service starting — tick ${TICK_S}s, carry ${CARRY ? "on" : "off"}${ONCE ? ", single pass" : ""}`);
+  log(
+    `keeper service starting — network ${NET.label}, tick ${TICK_S}s, ` +
+      `carry ${CARRY ? "on" : "off"}, oracle ${ORACLE ? "on" : "off"}${ONCE ? ", single pass" : ""}`,
+  );
   for (;;) {
-    await tick().catch((e) => log(`tick failed: ${e instanceof Error ? e.message.slice(0, 120) : e}`));
+    await tick().catch((e) => log(`tick failed: ${short(e)}`));
     if (ONCE) break;
     await new Promise((r) => setTimeout(r, TICK_S * 1000));
   }
