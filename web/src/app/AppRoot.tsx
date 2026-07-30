@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address, Hex } from "viem";
-import { SHOWCASE_ACCOUNT, SHOWCASE_AGENT_ID, TREASURER } from "../lib/network";
+import { NET, SHOWCASE_ACCOUNT, SHOWCASE_AGENT_ID, TREASURER } from "../lib/network";
 import { NetworkChip } from "./components/NetworkChip";
 import {
   fetchBalances,
@@ -377,12 +377,19 @@ function Console() {
           <div className="bside-foot">
             {wallet && (
               <div className="bside-wallet">
-                <span className={`chip ${isOwner ? "chip-amber" : "chip-dim"}`}>
-                  {t(isOwner ? "app_owner" : "app_viewer")}
-                </span>
+                {/* The role is about the vault on screen; with none open it
+                    would read "viewer" and look like a broken connection. */}
+                {view && (
+                  <span className={`chip ${isOwner ? "chip-amber" : "chip-dim"}`}>
+                    {t(isOwner ? "app_owner" : "app_viewer")}
+                  </span>
+                )}
                 <code>{short(wallet)}</code>
               </div>
             )}
+            <div className="bside-net">
+              <NetworkChip />
+            </div>
             <div className="bside-toggles">
               <button className="btgl" onClick={() => setLang(lang === "en" ? "tr" : "en")}>
                 {lang === "en" ? "TR" : "EN"}
@@ -406,7 +413,7 @@ function Console() {
               </a>
             </div>
             <div className="bside-note">
-              {iosHint ? t("app_ios_hint") : <>Fuji · Avalanche<br />{t("b_chain_note")}</>}
+              {iosHint ? t("app_ios_hint") : <>{NET.label} · {t(NET.kind === "mainnet" ? "b_env_main" : "b_env")}<br />{t("b_chain_note")}</>}
             </div>
           </div>
         </aside>
@@ -454,7 +461,6 @@ function Console() {
                     />
                   </div>
                 )}
-                <NetworkChip />
               </div>
 
               {txError && <div className="bnote">⚠ {t("app_tx_failed")}</div>}
