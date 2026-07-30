@@ -26,8 +26,6 @@ interface-compatible with ERC-8004.
 
 ## Fuji testnet (43113)
 
-## Fuji C-Chain (43113)
-
 | Contract | Address |
 | --- | --- |
 | VerglasHub | `0x17C273c8edEd16C5e9f7a7525f74AcE15bb5d81E` |
