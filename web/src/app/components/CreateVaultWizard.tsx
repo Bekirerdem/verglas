@@ -5,6 +5,7 @@ import { useI18n } from "../../lib/i18n";
 import { short } from "../../lib/format";
 import { sendCreateVault, sendUsdc } from "../lib/wallet";
 import { activateStampLine, setVaultName } from "../lib/activate";
+import { contacts, setContactName } from "../lib/contacts";
 
 const FAUCET = "https://faucet.circle.com/";
 
@@ -28,7 +29,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
   const [agent, setAgent] = useState<string>(wallet ?? "");
   const [perTx, setPerTx] = useState("5");
   const [budget, setBudget] = useState("20");
-  const [wl, setWl] = useState("");
+  const [rows, setRows] = useState<{ name: string; addr: string }[]>([{ name: "", addr: "" }]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [created, setCreated] = useState<Address | null>(null);
@@ -37,11 +38,27 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
   const [actStep, setActStep] = useState<0 | 1 | 2 | 3>(0);
   const [actAgentId, setActAgentId] = useState<bigint | null>(null);
 
-  const whitelist = wl
-    .split(/[\s,;]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const setRow = (i: number, field: "name" | "addr", v: string) =>
+    setRows((r) => r.map((row, j) => (j === i ? { ...row, [field]: v } : row)));
+  const addRow = () => setRows((r) => (r.length < 8 ? [...r, { name: "", addr: "" }] : r));
+  const delRow = (i: number) => setRows((r) => (r.length > 1 ? r.filter((_, j) => j !== i) : r));
+  /** Fill the first empty row with a known contact (or append one). */
+  const pickContact = (addr: string, contactLabel: string) =>
+    setRows((r) => {
+      const i = r.findIndex((row) => row.addr.trim() === "");
+      const row = { name: contactLabel, addr };
+      if (i >= 0) return r.map((x, j) => (j === i ? row : x));
+      return r.length < 8 ? [...r, row] : r;
+    });
+
+  const filled = rows.map((r) => ({ name: r.name.trim(), addr: r.addr.trim() })).filter((r) => r.addr !== "");
+  const whitelist = filled.map((r) => r.addr);
   const wlValid = whitelist.length >= 1 && whitelist.length <= 8 && whitelist.every((a) => isAddress(a));
+
+  const inRows = new Set(rows.map((r) => r.addr.trim().toLowerCase()));
+  const suggestions = Object.entries(contacts())
+    .filter(([addr]) => !inRows.has(addr))
+    .slice(0, 6);
 
   let amounts: { perTxLimit: bigint; totalBudget: bigint } | null = null;
   try {
@@ -67,6 +84,11 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
       const vaults = await fetchMyVaults(wallet!);
       const account = vaults[vaults.length - 1] ?? null;
       if (account && name.trim()) setVaultName(account, name.trim());
+      // Named recipients go straight into the address book, so payments,
+      // the feed and the rules page all show people instead of hashes.
+      for (const r of filled) {
+        if (r.name) setContactName(r.addr, r.name);
+      }
       setCreated(account);
     } catch {
       setError(true);
@@ -154,10 +176,49 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
                 <input value={budget} onChange={(e) => setBudget(e.target.value)} inputMode="decimal" />
               </label>
             </div>
-            <label>
-              {t("w_wl")}
-              <textarea value={wl} onChange={(e) => setWl(e.target.value)} rows={3} spellCheck={false} />
-            </label>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 550, color: "var(--ink2)" }}>{t("w_wl")}</span>
+              {rows.map((row, i) => (
+                <div key={i} style={{ display: "flex", gap: 6 }}>
+                  <input
+                    style={{ flex: 1, minWidth: 0 }}
+                    placeholder={t("w_wl_name")}
+                    value={row.name}
+                    maxLength={24}
+                    onChange={(e) => setRow(i, "name", e.target.value)}
+                  />
+                  <input
+                    style={{ flex: 2, minWidth: 0 }}
+                    placeholder={t("w_wl_addr")}
+                    value={row.addr}
+                    spellCheck={false}
+                    onChange={(e) => setRow(i, "addr", e.target.value)}
+                  />
+                  {rows.length > 1 && (
+                    <button className="btn-ghost" onClick={() => delRow(i)}>
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              {rows.length < 8 && (
+                <button className="btn-ghost" style={{ alignSelf: "flex-start" }} onClick={addRow}>
+                  {t("w_wl_add")}
+                </button>
+              )}
+              {suggestions.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                  <span className="wiz-hint" style={{ margin: 0 }}>
+                    {t("w_wl_pick")}
+                  </span>
+                  {suggestions.map(([addr, label]) => (
+                    <button key={addr} className="btn-ghost" onClick={() => pickContact(addr, label)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {error && <span className="wiz-err">{t("w_error")}</span>}
             <div className="rail-actions">
               <button className="btn-primary" disabled={!valid || busy !== null} onClick={create}>
