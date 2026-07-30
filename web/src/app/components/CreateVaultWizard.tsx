@@ -6,7 +6,9 @@ import { short } from "../../lib/format";
 import { sendCreateVault, sendUsdc } from "../lib/wallet";
 import { activateStampLine, setVaultName } from "../lib/activate";
 import { contacts, setContactName } from "../lib/contacts";
+import { NET } from "../../lib/network";
 
+/** Testnet only — Circle's faucet hands out test USDC. */
 const FAUCET = "https://faucet.circle.com/";
 
 const PRESETS = [
@@ -254,9 +256,11 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
                 <button className="btn-ghost" disabled={busy !== null} onClick={fund}>
                   {busy === "fund" ? t("app_pending") : fundedTx ? "✓ " + t("w_send") : t("w_send")}
                 </button>
-                <a className="btn-ghost" href={FAUCET} target="_blank" rel="noreferrer">
-                  {t("w_faucet")}
-                </a>
+                {NET.kind === "testnet" && (
+                  <a className="btn-ghost" href={FAUCET} target="_blank" rel="noreferrer">
+                    {t("w_faucet")}
+                  </a>
+                )}
               </div>
             </div>
 
