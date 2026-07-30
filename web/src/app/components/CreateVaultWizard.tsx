@@ -178,29 +178,33 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={{ fontSize: 11.5, fontWeight: 550, color: "var(--ink2)" }}>{t("w_wl")}</span>
-              {rows.map((row, i) => (
-                <div key={i} style={{ display: "flex", gap: 6 }}>
-                  <input
-                    style={{ flex: 1, minWidth: 0 }}
-                    placeholder={t("w_wl_name")}
-                    value={row.name}
-                    maxLength={24}
-                    onChange={(e) => setRow(i, "name", e.target.value)}
-                  />
-                  <input
-                    style={{ flex: 2, minWidth: 0 }}
-                    placeholder={t("w_wl_addr")}
-                    value={row.addr}
-                    spellCheck={false}
-                    onChange={(e) => setRow(i, "addr", e.target.value)}
-                  />
-                  {rows.length > 1 && (
-                    <button className="btn-ghost" onClick={() => delRow(i)}>
-                      ✕
-                    </button>
-                  )}
-                </div>
-              ))}
+              {rows.map((row, i) => {
+                const bad = row.addr.trim() !== "" && !isAddress(row.addr.trim());
+                return (
+                  <div key={i} style={{ display: "flex", gap: 6 }}>
+                    <input
+                      style={{ flex: 1, minWidth: 0 }}
+                      placeholder={t("w_wl_name")}
+                      value={row.name}
+                      maxLength={24}
+                      onChange={(e) => setRow(i, "name", e.target.value)}
+                    />
+                    <input
+                      style={{ flex: 2, minWidth: 0, ...(bad ? { outline: "2px solid var(--crimson)", outlineOffset: 1 } : {}) }}
+                      placeholder={t("w_wl_addr")}
+                      value={row.addr}
+                      spellCheck={false}
+                      onChange={(e) => setRow(i, "addr", e.target.value)}
+                    />
+                    {rows.length > 1 && (
+                      <button className="btn-ghost" onClick={() => delRow(i)}>
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+              {whitelist.length > 0 && !wlValid && <span className="wiz-err">{t("w_wl_invalid")}</span>}
               {rows.length < 8 && (
                 <button className="btn-ghost" style={{ alignSelf: "flex-start" }} onClick={addRow}>
                   {t("w_wl_add")}
