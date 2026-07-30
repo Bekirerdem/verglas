@@ -8,6 +8,18 @@ import { activateStampLine, setVaultName } from "../lib/activate";
 import { contacts, setContactName } from "../lib/contacts";
 import { NET } from "../../lib/network";
 
+/** A wallet error is only actionable if the user can read WHY. viem stacks are
+    long, so surface the line that carries the actual cause. */
+function reason(e: unknown): string {
+  if (!(e instanceof Error)) return String(e).slice(0, 160);
+  const lines = e.message
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const detail = lines.find((l) => /details:|reason:|reverted|rejected|denied|insufficient|chain/i.test(l));
+  return (detail ?? lines[0] ?? e.message).slice(0, 200);
+}
+
 /** Testnet only — Circle's faucet hands out test USDC. */
 const FAUCET = "https://faucet.circle.com/";
 
@@ -33,7 +45,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
   const [budget, setBudget] = useState("20");
   const [rows, setRows] = useState<{ name: string; addr: string }[]>([{ name: "", addr: "" }]);
   const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<Address | null>(null);
   const [fundAmt, setFundAmt] = useState("2");
   const [fundedTx, setFundedTx] = useState(false);
@@ -75,7 +87,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
   const create = async () => {
     if (!valid || busy) return;
     setBusy("create");
-    setError(false);
+    setError(null);
     try {
       const hash = await sendCreateVault(wallet!, {
         agent: agent as Address,
@@ -92,8 +104,8 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
         if (r.name) setContactName(r.addr, r.name);
       }
       setCreated(account);
-    } catch {
-      setError(true);
+    } catch (e) {
+      setError(reason(e));
     }
     setBusy(null);
   };
@@ -101,13 +113,13 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
   const fund = async () => {
     if (!created || !wallet || busy) return;
     setBusy("fund");
-    setError(false);
+    setError(null);
     try {
       const hash = await sendUsdc(wallet, created, parseUnits(fundAmt, 6));
       await hubChain.waitForTransactionReceipt({ hash });
       setFundedTx(true);
-    } catch {
-      setError(true);
+    } catch (e) {
+      setError(reason(e));
     }
     setBusy(null);
   };
@@ -115,12 +127,12 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
   const activate = async () => {
     if (!created || !wallet || busy || actStep !== 0) return;
     setBusy("activate");
-    setError(false);
+    setError(null);
     try {
       const agentId = await activateStampLine(wallet, created, setActStep);
       setActAgentId(agentId);
-    } catch {
-      setError(true);
+    } catch (e) {
+      setError(reason(e));
     }
     setActStep(0);
     setBusy(null);
@@ -225,7 +237,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
                 </div>
               )}
             </div>
-            {error && <span className="wiz-err">{t("w_error")}</span>}
+            {error && <span className="wiz-err">{t("w_error")}<br />{error}</span>}
             <div className="rail-actions">
               <button className="btn-primary" disabled={!valid || busy !== null} onClick={create}>
                 {busy === "create" ? t("app_pending") : t("w_deploy")}
@@ -278,7 +290,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
               </button>
             )}
 
-            {error && <span className="wiz-err">{t("w_error")}</span>}
+            {error && <span className="wiz-err">{t("w_error")}<br />{error}</span>}
             <button className="btn-primary" onClick={() => onCreated(created)}>
               {t("w_close")}
             </button>
