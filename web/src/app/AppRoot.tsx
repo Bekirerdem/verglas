@@ -252,9 +252,14 @@ function Console() {
   const vaultLabel = (account: Address): string => {
     if (TREASURER && account.toLowerCase() === TREASURER.account.toLowerCase()) return "Haznedar";
     if (account === ZERO) return "—";
-    if (hasShowcase && account.toLowerCase() === SHOWCASE_ACCOUNT.toLowerCase()) return "Demo Agent";
     const i = myVaults.findIndex((a) => a.toLowerCase() === account.toLowerCase());
-    return vaultNames()[account.toLowerCase()] ?? `${t("app_vault_mine")} ${i + 1}`;
+    const named = vaultNames()[account.toLowerCase()];
+    // The showcase stand-in name is for visitors only — the owner of the
+    // showcase vault sees it as their own (mainnet's showcase IS an owned vault).
+    if (i < 0 && !named && hasShowcase && account.toLowerCase() === SHOWCASE_ACCOUNT.toLowerCase()) {
+      return "Demo Agent";
+    }
+    return named ?? `${t("app_vault_mine")} ${i + 1}`;
   };
   // Labels follow the vault that is actually ON SCREEN (the fetched view),
   // so a switch never shows the new name over the old vault's numbers.
@@ -351,10 +356,11 @@ function Console() {
                 <span className="v num">{balanceOf(TREASURER.account)}</span>
               </button>
             )}
-            {hasShowcase && (
+            {hasShowcase && !myVaults.some((a) => a.toLowerCase() === SHOWCASE_ACCOUNT.toLowerCase()) && (
               <button className={`bacct${sel.key === "demo" ? " on" : ""}`} onClick={() => setSelKey("demo")}>
                 <span>
-                  Demo Agent<span className="showcase">{t("b_showcase_lc")}</span>
+                  {vaultLabel(SHOWCASE_ACCOUNT)}
+                  <span className="showcase">{t("b_showcase_lc")}</span>
                 </span>
                 <span className="v num">{balanceOf(SHOWCASE_ACCOUNT)}</span>
               </button>
