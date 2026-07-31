@@ -40,11 +40,7 @@ export const verglasHubAbi = parseAbi([
   "function carryAttestation(uint256 agentId, bytes32 destinationBlockchainID, address gate) returns (bytes32)",
   "function bindAccount(uint256 agentId, address account)",
   "function accountOf(uint256 agentId) view returns (address)",
-  // NOTE: the deployed Hub returns 5 fields. src/VerglasHub.sol already adds
-  // `account` as the first field; flip this line (and attestationOf /
-  // AttestationReceived below) in the same commit that deploys that Hub —
-  // a mismatch makes every attestation read fail to decode.
-  "function latestAttestation(uint256 agentId) view returns (bytes32 requestHash, uint256 finalCommitment, uint256 txCount, uint8 score, uint64 issuedAt)",
+  "function latestAttestation(uint256 agentId) view returns (address account, bytes32 requestHash, uint256 finalCommitment, uint256 txCount, uint8 score, uint64 issuedAt)",
   "function checkpoints(address account) view returns (uint256 commitment, uint256 txCount)",
   "event AccountBound(uint256 indexed agentId, address indexed account)",
   "event AttestationIssued(uint256 indexed agentId, bytes32 indexed requestHash, uint256 finalCommitment, uint256 txCount)",
@@ -91,11 +87,11 @@ export const pythAbi = parseAbi([
 
 export const verglasGateAbi = parseAbi([
   "function isCleared(uint256 agentId) view returns (bool)",
-  "function attestationOf(uint256 agentId) view returns (bytes32 requestHash, uint256 finalCommitment, uint256 txCount, uint8 score, uint64 issuedAt)",
+  "function attestationOf(uint256 agentId) view returns (address account, bytes32 requestHash, uint256 finalCommitment, uint256 txCount, uint8 score, uint64 issuedAt)",
   "function isClearedFor(uint256 agentId, address account) view returns (bool)",
   "function minScore() view returns (uint8)",
   "function maxAge() view returns (uint64)",
   "function hub() view returns (address)",
   "function hubBlockchainID() view returns (bytes32)",
-  "event AttestationReceived(uint256 indexed agentId, bytes32 indexed requestHash, uint8 score, uint64 issuedAt)",
+  "event AttestationReceived(uint256 indexed agentId, bytes32 indexed requestHash, address indexed account, uint8 score, uint64 issuedAt)",
 ]);

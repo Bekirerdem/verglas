@@ -56,11 +56,51 @@ the refillable-budget factory, so an exhausted budget is a top-up rather than a
 new vault.
 
 Note: the mainnet Hub carries the proven vault inside the attestation (the
-07-30 security fix); Fuji's Hub predates it. The SDK decodes
-`latestAttestation` by return length so one code path serves both.
+07-30 security fix), and since v4 (2026-07-31) Fuji's Hub does too. The SDK
+decodes `latestAttestation` by return length so one code path serves both.
 
 Not yet on mainnet: the treasurer vertical, a showcase vault, and any Gate
 (cross-chain clearance is M3, deployed per L1 operator).
+
+---
+
+# Fuji Testnet Deployment v4 (2026-07-31)
+
+The attestation–vault binding pass goes live on Fuji (it shipped inside the
+mainnet deploy a day earlier): the attestation and the carried packet name
+WHICH vault was proven, rebinding an identity to a different vault deletes
+its attestation, and the Gate answers the strict `isClearedFor(agentId,
+account)` alongside the legacy `isCleared`.
+
+## Fuji C-Chain (43113) — v4
+
+| Contract | Address |
+| --- | --- |
+| VerglasHub (attestation–vault binding) | 0xBDC5eca7253caC347Cf690Ead10dfFda0284A9d5 |
+
+Everything else is unchanged from v3 (oracle shim, treasury vault + treasurer,
+factory) and v2 (verifier, demo vault #219, canonical registries, USDC,
+dispenser).
+
+v4 live run (2026-07-31): **#219** rebound (0x35eeb99b…) and re-attested —
+3-spend window, score 100 (0x7fd95120…); **#220** rebound (0xc5ba3d39…) and
+re-attested — 2-spend window, score 100 (0x5b897a55…). Both attestations now
+carry their vault address on-chain. **#221** (external owner) rebinds through
+the console's "Pencereyi yenile" flow. Deployed with `RedeployHubFuji.s.sol`
+(tx 0x9560cac0…).
+
+## Gate: moved to Echo
+
+Dispatch's public RPC has been dead since 2026-07-30 (blockNumber=0, state
+methods 500; no incident on the Avalanche status page). The live gate moves
+to the **Echo test L1** (chain 173750, blockchain ID
+`0x1278d1be4b987e847be3465940eb5066c4604a7fbd6e086900823597d81af4c1`, read
+from the Warp precompile on 2026-07-31). The old v2 Gate on Dispatch
+(0xa24972871B987cC7feD401Ea8e46F6D85F88a24C) trusts the pre-v4 Hub and is
+retired; if Dispatch returns, a fresh Gate can be deployed there with the
+same script — multiple gates are the point.
+
+*Echo Gate address: pending deploy (needs ECH gas on the deployer).*
 
 ---
 
@@ -101,10 +141,8 @@ re-stamped on the canonical registry — #219 3-spend window (0xb63cf8bc…),
 #220 shim-fed window (0xb61862a6…). Groth16Verifier reused, proof pipeline
 byte-identical.
 
-⚠️ VerglasGate on Dispatch: redeploy pending — the Dispatch public RPC was
-down (blockNumber=0, state methods 500) during the wave. Until the new Gate
-ships, the v2 Gate keeps trusting the OLD Hub, so cross-chain clearance
-reflects v2 attestations only.
+VerglasGate on Dispatch: the redeploy never happened here — Dispatch's RPC
+stayed dead and the gate moved to Echo in v4 (see above).
 
 ---
 

@@ -11,3 +11,4 @@ optimizer_runs = 200
 fuji-c = "https://api.avax-test.network/ext/bc/C/rpc"
 avalanche = "https://api.avax.network/ext/bc/C/rpc"
 dispatch = "https://subnets.avax.network/dispatch/testnet/rpc"
+echo = "https://subnets.avax.network/echo/testnet/rpc"

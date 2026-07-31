@@ -1,4 +1,4 @@
-import { defineChain } from "viem";
+import { defineChain, type Chain } from "viem";
 import { avalanche, avalancheFuji } from "viem/chains";
 
 /** Fuji C-Chain (43113) — where the Verglas Hub lives on testnet. */
@@ -7,7 +7,9 @@ export const fujiC = avalancheFuji;
 /** Avalanche C-Chain (43114) — mainnet. */
 export const avalancheC = avalanche;
 
-/** Dispatch test L1 (779672) — the second chain of the live demo. */
+/** Dispatch test L1 (779672) — the demo's second chain until its public RPC
+ *  died on 2026-07-30 (blockNumber 0, state calls 500). Kept for the day it
+ *  comes back; the live gate moved to Echo. */
 export const dispatch = defineChain({
   id: 779672,
   name: "Dispatch Testnet",
@@ -18,14 +20,26 @@ export const dispatch = defineChain({
   testnet: true,
 });
 
+/** Echo test L1 (173750) — the live second chain of the demo. */
+export const echo = defineChain({
+  id: 173750,
+  name: "Echo Testnet",
+  nativeCurrency: { name: "Echo", symbol: "ECH", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://subnets.avax.network/echo/testnet/rpc"] },
+  },
+  testnet: true,
+});
+
 /**
  * Avalanche blockchain IDs (bytes32) used as ICM source/destination.
- * Read from the Warp precompile (0x02...05 getBlockchainID) on 2026-07-12 —
- * do not trust third-party listings for these.
+ * Read from the Warp precompile (0x02...05 getBlockchainID) on 2026-07-12
+ * (echo: 2026-07-31) — do not trust third-party listings for these.
  */
 export const BLOCKCHAIN_IDS = {
   fujiC: "0x7fc93d85c6d62c5b2ac0b519c87010ea5294012d1e407030d6acd0021cac10d5",
   dispatch: "0x9f3be606497285d0ffbb5ac9ba24aa60346a9b1812479ed66cb329f394a4b1c7",
+  echo: "0x1278d1be4b987e847be3465940eb5066c4604a7fbd6e086900823597d81af4c1",
 } as const;
 
 /** Canonical TeleporterMessenger, same address on every Avalanche EVM chain. */
@@ -58,18 +72,18 @@ export const REPUTATION_REGISTRY_MAINNET = "0x8004BAa17C55a88189AE136b182e5fdA19
 /** Circle's official USDC on Avalanche C-Chain mainnet, 6 decimals. */
 export const USDC_MAINNET = "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E" as const;
 
-/** Live Fuji v3 deployment of 2026-07-30 (see deployments/fuji-testnet.md).
- *  v3 = the redeploy wave: Hub with the bindAccount ownership fix and the
- *  treasurer fed by the VerglasOracle shim instead of Pyth. */
+/** Live Fuji v4 deployment of 2026-07-31 (see deployments/fuji-testnet.md).
+ *  v4 = the attestation–vault binding pass: the packet carries WHICH vault was
+ *  proven and rebinding an identity to a different vault invalidates its
+ *  attestation (v3 was the bindAccount ownership fix + oracle shim). */
 export const FUJI_DEPLOYMENT = {
-  hub: "0x17C273c8edEd16C5e9f7a7525f74AcE15bb5d81E",
+  hub: "0xBDC5eca7253caC347Cf690Ead10dfFda0284A9d5",
   /** The canonical ERC-8004 Validation Registry — not a Verglas deployment. */
   validationRegistry: "0x8004Cb1BF31DAf7788923b405b754f57acEB4272",
   verifier: "0xD8A0b54325B52345E390A4B297bC0629000960DE",
   account: "0x8Ede2dB4a519B260944EE58125d6ecfA33CfaE72",
   /** Circle's official Fuji USDC, 6 decimals. */
   usdc: "0x5425890298aed601595a70AB815c96711a31Bc65",
-  gateOnDispatch: "0xa24972871B987cC7feD401Ea8e46F6D85F88a24C",
   agentId: 219n,
   /** C-Chain block of the deployment — the earliest block worth scanning for events. */
   deployBlock: 0x3666514n,
@@ -123,8 +137,16 @@ export interface VerglasDeployment {
   };
   /** Workshop USDC tap — testnet only. */
   dispenser?: Hex40;
-  /** A VerglasGate on a second L1, when one is live. */
-  gate?: { address: Hex40; blockchainId: Hex40; chainLabel: string };
+  /** A VerglasGate on a second L1, when one is live. Clients build their gate
+   *  reads from `chain` and their links from `explorer` — nothing outside this
+   *  entry may assume which L1 the gate sits on. */
+  gate?: {
+    address: Hex40;
+    blockchainId: Hex40;
+    chainLabel: string;
+    chain: Chain;
+    explorer: string;
+  };
 }
 
 /** One network Verglas can run on. `deployment: null` means "supported by the
@@ -166,11 +188,10 @@ export const NETWORKS: Record<VerglasNetwork["key"], VerglasNetwork> = {
         usdTryPriceId: TREASURER_DEPLOYMENT.usdTryPriceId,
       },
       dispenser: FUJI_DEPLOYMENT.dispenser,
-      gate: {
-        address: FUJI_DEPLOYMENT.gateOnDispatch,
-        blockchainId: BLOCKCHAIN_IDS.dispatch,
-        chainLabel: "Dispatch",
-      },
+      // Gate: filled the moment the Echo gate is live (Echo wave, 2026-07-31).
+      // The old Dispatch gate (0xa24972871B987cC7feD401Ea8e46F6D85F88a24C)
+      // trusts the pre-v4 Hub and Dispatch's public RPC has been down since
+      // 2026-07-30 — retired rather than pointed at a dead chain.
     },
   },
   avalanche: {

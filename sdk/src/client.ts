@@ -8,7 +8,7 @@ import {
   type PublicClient,
   type WalletClient,
 } from "viem";
-import { BLOCKCHAIN_IDS, dispatch, FUJI_DEPLOYMENT, fujiC, type VerglasNetwork } from "./chains.js";
+import { FUJI_DEPLOYMENT, fujiC, NETWORKS, type VerglasNetwork } from "./chains.js";
 import { validationRegistryAbi, verglasAccountAbi, verglasGateAbi, verglasHubAbi } from "./abi.js";
 
 export interface VerglasAddresses {
@@ -74,10 +74,12 @@ export class VerglasClient {
     this.walletClient = opts.walletClient;
   }
 
-  /** The live Fuji testnet deployment, gate on Dispatch. Reads go through a
+  /** The live Fuji testnet deployment; the gate comes from the network
+      registry (absent while no gate L1 is live). Reads go through a
       fallback transport: the official RPC rate-limits per IP (429), which
       would take the console down for a whole venue on shared wifi. */
   static fuji(opts?: { walletClient?: WalletClient }): VerglasClient {
+    const gate = NETWORKS.fuji.deployment?.gate;
     return new VerglasClient({
       hubChain: createPublicClient({
         chain: fujiC,
@@ -90,12 +92,12 @@ export class VerglasClient {
         ]),
         batch: { multicall: true },
       }),
-      gateChain: createPublicClient({ chain: dispatch, transport: http() }),
+      gateChain: gate ? createPublicClient({ chain: gate.chain, transport: http() }) : undefined,
       addresses: {
         hub: FUJI_DEPLOYMENT.hub,
         validationRegistry: FUJI_DEPLOYMENT.validationRegistry,
         account: FUJI_DEPLOYMENT.account,
-        gate: FUJI_DEPLOYMENT.gateOnDispatch,
+        gate: gate?.address,
       },
       walletClient: opts?.walletClient,
     });
@@ -247,15 +249,6 @@ export class VerglasClient {
       functionName: "carryAttestation",
       args: [agentId, destinationBlockchainID, gate],
     } as never);
-  }
-
-  /** Convenience for the live demo route: Fuji Hub -> Dispatch gate. */
-  async carryToDispatch(agentId: bigint, gate?: Address): Promise<Hex> {
-    return this.carryAttestation(
-      agentId,
-      BLOCKCHAIN_IDS.dispatch,
-      this.#require(gate ?? this.addresses.gate, "gate"),
-    );
   }
 
   #wallet(): WalletClient {

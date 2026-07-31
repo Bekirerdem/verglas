@@ -2,6 +2,7 @@ export {
   fujiC,
   avalancheC,
   dispatch,
+  echo,
   BLOCKCHAIN_IDS,
   TELEPORTER_ADDRESS,
   IDENTITY_REGISTRY_ADDRESS,

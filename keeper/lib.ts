@@ -16,7 +16,6 @@ import {
 } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import {
-  dispatch,
   networkOf,
   pythAbi,
   validationRegistryAbi,
@@ -32,10 +31,7 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
  *  (default fuji). Everything below reads addresses from that deployment. */
 export const NET = networkOf(process.env.VERGLAS_NETWORK ?? "fuji");
 if (!NET.deployment) throw new Error(`${NET.label} has no Verglas deployment yet`);
-export const D = {
-  ...NET.deployment,
-  gateOnDispatch: NET.deployment.gate?.address ?? "0x0000000000000000000000000000000000000000",
-} as const;
+export const D = { ...NET.deployment } as const;
 const CHUNK = 2000n;
 
 /** Explicit gas and fees for every keeper write: Fuji's RPC intermittently
@@ -62,7 +58,9 @@ export function envKey(): `0x${string}` {
 
 export function clients() {
   const pub = createPublicClient({ chain: NET.chain, transport: http() });
-  const gatePub = createPublicClient({ chain: dispatch, transport: http() });
+  // With no gate configured this client is never asked a gate question —
+  // validityOf's try/catch turns the absence into gateSeen:false.
+  const gatePub = createPublicClient({ chain: D.gate?.chain ?? NET.chain, transport: http() });
   const signer: PrivateKeyAccount = privateKeyToAccount(envKey());
   const wallet = createWalletClient({ chain: NET.chain, transport: http(), account: signer });
   return { pub, gatePub, wallet, signer };
@@ -288,7 +286,7 @@ export async function validityOf(
     functionName: "latestAttestation",
     args: [agentId],
   });
-  if (att[4] === 0n) return null;
+  if (att[5] === 0n) return null;
   let gateSeen = true;
   let maxAge = FALLBACK_MAX_AGE;
   if (D.gate) {
@@ -300,7 +298,7 @@ export async function validityOf(
       gateSeen = false; // gate chain down — assume our standard window
     }
   }
-  const issuedAt = att[4];
+  const issuedAt = att[5];
   const expiresAt = issuedAt + maxAge;
   return { issuedAt, expiresAt, secondsLeft: Number(expiresAt) - Math.floor(Date.now() / 1000), gateSeen };
 }

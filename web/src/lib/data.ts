@@ -94,10 +94,7 @@ export interface DashboardData {
 // Every address and chain below comes from the network selected at page load
 // (see lib/network.ts) — the console is network-agnostic; switching reloads.
 const client = VerglasClient.forNetwork(NET);
-const D = {
-  ...DEPLOYMENT,
-  gateOnDispatch: DEPLOYMENT.gate?.address ?? "0x0000000000000000000000000000000000000000",
-} as const;
+const D = DEPLOYMENT;
 
 /** History scanning (M1, pre-indexer). Three rules keep the console
     responsive and the visitor's devtools clean:

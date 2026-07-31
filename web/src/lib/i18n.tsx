@@ -55,7 +55,7 @@ const en = {
 
   s5_tag: "04 · LIVE RIGHT NOW",
   s5_m1_l: "AGENT #219",
-  s5_m1_v: "cleared at Dispatch",
+  s5_m1_v: "cleared at the border gate",
   s5_m1_off: "not cleared",
   s5_m2_l: "LIVE USD/TRY",
   s5_m2_none: "loading",
@@ -596,7 +596,7 @@ const tr: typeof en = {
 
   s5_tag: "04 · ŞU ANDA CANLI",
   s5_m1_l: "AGENT #219",
-  s5_m1_v: "Dispatch'te onaylı",
+  s5_m1_v: "Sınır kapısında onaylı",
   s5_m1_off: "onay bekliyor",
   s5_m2_l: "CANLI USD/TRY",
   s5_m2_none: "yükleniyor",

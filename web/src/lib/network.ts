@@ -63,8 +63,6 @@ export const txUrl = (hash: string) => `${NET.explorer}/tx/${hash}`;
 export const gateUrl = () => {
   const gate = DEPLOYMENT.gate;
   if (!gate) return NET.explorer;
-  return NET.key === "fuji"
-    ? `https://subnets-test.avax.network/dispatch/address/${gate.address}`
-    : `${NET.explorer}/address/${gate.address}`;
+  return `${gate.explorer}/address/${gate.address}`;
 };
 export const addressUrl = (address: string) => `${NET.explorer}/address/${address}`;
