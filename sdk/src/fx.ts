@@ -50,25 +50,29 @@ export async function fetchUsdTryIndependent(): Promise<FxReading> {
     { name: "open.er-api", fn: fromErApi },
   ];
   const settled = await Promise.allSettled(candidates.map((c) => c.fn()));
-  const sources = candidates
-    .map((c, i) => ({ name: c.name, result: settled[i] }))
-    .filter((s) => s.result.status === "fulfilled")
-    .map((s) => ({ name: s.name, rate: (s.result as PromiseFulfilledResult<number>).value }));
+  const sources = candidates.flatMap((c, i) => {
+    const r = settled[i];
+    return r?.status === "fulfilled" ? [{ name: c.name, rate: r.value }] : [];
+  });
 
-  if (sources.length === 0) {
+  const [first, second] = sources;
+  if (!first) {
     const reasons = settled.map((s) => (s.status === "rejected" ? String(s.reason) : "ok")).join(" | ");
     throw new Error(`no FX source answered: ${reasons}`);
   }
-  if (sources.length === 1) {
-    return { rate: sources[0].rate, conf: sources[0].rate * SINGLE_SOURCE_CONF, sources };
+  if (!second) {
+    return { rate: first.rate, conf: first.rate * SINGLE_SOURCE_CONF, sources };
   }
 
-  const [a, b] = [sources[0].rate, sources[1].rate];
-  const spread = Math.abs(a - b) / Math.min(a, b);
+  const spread = Math.abs(first.rate - second.rate) / Math.min(first.rate, second.rate);
   if (spread > MAX_SOURCE_SPREAD) {
     throw new Error(`FX sources disagree by ${(spread * 100).toFixed(2)}% — push aborted`);
   }
-  return { rate: (a + b) / 2, conf: Math.abs(a - b) / 2, sources };
+  return {
+    rate: (first.rate + second.rate) / 2,
+    conf: Math.abs(first.rate - second.rate) / 2,
+    sources,
+  };
 }
 
 /** All pushes happen at this exponent (the treasurer normalizes anyway). */
