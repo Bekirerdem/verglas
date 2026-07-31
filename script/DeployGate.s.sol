@@ -4,12 +4,12 @@ pragma solidity 0.8.25;
 import {Script, console} from "forge-std/Script.sol";
 import {VerglasGate} from "../src/VerglasGate.sol";
 
-/// @notice Deploys a VerglasGate on the Dispatch test L1, trusting the Hub
-///         deployed by DeployFuji on the Fuji C-Chain.
-/// @dev Run: HUB_ADDRESS=<hub> forge script script/DeployDispatch.s.sol \
-///          --rpc-url dispatch --broadcast
+/// @notice Deploys a VerglasGate on a test L1 (the target chain is whatever
+///         --rpc-url points at), trusting the Hub on the Fuji C-Chain.
+/// @dev Run: HUB_ADDRESS=<hub> forge script script/DeployGate.s.sol \
+///          --rpc-url echo --broadcast
 ///      Reads PRIVATE_KEY and HUB_ADDRESS from the environment.
-contract DeployDispatch is Script {
+contract DeployGate is Script {
     /// @dev Canonical TeleporterMessenger, same address on every Avalanche EVM chain.
     address internal constant TELEPORTER = 0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf;
     /// @dev Fuji C-Chain blockchain ID, read from the Warp precompile (2026-07-12).
@@ -23,6 +23,6 @@ contract DeployDispatch is Script {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
         VerglasGate gate = new VerglasGate(TELEPORTER, FUJI_C_BLOCKCHAIN_ID, hub, MIN_SCORE, MAX_AGE);
         vm.stopBroadcast();
-        console.log("VerglasGate (Dispatch):", address(gate));
+        console.log("VerglasGate:", address(gate));
     }
 }

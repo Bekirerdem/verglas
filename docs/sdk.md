@@ -30,7 +30,7 @@ const val   = await client.getValidationStatus(requestHash); // canonical 8004 r
 ```ts
 await client.spend(to, amount);                       // as the vault's agent
 await client.submitProof(agentId, requestHash, ...);  // prove a window
-await client.carryToDispatch(agentId);                // ICM carry to the live gate
+await client.carryAttestation(agentId, destBlockchainId, gate); // ICM carry to a gate
 ```
 
 ## Proving (Node only)
@@ -48,4 +48,4 @@ Requires the `build/` circuit artifacts (wasm + zkey). Window shape: `N=64` spen
 
 ## Constants
 
-`FUJI_DEPLOYMENT` (hub, verifier, account, usdc, gateOnDispatch, agentId, deployBlock), `TREASURER_DEPLOYMENT` (treasurer, account, agentId, pyth, usdTryPriceId), `BLOCKCHAIN_IDS`, `TELEPORTER_ADDRESS`, `IDENTITY_REGISTRY_ADDRESS` — all checksummed, all covered by tests (`npm test`; add `VERGLAS_LIVE=1` for a live smoke against Fuji).
+`FUJI_DEPLOYMENT` (hub, verifier, account, usdc, agentId, deployBlock), `TREASURER_DEPLOYMENT` (treasurer, account, agentId, pyth, usdTryPriceId), `NETWORKS` (per-network deployments; the gate entry carries its own chain + explorer), `BLOCKCHAIN_IDS` (fujiC, dispatch, echo), `TELEPORTER_ADDRESS`, `IDENTITY_REGISTRY_ADDRESS` — all checksummed, all covered by tests (`npm test`; add `VERGLAS_LIVE=1` for a live smoke against Fuji).

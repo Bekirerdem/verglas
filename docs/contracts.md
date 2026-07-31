@@ -28,7 +28,7 @@ interface-compatible with ERC-8004.
 
 | Contract | Address |
 | --- | --- |
-| VerglasHub | `0x17C273c8edEd16C5e9f7a7525f74AcE15bb5d81E` |
+| VerglasHub | `0xBDC5eca7253caC347Cf690Ead10dfFda0284A9d5` |
 | VerglasOracle (keeper-signed price shim) | `0x11a5Bd2295B316eEB53101cdB8B16D7A61A3bF4E` |
 | Groth16Verifier | `0xD8A0b54325B52345E390A4B297bC0629000960DE` |
 | VerglasAccount (demo vault) | `0x8Ede2dB4a519B260944EE58125d6ecfA33CfaE72` |
@@ -57,13 +57,15 @@ verifies with `ecrecover`. Monotonic publish times, a future-skew bound and a
 ±10% deviation guard protect against bad source reads.
 :::
 
-## Dispatch L1 (779672)
+## Echo L1 (173750)
 
 | Contract | Address |
 | --- | --- |
-| VerglasGate | `0xa24972871B987cC7feD401Ea8e46F6D85F88a24C` (v2 — redeploy pending) |
+| VerglasGate | `0xD09c7baE6A2eE0E1E1C9443EF2a2791d8a97dc36` |
 
-Gate parameters: `minScore = 100`, `maxAge = 7 days`, trusts the Hub on Fuji C-Chain (blockchain ID `0x7fc93d85…cac10d5`, read from the Warp precompile — don't trust third-party listings). The v3 Gate redeploy was blocked by a Dispatch public-RPC outage during the wave; until it ships, this Gate still trusts the v2 Hub.
+Gate parameters: `minScore = 100`, `maxAge = 7 days`, trusts the Hub on Fuji C-Chain (blockchain ID `0x7fc93d85…cac10d5`, read from the Warp precompile — don't trust third-party listings). Alongside the legacy `isCleared(agentId)`, this Gate answers the strict `isClearedFor(agentId, account)` — the attestation names which vault was proven, so a consumer can refuse clearance earned on a different vault.
+
+The demo's second chain was the Dispatch L1 until its public RPC died on 2026-07-30; the retired v2 Gate there (`0xa24972871B987cC7feD401Ea8e46F6D85F88a24C`) trusts a pre-v4 Hub. Gates are cheap and per-L1 by design — if Dispatch returns, a fresh Gate lands there with the same script.
 
 ## Agent identities
 
@@ -71,4 +73,4 @@ Real ERC-721 tokens minted by the canonical Identity Registry: **#219** (demo va
 
 ## Source
 
-All contracts live in [`src/`](https://github.com/Bekirerdem/verglas) — Solidity 0.8.25, no proxies, no upgradability, custom errors, 86 Foundry tests. Deploy scripts under `script/`, full deployment history in `deployments/fuji-testnet.md`.
+All contracts live in [`src/`](https://github.com/Bekirerdem/verglas) — Solidity 0.8.25, no proxies, no upgradability, custom errors, 92 Foundry tests. Deploy scripts under `script/`, full deployment history in `deployments/fuji-testnet.md`.

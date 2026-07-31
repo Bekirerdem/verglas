@@ -100,7 +100,14 @@ from the Warp precompile on 2026-07-31). The old v2 Gate on Dispatch
 retired; if Dispatch returns, a fresh Gate can be deployed there with the
 same script — multiple gates are the point.
 
-*Echo Gate address: pending deploy (needs ECH gas on the deployer).*
+| Contract | Address |
+| --- | --- |
+| VerglasGate (Echo, 173750) | 0xD09c7baE6A2eE0E1E1C9443EF2a2791d8a97dc36 |
+
+Deployed 2026-07-31 with `script/DeployGate.s.sol --rpc-url echo` (the
+renamed, chain-agnostic DeployDispatch), minScore 100 / maxAge 7 days,
+trusting the v4 Hub on Fuji C. Carries: #219 tx 0x3afdce51…, #220 tx
+0xfff8f61a….
 
 ---
 

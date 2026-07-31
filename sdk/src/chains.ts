@@ -188,10 +188,16 @@ export const NETWORKS: Record<VerglasNetwork["key"], VerglasNetwork> = {
         usdTryPriceId: TREASURER_DEPLOYMENT.usdTryPriceId,
       },
       dispenser: FUJI_DEPLOYMENT.dispenser,
-      // Gate: filled the moment the Echo gate is live (Echo wave, 2026-07-31).
-      // The old Dispatch gate (0xa24972871B987cC7feD401Ea8e46F6D85F88a24C)
-      // trusts the pre-v4 Hub and Dispatch's public RPC has been down since
-      // 2026-07-30 — retired rather than pointed at a dead chain.
+      // The Echo gate (2026-07-31). The old Dispatch gate
+      // (0xa24972871B987cC7feD401Ea8e46F6D85F88a24C) trusts the pre-v4 Hub
+      // and Dispatch's public RPC has been down since 2026-07-30 — retired.
+      gate: {
+        address: "0xD09c7baE6A2eE0E1E1C9443EF2a2791d8a97dc36",
+        blockchainId: BLOCKCHAIN_IDS.echo,
+        chainLabel: "Echo",
+        chain: echo,
+        explorer: "https://subnets-test.avax.network/echo",
+      },
     },
   },
   avalanche: {

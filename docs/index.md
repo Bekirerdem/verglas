@@ -23,7 +23,7 @@ Everything below runs on Fuji right now — no mocks:
 | Agent identity | Real ERC-721 ids on the canonical ERC-8004 Identity Registry (agents #219, #220) |
 | Vault + spends | Circle USDC, real transfers |
 | Proof | Groth16 verified on-chain (~287K gas), stamped into the canonical Validation Registry |
-| Border crossing | ICM carry from C-Chain to the Dispatch L1, `isCleared` returns `true` |
+| Border crossing | ICM carry from C-Chain to the Echo L1, `isCleared` returns `true` |
 | Treasurer (V2) | Live FX-timed supplier payment through Pyth USD/TRY with an on-chain circuit breaker |
 
 See [Run the Live Demo](/demo) to reproduce the whole pipeline yourself.
