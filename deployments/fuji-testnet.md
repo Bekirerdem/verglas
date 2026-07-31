@@ -106,8 +106,27 @@ same script — multiple gates are the point.
 
 Deployed 2026-07-31 with `script/DeployGate.s.sol --rpc-url echo` (the
 renamed, chain-agnostic DeployDispatch), minScore 100 / maxAge 7 days,
-trusting the v4 Hub on Fuji C. Carries: #219 tx 0x3afdce51…, #220 tx
-0xfff8f61a….
+trusting the v4 Hub on Fuji C. Carries: #219 tx 0xf70a5868…, #220 tx
+0x471fbd42… (C-Chain side).
+
+**E2E verified live (2026-07-31):** `isCleared(219)=true`,
+`isCleared(220)=true`, `isClearedFor` true for each agent's own vault and
+**false for a foreign vault** — the attestation–vault binding holds on the
+destination chain (delivery txs 0xedd90d32…, 0x69c4baa5…, 412k gas each).
+
+### Delivery: no relayer serves Echo — we self-deliver
+
+The public testnet relayer's Echo lane has been dead since May 2026, and a
+self-hosted `icm-relayer` (v1.8.0-fuji — older versions can't even peer with
+post-upgrade Fuji) dies at delivery: the `subnets.avax.network` gateway only
+proxies the EVM RPC and returns 405 for the ProposerVM API the relayer needs
+on the destination. The working path, proven today: run
+`signature-aggregator` (v0.6.0-fuji, WSL) → extract the unsigned Warp message
+from the carry tx's precompile log → `POST /aggregate-signatures` → submit
+`receiveCrossChainMessage(0, reward)` to Echo's Teleporter ourselves, with
+the signed message packed into the tx's predicate access list (bytes + 0xff
+delimiter, zero-padded, 32-byte chunks). ⚠️ Until this is folded into the
+keeper, carries to Echo need this manual path — nothing else delivers them.
 
 ---
 
