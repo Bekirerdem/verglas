@@ -6,7 +6,9 @@
 //      alive now that Pyth's free feed is gone,
 //   2. discovers every agent ever bound to the Hub (AccountBound events),
 //   3. stamps any agent with an open validation window and >=1 new spend
-//      (prove -> submitProof -> ICM carry),
+//      (prove -> submitProof -> ICM carry; where no relayer serves the lane
+//      the keeper also aggregates the Warp signature and delivers the
+//      message to the gate chain itself),
 //   4. re-carries an attestation whose gate clearance is about to lapse: the
 //      Hub's proof is still valid, only the far-side copy ages out, and
 //      carrying needs no owner signature,
@@ -17,6 +19,8 @@
 //
 // Usage: npx tsx service.ts [--once] [--no-carry] [--no-oracle] [--tick <seconds>]
 // Env:   VERGLAS_NETWORK=fuji|avalanche (default fuji)
+//        VERGLAS_AGG_URL — signature-aggregator endpoint for self-delivered
+//        lanes (default http://127.0.0.1:8080/aggregate-signatures)
 import { createPublicClient } from "viem";
 import { pythAbi, verglasTreasurerAbi } from "@verglas/sdk";
 import { NET, carryAttestation, clients, discoverAgents, pushFxPrice, stampAgent, validityOf } from "./lib.js";

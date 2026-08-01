@@ -125,8 +125,16 @@ on the destination. The working path, proven today: run
 from the carry tx's precompile log → `POST /aggregate-signatures` → submit
 `receiveCrossChainMessage(0, reward)` to Echo's Teleporter ourselves, with
 the signed message packed into the tx's predicate access list (bytes + 0xff
-delimiter, zero-padded, 32-byte chunks). ⚠️ Until this is folded into the
-keeper, carries to Echo need this manual path — nothing else delivers them.
+delimiter, zero-padded, 32-byte chunks).
+
+**Folded into the keeper on 2026-08-01:** the gate entry carries
+`selfDeliver: true`, and every keeper carry now runs the aggregate → deliver →
+`isCleared` chain itself (`keeper/lib.ts selfDeliver`). Verified live: carry
+`0x94f16c48…`, delivery `0x7737a90b…` (331k gas, 38 gwei — Echo's pool floor
+is 36 gwei, so the Fuji fee pin must not price gate txs). The aggregator is
+the keeper's required companion process; point `VERGLAS_AGG_URL` at it when
+it is not on `127.0.0.1:8080` — e.g. under WSL2 without localhost forwarding,
+use the WSL IP (`hostname -I`).
 
 ---
 

@@ -6,18 +6,21 @@ import { dirname, join } from "node:path";
 import {
   createPublicClient,
   createWalletClient,
+  encodeFunctionData,
   http,
   keccak256,
   parseAbiItem,
   toHex,
   type Address,
   type PublicClient,
+  type TransactionReceipt,
   type WalletClient,
 } from "viem";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";
 import {
   networkOf,
   pythAbi,
+  TELEPORTER_ADDRESS,
   validationRegistryAbi,
   verglasAccountAbi,
   verglasGateAbi,
@@ -46,6 +49,17 @@ const spendEvent = parseAbiItem(
   "event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment)",
 );
 const accountBoundEvent = parseAbiItem("event AccountBound(uint256 indexed agentId, address indexed account)");
+const receiveMessageAbi = [
+  parseAbiItem("function receiveCrossChainMessage(uint32 messageIndex, address relayerRewardAddress)"),
+] as const;
+
+/** The Warp precompile — the unsigned message a carry produced sits in its log,
+ *  and a self-delivered message must ride the delivery tx's access list under
+ *  this same address. */
+const WARP_PRECOMPILE = "0x0200000000000000000000000000000000000005";
+/** signature-aggregator endpoint (WSL companion process on the same box). */
+const AGG_URL = process.env.VERGLAS_AGG_URL ?? "http://127.0.0.1:8080/aggregate-signatures";
+const DELIVER_GAS = 2_000_000n; // measured live: 412k — headroom for wider validator sets
 
 export function envKey(): `0x${string}` {
   const line = readFileSync(join(ROOT, ".env"), "utf8")
@@ -228,6 +242,89 @@ export async function carryAttestation(
   const rc = await pub.waitForTransactionReceipt({ hash: carryHash });
   if (rc.status !== "success") throw new Error(`carry reverted: ${carryHash}`);
   log(`agent #${agentId}: carried to ${D.gate.chainLabel} (${carryHash})`);
+
+  if (D.gate.selfDeliver) await selfDeliver(rc, agentId, log);
+}
+
+/** Deliver a just-sent carry to the gate chain ourselves: no relayer serves
+ *  the lane, so the carry tx alone leaves the message stranded on the Hub
+ *  side. Aggregates the Warp signature via the companion signature-aggregator
+ *  and submits `receiveCrossChainMessage` with the signed message packed into
+ *  the tx's predicate access list. Throws when the aggregator is down or the
+ *  delivery reverts — a stranded carry must be loud, not a quiet half-success. */
+export async function selfDeliver(
+  carryReceipt: TransactionReceipt,
+  agentId: bigint,
+  log: (msg: string) => void,
+): Promise<void> {
+  const gate = D.gate!;
+  const unsigned = unsignedWarpMessage(carryReceipt);
+  log(`agent #${agentId}: aggregating Warp signature (${(unsigned.length - 2) / 2} bytes)…`);
+  const signed = await aggregateSignatures(unsigned);
+
+  const account = privateKeyToAccount(envKey());
+  const gateWallet = createWalletClient({ chain: gate.chain, transport: http(), account });
+  const gatePub = createPublicClient({ chain: gate.chain, transport: http() });
+  const hash = await gateWallet.sendTransaction({
+    to: TELEPORTER_ADDRESS,
+    data: encodeFunctionData({
+      abi: receiveMessageAbi,
+      functionName: "receiveCrossChainMessage",
+      args: [0, account.address],
+    }),
+    accessList: [{ address: WARP_PRECOMPILE, storageKeys: predicateStorageKeys(signed) }],
+    gas: DELIVER_GAS,
+    // No TX_FEES here: that hack works around Fuji's broken fee estimation,
+    // and the gate chain sets its own floor (Echo's pool minimum is 36 gwei —
+    // above Fuji's 30 gwei cap). The gate RPC estimates sanely.
+  });
+  const rc = await gatePub.waitForTransactionReceipt({ hash });
+  if (rc.status !== "success") throw new Error(`delivery reverted on ${gate.chainLabel}: ${hash}`);
+
+  const cleared = await gatePub.readContract({
+    address: gate.address,
+    abi: verglasGateAbi,
+    functionName: "isCleared",
+    args: [agentId],
+  });
+  log(`agent #${agentId}: delivered to ${gate.chainLabel} (${hash}) — isCleared=${cleared}`);
+}
+
+/** The unsigned Warp message the carry emitted: the Warp precompile's log
+ *  data is a single abi-encoded `bytes` (32-byte offset, 32-byte length,
+ *  payload). */
+function unsignedWarpMessage(rc: TransactionReceipt): `0x${string}` {
+  const warpLog = rc.logs.find((l) => l.address.toLowerCase() === WARP_PRECOMPILE);
+  if (!warpLog) throw new Error("carry receipt has no Warp precompile log");
+  const len = Number(BigInt(`0x${warpLog.data.slice(2 + 64, 2 + 128)}`));
+  return `0x${warpLog.data.slice(2 + 128, 2 + 128 + len * 2)}`;
+}
+
+async function aggregateSignatures(unsigned: `0x${string}`): Promise<`0x${string}`> {
+  let res: Response;
+  try {
+    res = await fetch(AGG_URL, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: unsigned }),
+    });
+  } catch {
+    throw new Error(`signature-aggregator unreachable at ${AGG_URL} — is the companion process up?`);
+  }
+  if (!res.ok) throw new Error(`signature-aggregator ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const body = (await res.json()) as { "signed-message"?: string };
+  const signed = body["signed-message"];
+  if (!signed) throw new Error("signature-aggregator returned no signed-message");
+  return (signed.startsWith("0x") ? signed : `0x${signed}`) as `0x${string}`;
+}
+
+/** Predicate encoding (avalanchego predicate.PackPredicate): message bytes,
+ *  a 0xff delimiter, zero-padding up to a 32-byte boundary, then split into
+ *  the access-list storage slots. */
+function predicateStorageKeys(signed: `0x${string}`): `0x${string}`[] {
+  const raw = `${signed.slice(2)}ff`;
+  const padded = raw.padEnd(Math.ceil(raw.length / 64) * 64, "0");
+  return Array.from({ length: padded.length / 64 }, (_, i) => `0x${padded.slice(i * 64, (i + 1) * 64)}` as `0x${string}`);
 }
 
 /** Push a fresh USD/TRY reading to the network's VerglasOracle shim. Returns

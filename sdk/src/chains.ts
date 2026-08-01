@@ -146,6 +146,10 @@ export interface VerglasDeployment {
     chainLabel: string;
     chain: Chain;
     explorer: string;
+    /** No relayer serves this lane — whoever sends a carry must also collect
+     *  the Warp signatures and submit `receiveCrossChainMessage` on the gate
+     *  chain itself (see deployments/fuji-testnet.md, "self-deliver"). */
+    selfDeliver?: boolean;
   };
 }
 
@@ -197,6 +201,8 @@ export const NETWORKS: Record<VerglasNetwork["key"], VerglasNetwork> = {
         chainLabel: "Echo",
         chain: echo,
         explorer: "https://subnets-test.avax.network/echo",
+        // The public relayer's Echo lane has been dead since May 2026.
+        selfDeliver: true,
       },
     },
   },
