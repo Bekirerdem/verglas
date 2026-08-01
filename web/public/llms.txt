@@ -3,16 +3,17 @@
 > Verglas is the trust layer for agent money on Avalanche: a rule-bound,
 > non-custodial vault for AI agents, zero-knowledge proofs that a whole
 > spending window obeyed the owner's rules, and attestations that travel to
-> every Avalanche L1 over native Interchain Messaging (ICM). Live on Fuji
-> testnet with the canonical ERC-8004 registries and real Circle USDC.
+> every Avalanche L1 over native Interchain Messaging (ICM). Live on
+> Avalanche C-Chain mainnet (real Circle USDC, on-chain Groth16 proofs) and
+> on Fuji testnet, where the ICM crossing to the Echo L1 runs end to end.
 
 Key facts:
 - Category: AI-agent trust & treasury infrastructure on Avalanche (C-Chain + sovereign L1s)
 - The vault (VerglasAccount): whitelist, per-transaction limit, lifetime budget and an owner freeze — the rule engine lives in the contract, and every spend folds into a Poseidon hash chain
 - The receipt: a Groth16 zk-SNARK (~86k constraints) proves every payment obeyed the rules without revealing a single transaction; verified on-chain for ~287k gas
-- The stamp: Verglas wrote the first ZK-verified validation response on the canonical ERC-8004 Validation Registry on Avalanche Fuji
+- The stamp: Verglas wrote the first ZK-verified validation response on the ERC-8004 Validation Registry on Avalanche — live on both C-Chain mainnet and Fuji
 - The passport: attestations cross to any Avalanche L1 over ICM; the receiving gate answers one view call — isCleared(agentId)
-- Agent identities are real ERC-721 tokens on the canonical ERC-8004 Identity Registry (live agents #219 and #220)
+- Agent identities are real ERC-721 tokens on the canonical ERC-8004 Identity Registry (mainnet agent #1783; Fuji agents #219, #220, #222)
 - Verglas Treasurer (first vertical): an autonomous corporate treasury agent that pays FX-timed supplier invoices inside a daily cap and a USD/TRY circuit breaker, backtested at 3.79% savings over 254 days of real USD/TRY data
 - Owner console at /app: live vault status, the freeze lever, policy editing, proof receipts and the interchain passport; installable as a PWA
 - Positioning: open standard (ERC-8004) + real on-chain proofs + trust that travels — not a walled platform score
@@ -20,9 +21,10 @@ Key facts:
 ## Docs
 
 - [Overview](https://verglas.xyz/docs/): what Verglas is and why it exists
+- [Quickstart](https://verglas.xyz/docs/quickstart.html): give your agent a vault in ten minutes, test USDC included
 - [Architecture](https://verglas.xyz/docs/architecture.html): hub, gate, vault and the registries
 - [Proof system](https://verglas.xyz/docs/proofs.html): Poseidon commitment chain and the Groth16 circuit
-- [Contracts](https://verglas.xyz/docs/contracts.html): deployed addresses on Fuji C-Chain and the Dispatch L1
+- [Contracts](https://verglas.xyz/docs/contracts.html): deployed addresses on mainnet, Fuji C-Chain and the Echo L1
 - [Treasurer](https://verglas.xyz/docs/treasurer.html): the corporate treasury vertical
 - [SDK](https://verglas.xyz/docs/sdk.html): TypeScript SDK built on viem
 - [Demo runbook](https://verglas.xyz/docs/demo.html): the live end-to-end flow

@@ -16,7 +16,7 @@ An importer holds TRY and owes USD-denominated supplier invoices. Banks convert 
 `VerglasTreasurer` **is** the vault's agent. `payFX(supplier, amountUsdc, priceUpdate)`:
 
 1. only the keeper (operator) may call; treasurer must not be paused;
-2. refreshes Pyth with the Hermes payload (fee paid in the same call);
+2. applies the price update when one is attached (fee paid in the same call) — since the July 2026 Pyth cutover the live feed is the keeper-signed `VerglasOracle` shim, read through the same IPyth ABI, so an empty update works while the keeper keeps the shim fresh;
 3. reads `getPriceNoOlderThan(USD/TRY, 26h)` and normalizes the exponent;
 4. **FX circuit breaker:** if the live rate deviates from the owner's reference rate by more than `maxSlippageBps`, revert — a human looks again;
 5. **daily cap:** per-calendar-day spend accumulator (`block.timestamp / 1 days`, lazily reset) must stay under `dailyLimit`;
@@ -30,13 +30,13 @@ The vault's brake always wins: freezing the **account** silences the treasurer u
 
 ## The keeper
 
-`agent/src/tick.ts` — a one-shot tick, deliberately not a daemon: fetch the live rate from Hermes, compute the window low from the ECB daily series, run the 5-rule deterministic strategy (deadline guarantee + catch-the-dip; not an LLM), and if the decision is *convert*, execute `payFX` with the Pyth update attached.
+`agent/src/tick.ts` — a one-shot tick, deliberately not a daemon: fetch the live rate, compute the window low from the ECB daily series, run the 5-rule deterministic strategy (deadline guarantee + catch-the-dip; not an LLM), and if the decision is *convert*, execute `payFX`.
 
 ```bash
 TREASURER_ADDRESS=0x... npm run tick   # in agent/
 ```
 
-> **Note:** hermes.pyth.network requires an API key starting 2026-07-31 (Pyth Core plans). Point `HERMES_URL` at an authenticated endpoint after the cutover.
+> **Note:** hermes.pyth.network moved behind an API key on 2026-07-31 (Pyth Core plans), so the production path no longer touches Hermes at all: the keeper signs independent FX readings (ECB via frankfurter + open.er-api) into the `VerglasOracle` shim, and `payFX` reads them through the IPyth ABI unchanged.
 
 ## Compliance posture (TR)
 

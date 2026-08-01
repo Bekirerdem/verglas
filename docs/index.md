@@ -16,17 +16,17 @@ Verglas replaces both with **papers every border accepts**:
 
 ## What's live today
 
-Everything below runs on Fuji right now — no mocks:
+The core pipeline runs on **Avalanche C-Chain mainnet**; the cross-L1 crossing runs end to end on testnet (Fuji → Echo). No mocks anywhere:
 
 | Piece | Status |
 | --- | --- |
-| Agent identity | Real ERC-721 ids on the canonical ERC-8004 Identity Registry (agents #219, #220) |
-| Vault + spends | Circle USDC, real transfers |
-| Proof | Groth16 verified on-chain (~287K gas), stamped into the canonical Validation Registry |
-| Border crossing | ICM carry from C-Chain to the Echo L1, `isCleared` returns `true` |
-| Treasurer (V2) | Live FX-timed supplier payment through Pyth USD/TRY with an on-chain circuit breaker |
+| Agent identity | Real ERC-721 ids on the canonical ERC-8004 Identity Registry — agent #1783 on mainnet, #219/#220/#222 on Fuji |
+| Vault + spends | Circle USDC, real transfers on both networks |
+| Proof | Groth16 verified on-chain (~287K gas), stamped into the ERC-8004 Validation Registry on mainnet and Fuji |
+| Border crossing | ICM carry from Fuji C-Chain to the Echo L1, `isCleared` returns `true` — the keeper aggregates the Warp signature and delivers the message itself, no relayer needed |
+| Treasurer (V2) | Live FX-timed supplier payment inside an on-chain USD/TRY circuit breaker, fed by the keeper-signed `VerglasOracle` shim |
 
-See [Run the Live Demo](/demo) to reproduce the whole pipeline yourself.
+Want your own vault instead of reading about ours? [Quickstart — ten minutes on Fuji](/quickstart). To reproduce the whole pipeline from a terminal, see [Run the Live Demo](/demo).
 
 ## The two product surfaces
 

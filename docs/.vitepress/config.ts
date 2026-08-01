@@ -28,6 +28,7 @@ export default defineConfig({
         text: "Concepts",
         items: [
           { text: "What is Verglas?", link: "/" },
+          { text: "Quickstart — Your Vault", link: "/quickstart" },
           { text: "Architecture", link: "/architecture" },
           { text: "Proof System", link: "/proofs" },
           { text: "Naming & Glossary", link: "/glossary" },

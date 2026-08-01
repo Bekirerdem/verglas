@@ -2,11 +2,12 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useI18n } from "../lib/i18n";
+import { DEPLOYMENT } from "../lib/network";
 
 gsap.registerPlugin(ScrollTrigger);
 
 /** S3b — THE PASSPORT: the moat, full-bleed. Pinned; scroll carries the
-    sealed stamp from the C-Chain hub across the rail to the Dispatch gate,
+    sealed stamp from the C-Chain hub across the rail to the far-side gate,
     which clears green on arrival. The one scene where "trust that travels"
     is something the visitor physically moves. */
 export function Passport() {
@@ -83,7 +84,7 @@ export function Passport() {
               </b>
             </i>
             <span className="pp-node dst">
-              <b>DISPATCH</b>
+              <b>{(DEPLOYMENT.gate?.chainLabel ?? "L1").toUpperCase()}</b>
               <em className="pp-gate">isCleared → true</em>
             </span>
           </div>
