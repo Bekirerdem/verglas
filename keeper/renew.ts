@@ -6,7 +6,9 @@
 // Only agents whose identity and spend authority sit on the keeper key can
 // renew here — an external owner's vault renews from the console with their
 // own signature, by design (the keeper can forge neither window nor spend).
-// Usage: npx tsx renew.ts <agentId> [--amount <usdc>]
+// Usage: npx tsx renew.ts <agentId> [--amount <usdc>] [--no-stamp]
+//        --no-stamp leaves the window and the spend for the scheduled keeper
+//        to prove on its next pass, instead of stamping here and now.
 import { concat, keccak256, toHex } from "viem";
 import { validationRegistryAbi, verglasAccountAbi, verglasHubAbi, verglasTreasurerAbi } from "@verglas/sdk";
 import { clients, D, NET, openRequest, stampAgent, windowSpends } from "./lib.js";
@@ -19,6 +21,7 @@ if (!idArg || !/^\d+$/.test(idArg)) {
 const agentId = BigInt(idArg);
 const amountArg = process.argv.indexOf("--amount");
 const AMOUNT = amountArg >= 0 ? BigInt(Math.round(Number(process.argv[amountArg + 1]) * 1e6)) : 100_000n;
+const NO_STAMP = process.argv.includes("--no-stamp");
 
 const TX_FEES = { maxFeePerGas: 30_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n } as const;
 const { pub, wallet, signer } = clients();
@@ -97,7 +100,13 @@ if ((await windowSpends(pub, account, cp[1])).length > 0) {
   log(`agent #${agentId}: spent ${Number(AMOUNT) / 1e6} USDC to ${target} (${hash})`);
 }
 
-// 3. The stamp routine — prove, submit, carry, self-deliver.
+// 3. The stamp routine — prove, submit, carry, self-deliver. Skipping it hands
+//    the window to the scheduled keeper, which runs the same routine on its
+//    next pass; the proving artifacts then never have to exist on this machine.
+if (NO_STAMP) {
+  log(`agent #${agentId}: window and spend are ready — the scheduled keeper will stamp them`);
+  process.exit(0);
+}
 const result = await stampAgent(pub, wallet, agentId, { carry: true, log });
 console.log(result === "stamped" ? "RENEWED ✓" : `stamp not reached: ${result}`);
 process.exit(result === "stamped" ? 0 : 1);
