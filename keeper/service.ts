@@ -19,9 +19,14 @@
 //
 // Usage: npx tsx service.ts [--once] [--no-carry] [--no-oracle] [--tick <seconds>]
 // Env:   VERGLAS_NETWORK=fuji|avalanche (default fuji)
+//        PRIVATE_KEY — the keeper key; falls back to the repo's .env
 //        VERGLAS_AGG_URL — signature-aggregator endpoint for self-delivered
 //        lanes (default http://127.0.0.1:8080/aggregate-signatures)
-import { createPublicClient } from "viem";
+//
+// Under --once the exit code is the whole monitoring stack: 1 means the keeper
+// could not do its job (see `fail` below), so the scheduled run goes red and
+// GitHub mails us. Waiting on the owner is not a failure.
+import { createPublicClient, formatEther } from "viem";
 import { pythAbi, verglasTreasurerAbi } from "@verglas/sdk";
 import { NET, carryAttestation, clients, discoverAgents, pushFxPrice, stampAgent, validityOf } from "./lib.js";
 
@@ -38,11 +43,23 @@ const RECARRY_S = 12 * 3600;
 /** Skip the push while the stored price is younger than this: ticking faster
  *  than the feed's own resolution would only burn gas. */
 const PRICE_FRESH_S = 20 * 60;
+/** Below this the wallet is too thin to be trusted with the next few days of
+ *  ticks (a stamp costs ~0.03 AVAX at the pinned fees, a price push ~0.002). */
+const MIN_BALANCE = 30_000_000_000_000_000n; // 0.03 AVAX
 
 const T = NET.deployment!.treasurer;
 const stamp = () => new Date().toISOString().slice(0, 19).replace("T", " ");
 const log = (msg: string) => console.log(`[${stamp()}] ${msg}`);
 const short = (e: unknown) => (e instanceof Error ? e.message.split("\n")[0].slice(0, 140) : String(e));
+
+/** Something the keeper was supposed to do and could not: a thin wallet, a
+ *  needed price push that failed, an agent whose stamp or carry threw. Logged
+ *  like everything else, but it also colours the --once exit code. */
+let failed = false;
+const fail = (msg: string) => {
+  failed = true;
+  log(msg);
+};
 
 type Pub = ReturnType<typeof createPublicClient>;
 
@@ -93,7 +110,12 @@ async function observeTreasurer(pub: Pub) {
 }
 
 async function tick(): Promise<void> {
-  const { pub, gatePub, wallet } = clients();
+  const { pub, gatePub, wallet, signer } = clients();
+
+  const balance = await pub.getBalance({ address: signer.address });
+  const avax = `${Number(formatEther(balance)).toFixed(4)} AVAX`;
+  if (balance < MIN_BALANCE) fail(`keeper ${signer.address}: ${avax} left — top the wallet up`);
+  else log(`keeper ${signer.address}: ${avax}`);
 
   if (ORACLE && T) {
     // A failed push must never stop stamping: the vault's rules are enforced
@@ -103,7 +125,7 @@ async function tick(): Promise<void> {
       if (age < PRICE_FRESH_S) log(`oracle: stored price ${Math.round(age / 60)} min old — no push needed`);
       else await pushFxPrice(pub, wallet, log);
     } catch (e) {
-      log(`oracle push FAILED: ${short(e)}`);
+      fail(`oracle push FAILED: ${short(e)}`);
     }
   }
 
@@ -136,7 +158,7 @@ async function tick(): Promise<void> {
         log(`agent #${agentId}: fresh (${(v.secondsLeft / 86400).toFixed(1)}d left)`);
       }
     } catch (e) {
-      log(`agent #${agentId}: ERROR ${short(e)}`);
+      fail(`agent #${agentId}: ERROR ${short(e)}`);
     }
   }
 
@@ -149,11 +171,11 @@ async function main() {
       `carry ${CARRY ? "on" : "off"}, oracle ${ORACLE ? "on" : "off"}${ONCE ? ", single pass" : ""}`,
   );
   for (;;) {
-    await tick().catch((e) => log(`tick failed: ${short(e)}`));
+    await tick().catch((e) => fail(`tick failed: ${short(e)}`));
     if (ONCE) break;
     await new Promise((r) => setTimeout(r, TICK_S * 1000));
   }
-  process.exit(0);
+  process.exit(failed ? 1 : 0);
 }
 
 main();

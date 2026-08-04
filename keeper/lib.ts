@@ -61,13 +61,20 @@ const WARP_PRECOMPILE = "0x0200000000000000000000000000000000000005";
 const AGG_URL = process.env.VERGLAS_AGG_URL ?? "http://127.0.0.1:8080/aggregate-signatures";
 const DELIVER_GAS = 2_000_000n; // measured live: 412k — headroom for wider validator sets
 
+/** The keeper's signing key. The environment wins — the scheduled job holds it
+ *  in a repo secret and never checks out a `.env` — and the repo's `.env` stays
+ *  the local fallback. */
 export function envKey(): `0x${string}` {
+  const raw = process.env.PRIVATE_KEY?.trim() || dotEnvKey();
+  return (raw.startsWith("0x") ? raw : `0x${raw}`) as `0x${string}`;
+}
+
+function dotEnvKey(): string {
   const line = readFileSync(join(ROOT, ".env"), "utf8")
     .split(/\r?\n/)
     .find((l) => l.startsWith("PRIVATE_KEY="));
   if (!line) throw new Error("PRIVATE_KEY not found in .env");
-  const raw = line.slice("PRIVATE_KEY=".length).trim();
-  return (raw.startsWith("0x") ? raw : `0x${raw}`) as `0x${string}`;
+  return line.slice("PRIVATE_KEY=".length).trim();
 }
 
 export function clients() {
