@@ -1,0 +1,141 @@
+name: Keeper
+
+# The keeper's heartbeat, six passes a day. Nothing it does needs minute
+# accuracy: the treasurer accepts a price up to 26 hours old
+# (VerglasTreasurer.MAX_PRICE_AGE) and a gate clearance is re-carried 12 hours
+# before it lapses — so no server has to stay up for this. A failed pass is a
+# red run and GitHub's mail; that is the whole monitoring stack.
+on:
+  schedule:
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
+
+# One pass at a time: two runs would sign from the same key and race on the
+# nonce. A queued run waits rather than cancels — a dropped pass is a price
+# push that never happened.
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  # Older aggregator builds cannot even peer with post-upgrade Fuji.
+  AGG_VERSION: 0.6.0-fuji
+
+jobs:
+  tick:
+    name: ${{ matrix.network }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read # the proving artifacts come from a release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Fuji carries to the Echo gate, and no relayer serves that lane —
+          # the keeper self-delivers, which needs the aggregator beside it.
+          - network: fuji
+            aggregator: true
+          # Mainnet has neither gate nor treasurer yet: stamping only.
+          - network: avalanche
+            aggregator: false
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            sdk/package-lock.json
+            keeper/package-lock.json
+
+      # The SDK is consumed as sources (`file:../sdk`), so its own dependencies
+      # have to be installed where they resolve from.
+      - name: Install the SDK dependencies
+        working-directory: sdk
+        run: npm ci
+
+      - name: Install the keeper dependencies
+        working-directory: keeper
+        run: npm ci
+
+      - name: Restore the proving artifacts
+        id: zk
+        uses: actions/cache@v6
+        with:
+          path: build
+          key: keeper-artifacts-v1
+
+      # Never rebuilt here: a second trusted setup yields a zkey whose proofs
+      # the deployed Groth16Verifier rejects. These are the exact artifacts the
+      # verifier was generated from, fetched byte for byte.
+      - name: Fetch the proving artifacts
+        if: steps.zk.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p build/policy_compliance_js
+          gh release download keeper-artifacts-v1 --repo "$REPO" \
+            --pattern policy_compliance.zkey --dir build
+          gh release download keeper-artifacts-v1 --repo "$REPO" \
+            --pattern policy_compliance.wasm --dir build/policy_compliance_js
+
+      - name: Restore the signature aggregator
+        if: matrix.aggregator
+        id: agg
+        uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/signature-aggregator
+          key: signature-aggregator-${{ env.AGG_VERSION }}
+
+      - name: Fetch the signature aggregator
+        if: matrix.aggregator && steps.agg.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/ava-labs/icm-services/releases/download/signature-aggregator-v${AGG_VERSION}/signature-aggregator_${AGG_VERSION}_linux_amd64.tar.gz" \
+            | tar -xz -C "$RUNNER_TEMP" signature-aggregator
+
+      - name: Start the signature aggregator
+        if: matrix.aggregator
+        run: |
+          set -euo pipefail
+          chmod +x "$RUNNER_TEMP/signature-aggregator"
+          cat > "$RUNNER_TEMP/agg.json" <<'JSON'
+          {
+            "log-level": "info",
+            "info-api": { "base-url": "https://api.avax-test.network" },
+            "p-chain-api": { "base-url": "https://api.avax-test.network" },
+            "api-port": 8080
+          }
+          JSON
+          "$RUNNER_TEMP/signature-aggregator" --config-file "$RUNNER_TEMP/agg.json" \
+            > "$RUNNER_TEMP/agg.log" 2>&1 &
+          for _ in $(seq 60); do
+            if curl -sf http://127.0.0.1:8080/health >/dev/null; then
+              echo "aggregator up"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "aggregator never answered /health"
+          cat "$RUNNER_TEMP/agg.log"
+          exit 1
+
+      - name: Keeper pass
+        working-directory: keeper
+        env:
+          VERGLAS_NETWORK: ${{ matrix.network }}
+          PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
+        run: npx tsx service.ts --once
+
+      - name: Aggregator log
+        if: failure() && matrix.aggregator
+        run: cat "$RUNNER_TEMP/agg.log" || true
