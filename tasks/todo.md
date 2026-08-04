@@ -1,53 +1,34 @@
-# Keeper zamanlı işi — GitHub Actions (08-03 onaylı, kod 08-04'te yazıldı)
+# Açık iş
 
-Keeper ve aggregator artık elle çalıştırılmıyor: günde 6 kez tetiklenen tek bir Actions
-job'ı ikisini de koşturuyor. 7/24 sunucu gerekmiyor — `VerglasTreasurer.MAX_PRICE_AGE`
-26 saat, keeper'ın 20 dakikalık push eşiği kendi tercihi. Gerekçe ve elenen yollar:
-vault `team1-grant/decisions/2026-08-03-keeper-barindirma-github-actions`.
-
-## Kod
-
-- [x] 1. `keeper/lib.ts` `envKey()` → önce `process.env.PRIVATE_KEY`, yoksa `.env`
-      → **doğrulandı:** `.env` geçici olarak kaldırılıp `PRIVATE_KEY=…` ile koşuldu,
-      verilen anahtarın adresiyle çalıştı; `.env` geri konunca eski davranış aynı
-- [x] 2. `keeper/service.ts` `--once` exit code'u → **doğrulandı:** boş cüzdanla `exit 1`,
-      normal koşu `exit 0`. Kapsam planın bir adım ötesinde: bakiye ve oracle push'un
-      yanı sıra **ajan hatası** (stamp/carry throw) ve tick çöküşü de kırmızı yapar —
-      yoksa gerçek bir hata sessizce yeşil geçerdi ve izleme diye bir şey kalmazdı
-
-## CI
-
-- [x] 3. `.github/workflows/keeper.yml` — `cron: '0 */4 * * *'` + `workflow_dispatch` +
-      `concurrency: keeper` + timeout 15 dk
-- [x] 4. ZK artifact adımı: `actions/cache` + `gh release download keeper-artifacts-v1`
-      (CI'da **yeniden derleme yok** — farklı trusted setup zincirdeki verifier'ı kırar).
-      Cache-boş yolu ancak release yüklendikten sonra (madde 10) koşulabilir
-- [x] 5. Aggregator adımı: amd64 binary (cache) → `--config-file` → `/health` beklenir.
-      Yalnız Fuji koşusunda: mainnet'te gate yok. `isCleared=true` doğrulaması gerçek bir
-      carry ister — ilk koşudan önce #219'a bir harcama+pencere açılırsa aynı koşuda görülür
-- [x] 6. İki koşu: matrix `fuji` + `avalanche`. **Lokal olarak temiz kurulumla** (sıfırdan
-      `npm ci`, `.env` yok, `PRIVATE_KEY` env'den) ikisi de `exit 0` verdi; gerçek Actions
-      koşusu secret'a bağlı (madde 10)
-
-## Bekir'in elinde (tek seferlik) — sıra sende
-
-- [ ] 7. `cast wallet new` → keeper key üret
-- [ ] 8. Fuji + mainnet `VerglasOracle.setKeeper(yeniAdres)` (owner imzası)
-- [ ] 9. Gas: Fuji faucet + mainnet ~0.05 AVAX
-- [ ] 10. GitHub Secret `KEEPER_PRIVATE_KEY` + `gh release create keeper-artifacts-v1`
-      (`build/policy_compliance.zkey` + `build/policy_compliance_js/policy_compliance.wasm`)
-
-Ondan sonra: Actions → Keeper → **Run workflow** → iki job da yeşil olmalı.
-
-## Kapsam dışı — bilinçli
-
-`renew.ts` taşınmıyor: `VerglasAccount.agent` immutable, #219'un harcama yetkisi kalıcı
-olarak deployer key'inde. Haftalık yenileme yerel kalır. Ayrı izleme servisi yok —
-job fail = GitHub'ın otomatik maili.
+**Mainnet pasaportları 06 Ağustos'ta doluyor** (#1783, #1784 — Fuji'dekiler 08'inde).
+`keeper/renew.ts` Fuji'ye göre yazıldı: #220'nin harcaması treasurer'ın `payFX`
+operatörü üzerinden gidiyor, mainnet'te treasurer yok. Mainnet yenilemesinin yolu
+ayrıca çözülecek — yoksa vitrindeki ilk mainnet kasası "expired" görünür.
 
 ---
 
 # Tamamlandı (arşiv)
+
+**Keeper zamanlı işi — GitHub Actions (08-04, canlı)** — keeper artık kimsenin
+bilgisayarına bağlı değil: `.github/workflows/keeper.yml`, günde 6 koşu
+(`cron 0 */4 * * *`) + elle tetikleme, `concurrency: keeper`, 15 dk timeout, matrix
+`fuji` (aggregator'lı, self-delivery için) + `avalanche` (damga). Anahtar
+`PRIVATE_KEY` secret'ından okunuyor (`.env` lokal yedek), `--once` çıkış kodu
+kırmızıya dönüyor: ince bakiye (< 0.03 AVAX), gereken oracle push'un başarısızlığı,
+ajan hatası, tick çöküşü. İzleme = GitHub'ın hata maili. ZK artifact'ları
+`keeper-artifacts-v1` release'inden geliyor, CI'da **asla** yeniden derlenmiyor —
+ikinci bir trusted setup zincirdeki verifier'ı kırar.
+
+Keeper cüzdanı `0x6fD261FcC828D11bc404E84b1818Db7A396A7f8D` (deployer anahtarı
+GitHub'a girmedi), Fuji `VerglasOracle.setKeeper` → `0x4083f43e…`. İlk yeşil koşu:
+actions/runs/30948412525 — aggregator 4 sn'de ayağa kalktı, yeni cüzdan USD/TRY
+47.5525 push etti, üç Fuji + iki mainnet ajanı okundu. Gerekçe ve elenen barındırma
+yolları: vault `team1-grant/decisions/2026-08-03-keeper-barindirma-github-actions`.
+
+Kapsam dışı bırakıldı: `renew.ts` taşınmıyor (`VerglasAccount.agent` immutable,
+#219'un harcama yetkisi kalıcı olarak deployer key'inde), ayrı izleme servisi yok.
+Henüz gerçek bir carry denk gelmediği için Echo self-delivery yolu CI içinde
+koşmadı — ilk re-carry'de (ya da #219'a bir harcama açıldığında) görülecek.
 
 **Konsol: gerçek sayfalara ayırma (07-23)** — hash-router, 5 sayfa (genel bakış/ödemeler/
 kurallar/denetim/kişiler), CSV dışa aktarım, büyük pasaport, ~40 i18n anahtarı × 2 dil.
