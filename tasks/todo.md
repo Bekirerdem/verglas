@@ -1,4 +1,4 @@
-# Keeper zamanlı işi — GitHub Actions (08-03 onaylı, uygulanmadı)
+# Keeper zamanlı işi — GitHub Actions (08-03 onaylı, kod 08-04'te yazıldı)
 
 Keeper ve aggregator artık elle çalıştırılmıyor: günde 6 kez tetiklenen tek bir Actions
 job'ı ikisini de koşturuyor. 7/24 sunucu gerekmiyor — `VerglasTreasurer.MAX_PRICE_AGE`
@@ -7,32 +7,37 @@ vault `team1-grant/decisions/2026-08-03-keeper-barindirma-github-actions`.
 
 ## Kod
 
-- [ ] 1. `keeper/lib.ts` `envKey()` → önce `process.env.PRIVATE_KEY`, yoksa mevcut `.env`
-      okuması → doğrula: `PRIVATE_KEY=… npx tsx service.ts --once` `.env` olmadan koşar,
-      `.env` ile eski davranış bozulmaz
-- [ ] 2. `keeper/service.ts` `--once` exit code'u: bakiye eşiğin altında **veya** oracle
-      push gerekliyken başarısız → `exit 1`; boş pencere / sahip beklemesi → `exit 0`
-      → doğrula: boş cüzdanla koşu `exit 1`, normal koşu `exit 0`
+- [x] 1. `keeper/lib.ts` `envKey()` → önce `process.env.PRIVATE_KEY`, yoksa `.env`
+      → **doğrulandı:** `.env` geçici olarak kaldırılıp `PRIVATE_KEY=…` ile koşuldu,
+      verilen anahtarın adresiyle çalıştı; `.env` geri konunca eski davranış aynı
+- [x] 2. `keeper/service.ts` `--once` exit code'u → **doğrulandı:** boş cüzdanla `exit 1`,
+      normal koşu `exit 0`. Kapsam planın bir adım ötesinde: bakiye ve oracle push'un
+      yanı sıra **ajan hatası** (stamp/carry throw) ve tick çöküşü de kırmızı yapar —
+      yoksa gerçek bir hata sessizce yeşil geçerdi ve izleme diye bir şey kalmazdı
 
 ## CI
 
-- [ ] 3. `.github/workflows/keeper.yml` — `cron: '0 */4 * * *'` + `workflow_dispatch` +
-      `concurrency: keeper` (nonce çakışması koruması), timeout 15 dk
-- [ ] 4. ZK artifact adımı: `gh release download keeper-artifacts-v1` + `actions/cache`
-      → doğrula: cache boşken de job yeşil (CI'da **yeniden derleme yok** — farklı
-      trusted setup zincirdeki verifier'ı kırar)
-- [ ] 5. Aggregator adımı: amd64 binary indir (cache), arka planda başlat, `:8080` hazır
-      olana kadar bekle → doğrula: Echo self-delivery job içinde `isCleared=true` veriyor
-- [ ] 6. İki koşu: `VERGLAS_NETWORK=fuji` ve `=avalanche` → doğrula: `workflow_dispatch`
-      ile elle tetiklenen ilk koşu uçtan uca yeşil
+- [x] 3. `.github/workflows/keeper.yml` — `cron: '0 */4 * * *'` + `workflow_dispatch` +
+      `concurrency: keeper` + timeout 15 dk
+- [x] 4. ZK artifact adımı: `actions/cache` + `gh release download keeper-artifacts-v1`
+      (CI'da **yeniden derleme yok** — farklı trusted setup zincirdeki verifier'ı kırar).
+      Cache-boş yolu ancak release yüklendikten sonra (madde 10) koşulabilir
+- [x] 5. Aggregator adımı: amd64 binary (cache) → `--config-file` → `/health` beklenir.
+      Yalnız Fuji koşusunda: mainnet'te gate yok. `isCleared=true` doğrulaması gerçek bir
+      carry ister — ilk koşudan önce #219'a bir harcama+pencere açılırsa aynı koşuda görülür
+- [x] 6. İki koşu: matrix `fuji` + `avalanche`. **Lokal olarak temiz kurulumla** (sıfırdan
+      `npm ci`, `.env` yok, `PRIVATE_KEY` env'den) ikisi de `exit 0` verdi; gerçek Actions
+      koşusu secret'a bağlı (madde 10)
 
-## Bekir'in elinde (tek seferlik)
+## Bekir'in elinde (tek seferlik) — sıra sende
 
 - [ ] 7. `cast wallet new` → keeper key üret
 - [ ] 8. Fuji + mainnet `VerglasOracle.setKeeper(yeniAdres)` (owner imzası)
 - [ ] 9. Gas: Fuji faucet + mainnet ~0.05 AVAX
 - [ ] 10. GitHub Secret `KEEPER_PRIVATE_KEY` + `gh release create keeper-artifacts-v1`
-      (zkey + wasm)
+      (`build/policy_compliance.zkey` + `build/policy_compliance_js/policy_compliance.wasm`)
+
+Ondan sonra: Actions → Keeper → **Run workflow** → iki job da yeşil olmalı.
 
 ## Kapsam dışı — bilinçli
 
