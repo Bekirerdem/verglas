@@ -21,3 +21,22 @@ bayatlık değildir. Tolerans genişse en az bakımlı çözüme in.
 **Aynı refleksin ikinci yüzü:** yetki envanterini de koddan çıkar. `submitProof`,
 `carryAttestation` ve `receiveCrossChainMessage` permissionless olduğu için otomasyona
 deployer key'i gerekmedi — bu okunmasaydı owner key'i bir CI secret'ına yazılacaktı.
+
+## 2026-08-04 · Anahtar rotasyonu tek zincirde bitmez
+
+**Ne oldu:** keeper anahtarı yeni bir cüzdana taşındı, Fuji'ye gas kondu, ilk koşu
+yeşil sanıldı. İki tur kayıp: (1) mainnet job'ı `0.0000 AVAX` ile kırmızı — aynı adres,
+başka zincir; (2) Fuji koşusu damgayı attı, Echo'ya taşıdı, Warp imzasını topladı ve
+teslimde düştü: **gate zinciri kendi native token'ını istiyor**, keeper'ın Echo bakiyesi
+sıfırdı.
+
+**Kural:** bir imzalayanı değiştirirken "hangi zincirlerde tx gönderiyor" listesini
+koddan çıkar — `TX_FEES` geçen her yazma yolu bir gas hesabıdır. Verglas'ta üç tane:
+Fuji C-Chain (damga + oracle push), Avalanche C-Chain (damga), Echo (self-delivery).
+Eski anahtarın bakiyeleri yeni anahtara otomatik geçmez; rotasyon = her zincirde
+ayrı bir dolum.
+
+**İkinci yüz:** eşik uyarısı yalnız keeper'ın kendi ağını ölçüyor (`pub.getBalance`),
+gate zincirini ölçmüyor — o yüzden Echo boşluğu önceden değil, teslim revert'ünde
+görüldü. Şimdilik yeterli (hata gürültülü düşüyor), ama sessiz kalmadığı için değil,
+`selfDeliver` throw ettiği için yeterli.

@@ -1,9 +1,18 @@
 # Açık iş
 
-**Mainnet pasaportları 06 Ağustos'ta doluyor** (#1783, #1784 — Fuji'dekiler 08'inde).
-`keeper/renew.ts` Fuji'ye göre yazıldı: #220'nin harcaması treasurer'ın `payFX`
-operatörü üzerinden gidiyor, mainnet'te treasurer yok. Mainnet yenilemesinin yolu
-ayrıca çözülecek — yoksa vitrindeki ilk mainnet kasası "expired" görünür.
+**Mainnet pasaportları 06 Ağustos'ta doluyor** (#1783, #1784). Bu bir araç eksiği
+değil: mainnet'te hem kimlik sahibi hem kasa agent'ı `0x39AEfbC8…5794` (Bekir'in
+cüzdanı), yani `validationRequest` de harcama da onun imzasını istiyor — keeper
+ikisini de forge edemez, tasarım bu. Konsoldan **iki imza** yeter, damgayı zamanlı
+keeper atar:
+
+- [ ] #1783 — konsol → mainnet → pencereyi yenile + bir ödeme (kasada 0.5 USDC var)
+- [ ] #1784 — aynısı, ama kasa boş: önce USDC yatırmak gerekiyor. Vitrinde
+      görünen kasa #1783, bu ikincisi beklerse vitrin bozulmaz.
+
+Her hafta tekrarlanacak. Tamamen otomatikleşmesi ancak mainnet'te agent'ı keeper
+cüzdanı olan bir kasayla mümkün (`VerglasAccount.agent` immutable, mevcut kasalar
+devredilemez) — ayrı bir karar.
 
 ---
 
