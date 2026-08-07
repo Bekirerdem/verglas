@@ -249,6 +249,49 @@ contract VerglasHubTest is Test {
         assertGt(issuedAt, 0);
     }
 
+    /// @notice A proof for one agent must never answer another agent's validation
+    ///         request. The Hub verifies the proof against `agentId`'s vault but
+    ///         hands `requestHash` to the registry, which resolves it to the agentId
+    ///         the request was opened for — so without a binding check, anyone can
+    ///         write a score-100 response onto a stranger's pending request.
+    /// @dev The vault's public policy (whitelist, per-tx limit) is readable on-chain
+    ///      and the commitment chain folds only (to, amount), so an attacker can
+    ///      reproduce a vault whose state the victim's own proof verifies against.
+    function test_RevertWhen_ProofAnswersAnotherAgentsRequest() public {
+        address attacker = makeAddr("attacker");
+        uint256 attackerAgentId = 2600;
+
+        address[] memory wl = new address[](2);
+        wl[0] = dexA;
+        wl[1] = dexB;
+        VerglasAccount attackerAccount = new VerglasAccount(attacker, agent, address(token), PER_TX, BUDGET, wl);
+        token.mint(address(attackerAccount), 1000e6);
+
+        identity.set(attackerAgentId, attacker);
+        vm.prank(attacker);
+        hub.bindAccount(attackerAgentId, address(attackerAccount));
+
+        vm.startPrank(agent);
+        attackerAccount.spend(dexA, 100e6);
+        attackerAccount.spend(dexB, 50e6);
+        attackerAccount.spend(dexA, 25e6);
+        vm.stopPrank();
+        assertEq(attackerAccount.commitment(), FINAL_COMMITMENT, "same spends reproduce the same chain");
+
+        // The attacker's proof is genuinely valid for their own vault — but
+        // REQUEST_HASH was opened by the victim, for AGENT_ID.
+        vm.prank(attacker);
+        vm.expectRevert(VerglasHub.RequestAgentMismatch.selector);
+        hub.submitProof(
+            attackerAgentId, REQUEST_HASH, pA, pB, pC, _publicSignals(), "ipfs://attacker", keccak256("attacker")
+        );
+
+        // The victim's request must still be unanswered.
+        (,, uint8 score,,, uint256 lastUpdate) = registry.getValidationStatus(REQUEST_HASH);
+        assertEq(score, 0, "victim's request must not carry a score");
+        assertEq(lastUpdate, 0, "victim's request must have no response");
+    }
+
     function test_Registry_OnlyRequestedValidatorResponds() public {
         vm.prank(owner);
         vm.expectRevert(ValidationRegistry.NotRequestedValidator.selector);
