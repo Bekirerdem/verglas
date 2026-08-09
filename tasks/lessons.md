@@ -40,3 +40,15 @@ ayrı bir dolum.
 gate zincirini ölçmüyor — o yüzden Echo boşluğu önceden değil, teslim revert'ünde
 görüldü. Şimdilik yeterli (hata gürültülü düşüyor), ama sessiz kalmadığı için değil,
 `selfDeliver` throw ettiği için yeterli.
+
+## 2026-08-09 · wrangler pages deploy branch'siz preview'a gider
+
+**Ne oldu:** /check sayfası deploy edildi, "Deployment complete" görüldü, ama
+verglas.xyz eski kaldı — komut feature branch'ten koşulduğu için Cloudflare Pages
+deploy'u `feat-relaunch` PREVIEW'ı saydı; custom domain production'ı gösterir.
+
+**Kural:** production deploy her zaman `--branch=master` bayrağıyla:
+`npx wrangler pages deploy web/dist --project-name=verglas --branch=master --commit-dirty=true`.
+"Deployment complete" satırı tek başına kanıt değil — kanıt, verglas.xyz'de
+değişikliğin GÖRÜNMESİ. `build-site.mjs`'in bastığı komut bayrağı içermiyor;
+feature branch'ten çalışırken bayrağı elle ekle.
