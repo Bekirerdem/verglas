@@ -25,7 +25,7 @@ function Curve({ rows }: { rows: AgentCheck["history"] }) {
 
   const W = 560;
   const H = 120;
-  const PAD = { l: 30, r: 16, t: 14, b: 22 };
+  const PAD = { l: 30, r: 16, t: 22, b: 22 };
   const t0 = pts[0].issuedAt;
   const t1 = pts[pts.length - 1].issuedAt;
   const x = (unix: number) => PAD.l + ((unix - t0) / Math.max(1, t1 - t0)) * (W - PAD.l - PAD.r);
