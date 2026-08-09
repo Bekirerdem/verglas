@@ -308,6 +308,9 @@
 .bnote-detail {
   margin-top: 4px; font-family: var(--font-mono); font-size: 12px; opacity: 0.8; overflow-wrap: anywhere;
 }
+.wiz-wallet { flex-wrap: wrap; }
+.wiz-wallet-k { font-size: 10px; letter-spacing: 1.6px; color: var(--faint); flex-basis: 100%; }
+.wiz-wallet-bal { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
 
 /* contacts panel rows */
 .bcontact { display: grid; grid-template-columns: 40px 1fr 200px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--edge); }
