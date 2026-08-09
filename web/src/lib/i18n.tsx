@@ -541,6 +541,25 @@ const en = {
   app_act_step2: "BINDING",
   app_act_step3: "WINDOW",
   app_owner_needed: "Connect the owner wallet.",
+
+  // /check — the public agent record
+  check_title: "Agent record",
+  check_sub: "Look up any Verglas agent before you accept its payment.",
+  check_cleared: "CLEARED AT THE BORDER",
+  check_not_cleared: "NO VALID STAMP",
+  check_score: "Latest score",
+  check_issued: "Stamped",
+  check_txs: "Payments in window",
+  check_vault: "Bound vault",
+  check_history: "Stamp history",
+  check_curve: "Reputation over time",
+  check_lookup: "Look up an agent",
+  check_lookup_ph: "Agent number — e.g. 222",
+  check_lookup_go: "LOOK UP",
+  check_empty: "No record on this network yet.",
+  check_net_note: "The record is kept on the Fuji test network for now.",
+  check_loading: "Reading the chain…",
+  check_back: "verglas.xyz",
 };
 
 const tr: typeof en = {
@@ -1082,6 +1101,25 @@ const tr: typeof en = {
   app_act_step2: "BAĞLAMA",
   app_act_step3: "PENCERE",
   app_owner_needed: "Sahip cüzdanıyla bağlan.",
+
+  // /check — herkese açık ajan sicili
+  check_title: "Ajan sicili",
+  check_sub: "Ödemesini kabul etmeden önce herhangi bir Verglas ajanını sorgula.",
+  check_cleared: "SINIR KAPISINDAN ONAYLI",
+  check_not_cleared: "GEÇERLİ DAMGA YOK",
+  check_score: "Son skor",
+  check_issued: "Damga tarihi",
+  check_txs: "Penceredeki ödemeler",
+  check_vault: "Bağlı kasa",
+  check_history: "Damga geçmişi",
+  check_curve: "Zaman içinde itibar",
+  check_lookup: "Ajan sorgula",
+  check_lookup_ph: "Ajan numarası — örn. 222",
+  check_lookup_go: "SORGULA",
+  check_empty: "Bu ağda henüz kayıt yok.",
+  check_net_note: "Sicil şimdilik Fuji test ağında tutulur.",
+  check_loading: "Zincir okunuyor…",
+  check_back: "verglas.xyz",
 };
 
 const dicts = { en, tr };
