@@ -16,6 +16,7 @@ import {
 import { I18nProvider, useI18n } from "../lib/i18n";
 import { short, usd, utcDate } from "../lib/format";
 import { connect, ensureChain, getConnected } from "./lib/wallet";
+import { txErrorReason } from "./lib/txError";
 import { contactName, initials } from "./lib/contacts";
 import { memoFor } from "./lib/memos";
 import { vaultNames } from "./lib/activate";
@@ -99,6 +100,7 @@ function Console() {
   const [wallet, setWallet] = useState<Address | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
+  const [txErrorDetail, setTxErrorDetail] = useState<string>("");
   const [justFroze, setJustFroze] = useState(false);
   const [desk, setDesk] = useState<Desk>(null);
   const [page, setPage] = useState<Page>(pageFromHash);
@@ -228,10 +230,13 @@ function Console() {
       const rc = await hubChain.waitForTransactionReceipt({ hash });
       if (rc.status !== "success") throw new Error("reverted");
       setTxError(null);
+      setTxErrorDetail("");
       load(sel);
       return true;
-    } catch {
-      setTxError(label); // rejected in the wallet or reverted by a vault rule
+    } catch (e) {
+      console.error("[tx]", label, e);
+      setTxError(label);
+      setTxErrorDetail(txErrorReason(e)); // the line that names the actual cause
       return false;
     } finally {
       setBusy(null);
@@ -470,7 +475,12 @@ function Console() {
                 )}
               </div>
 
-              {txError && <div className="bnote">⚠ {t("app_tx_failed")}</div>}
+              {txError && (
+                <div className="bnote">
+                  ⚠ {t("app_tx_failed")}
+                  {txErrorDetail && <div className="bnote-detail">{txErrorDetail}</div>}
+                </div>
+              )}
 
               {(page === "overview" || page === "payments") && (
                 <ActionDesk
