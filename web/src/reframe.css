@@ -361,6 +361,25 @@
 }
 .pp-rail[data-arrived="1"] .pp-gate { color: var(--ok); }
 
+/* the public record card — the stamp becomes something you can open */
+.pp-registry {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px;
+  margin: 3vh 0 2vh; padding: 16px 22px; border-radius: 14px;
+  border: 1px solid var(--edge); background: var(--card-solid);
+  text-decoration: none; color: inherit; max-width: 640px;
+  box-shadow: 0 18px 50px -26px var(--shadow);
+  opacity: 0;
+}
+.ppr-head { display: flex; align-items: center; gap: 12px; font-size: 13px; letter-spacing: 1.2px; }
+.ppr-badge {
+  font-style: normal; font-size: 10px; letter-spacing: 1.8px; padding: 5px 11px;
+  border-radius: 999px; background: var(--stamp-amber); color: var(--stamp-ink);
+  border: 1px solid var(--stamp-amber-lo);
+}
+.ppr-rows { font-size: 10.5px; letter-spacing: 1.2px; color: var(--faint); }
+.ppr-cta { margin-left: auto; font-size: 11px; letter-spacing: 2px; color: var(--accent-hi); }
+.pp-registry:hover .ppr-cta { text-decoration: underline; }
+
 .pp-kite {
   font-size: clamp(19px, 2.2vw, 30px);
   color: var(--text);
@@ -418,6 +437,13 @@
 }
 
 /* ---------------- hero passport artifact (replaces the orphan score chip) ---------------- */
+/* Anchor jumps must travel THROUGH the pinned scenes, not teleport past
+   their spacers — smooth scrolling keeps every ScrollTrigger consistent. */
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 .hero-passport {
   position: absolute;
   right: max(5vw, calc(50% - 590px));

@@ -15,8 +15,8 @@ import { Hero } from "./components/Hero";
 import { Problem } from "./components/Problem";
 import { TreasurerScene } from "./components/TreasurerScene";
 import { Passport } from "./components/Passport";
-import { Motor } from "./components/Motor";
 import { LiveBand } from "./components/LiveBand";
+import { SHOWCASE_AGENT_ID } from "./lib/network";
 import { Closing } from "./components/Closing";
 import { FooterWall } from "./components/FooterWall";
 import { VerglasCanvas } from "./components/VerglasCanvas";
@@ -170,11 +170,8 @@ function Page() {
           <Problem />
         </div>
         <TreasurerScene treasurer={treasurer} />
-        <Passport />
-        <div className="room room-raised">
-          <Motor />
-        </div>
-        <LiveBand data={data} treasurer={treasurer} />
+        <LiveBand data={data} fresh={fresh} treasurer={treasurer} />
+        <Passport recordId={data?.cleared === false && fresh ? fresh.agentId : SHOWCASE_AGENT_ID} />
         <Closing />
       </main>
       <FooterWall />

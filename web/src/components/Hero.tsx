@@ -39,10 +39,10 @@ export function Hero({
           </span>
         </div>
         <nav className="navlinks">
-          <a href="#scene">{t("nav_how")}</a>
-          <a href="#motor">{t("nav_product")}</a>
+          <a href="#problem">{t("nav_how")}</a>
+          <a href="#scene">{t("nav_product")}</a>
           <a href="#live">{t("nav_live")}</a>
-          <a href="/check/">{t("nav_registry")}</a>
+          <a href={checkHref}>{t("nav_registry")}</a>
           <a href="/docs/">{t("nav_docs")}</a>
           <a href="/app/">{t("nav_app")}</a>
         </nav>
