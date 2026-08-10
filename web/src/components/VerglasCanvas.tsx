@@ -221,7 +221,9 @@ export function VerglasCanvas({ theme }: { theme: string }) {
         if (r.bottom > 0 && r.top < H) glows.push({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
       });
 
-      const settle = dark ? 0.3 : 0.22;
+      // Visibility floor raised 2026-08-10: at 0.22 the light-mode sheet read
+      // as an empty cream page — the concept was invisible, which defeats it.
+      const settle = dark ? 0.34 : 0.3;
       edges.forEach((e, ei) => {
         if (e.born === 0) return;
         const age = now - e.born;
@@ -255,7 +257,7 @@ export function VerglasCanvas({ theme }: { theme: string }) {
           inSweep && sweepRed && !e.horizontal
             ? `rgba(193, 31, 46, ${Math.min(0.6, alpha)})`
             : `rgba(${lineBase}, ${Math.min(0.55, alpha)})`;
-        ctx.lineWidth = e.horizontal ? 1 : 1 + railK * 0.7;
+        ctx.lineWidth = e.horizontal ? 1.15 : 1.15 + railK * 0.7;
         ctx.beginPath();
         ctx.moveTo(pa.x, pa.y);
         ctx.lineTo(pb.x, pb.y);

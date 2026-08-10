@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./reframe.css";
-import { fetchDashboard, fetchTreasurer, type DashboardData, type TreasurerData } from "./lib/data";
+import {
+  fetchDashboard,
+  fetchFallbackClearance,
+  fetchTreasurer,
+  type DashboardData,
+  type FreshClearance,
+  type TreasurerData,
+} from "./lib/data";
 import { I18nProvider, useI18n } from "./lib/i18n";
 import { Hero } from "./components/Hero";
 import { Problem } from "./components/Problem";
@@ -21,6 +28,7 @@ const REFRESH_MS = 45_000;
 function Page() {
   const { lang } = useI18n();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [fresh, setFresh] = useState<FreshClearance | null>(null);
   const [treasurer, setTreasurer] = useState<TreasurerData | null>(null);
   const [theme, setTheme] = useState<string>(() => {
     const saved = localStorage.getItem("verglas-theme");
@@ -42,7 +50,18 @@ function Page() {
       // the marketing page never surfaces an RPC error to a visitor.
       fetchDashboard().then(
         (d) => {
-          if (alive) setData(d);
+          if (!alive) return;
+          setData(d);
+          // Stale showcase stamp → read the keeper-fresh Fuji record so the
+          // hero badge never opens the page on a red light.
+          if (!d.cleared) {
+            fetchFallbackClearance().then(
+              (f) => {
+                if (alive) setFresh(f);
+              },
+              () => {},
+            );
+          }
         },
         () => {},
       );
@@ -76,13 +95,16 @@ function Page() {
         return;
       }
       const play = () => {
-        // Hero entrance — Premium/Krehel reveal token: opacity + y16 + blur6,
-        // decelerate (power3.out), 480ms, standard stagger 80ms (<400ms budget).
+        // Hero entrance — the glass-frost reveal: content settles out of a
+        // frosted pane (opacity + y16 + blur10), decelerate (power3.out),
+        // no overshoot (ice does not bounce). The canvas fires one glaze
+        // sweep as the page freezes into place.
         gsap.fromTo(
           ".hero-anim",
-          { opacity: 0, y: 16, filter: "blur(6px)" },
-          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.48, ease: "power3.out", stagger: 0.08, delay: 0.1 },
+          { opacity: 0, y: 16, filter: "blur(10px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.52, ease: "power3.out", stagger: 0.08, delay: 0.1 },
         );
+        gsap.delayedCall(0.25, () => window.dispatchEvent(new Event("verglas-sweep")));
         // hero copy drifts up as you leave — counter-motion depth against the
         // fixed ice (ambient layer, ease:none for 1:1 scroll linkage)
         gsap.to(".hero-block", {
@@ -142,7 +164,7 @@ function Page() {
           surface a raw RPC error to a visitor. The live cells simply stay
           in their neutral state until the data lands. */}
 
-      <Hero data={data} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
+      <Hero data={data} fresh={fresh} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
       <main>
         <div className="room room-raised">
           <Problem />

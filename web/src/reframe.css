@@ -351,6 +351,10 @@
   right: max(5vw, calc(50% - 590px));
   top: 19vh;
   width: 232px;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
   z-index: 3;
   border-radius: 18px;
   padding: 18px 20px;

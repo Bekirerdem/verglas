@@ -91,6 +91,27 @@ export interface DashboardData {
   fetchedAt: number;
 }
 
+export interface FreshClearance {
+  agentId: bigint;
+  cleared: boolean;
+  network: "fuji";
+}
+
+/** The hero badge must never open on a stale red: when the selected
+    network's showcase stamp has lapsed, fall back to the Fuji pair — the
+    scheduled keeper keeps those stamps fresh. Honest labelling (the badge
+    says which network it is reading) is the caller's job. */
+export async function fetchFallbackClearance(): Promise<FreshClearance | null> {
+  try {
+    const fuji = VerglasClient.fuji();
+    const agentId = 219n;
+    const cleared = await fuji.isCleared(agentId);
+    return cleared ? { agentId, cleared, network: "fuji" } : null;
+  } catch {
+    return null;
+  }
+}
+
 // Every address and chain below comes from the network selected at page load
 // (see lib/network.ts) — the console is network-agnostic; switching reloads.
 const client = VerglasClient.forNetwork(NET);
