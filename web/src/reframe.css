@@ -42,6 +42,34 @@
 .p2-bot b { color: var(--text); display: block; font-weight: 800; font-family: var(--font-display); font-stretch: 80%; font-size: 1.35em; margin-top: 6px; }
 .p2-close { margin-top: 9vh; font-size: clamp(20px, 2.2vw, 30px); color: var(--text); text-align: center; }
 
+/* the drift field — instructions that never line up, on purpose */
+.p2-drift {
+  position: relative; display: flex; flex-wrap: wrap; gap: 26px;
+  justify-content: center; align-items: flex-start; padding: 4vh 0 2vh;
+}
+.p2-card {
+  border: 1px solid var(--edge); border-radius: 14px; background: var(--card-solid);
+  padding: 16px 20px; font-size: 15px; color: var(--muted); max-width: 300px;
+  box-shadow: 0 14px 40px -22px var(--shadow);
+}
+.p2-card.p2-file { font-size: 13px; color: var(--faint); text-decoration: line-through 1px color-mix(in srgb, var(--accent) 40%, transparent); }
+.p2-card.p2-bot { color: var(--muted); }
+.p2-card.p2-bot b { color: var(--text); display: block; font-weight: 800; font-family: var(--font-display); font-stretch: 80%; font-size: 1.25em; margin-top: 4px; }
+.p2-card:nth-child(1) { transform: rotate(-2.4deg) translateY(10px); }
+.p2-card:nth-child(2) { transform: rotate(1.6deg) translateY(-6px); }
+.p2-card:nth-child(3) { transform: rotate(-1.2deg) translateY(22px); }
+.p2-card:nth-child(4) { transform: rotate(2.2deg) translateY(2px); }
+@media (prefers-reduced-motion: no-preference) {
+  .p2-card { animation: p2float 7s ease-in-out infinite; }
+  .p2-card:nth-child(2) { animation-duration: 8.4s; animation-delay: -2.1s; }
+  .p2-card:nth-child(3) { animation-duration: 9.2s; animation-delay: -4.4s; }
+  .p2-card:nth-child(4) { animation-duration: 7.8s; animation-delay: -1.3s; }
+}
+@keyframes p2float {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -9px; }
+}
+
 /* ---------------- S3 · treasurer scene (pinned) ---------------- */
 .tscene { position: relative; }
 .ts-inner {
@@ -57,6 +85,8 @@
 .ts-intro b { color: var(--text); font-style: normal; font-family: var(--font-display); font-weight: 700; }
 
 .ts-frame {
+  position: relative;
+  overflow: hidden;
   border-radius: 20px;
   padding: 34px 36px;
   display: flex;
@@ -166,7 +196,49 @@
 .ts-frame[data-stage="2"] .tsf-knob { left: calc(100% - 19px); background: linear-gradient(160deg, var(--accent-hi), var(--accent)); }
 .ts-frame[data-stage="3"] .tsf-receipt,
 .ts-frame[data-stage="4"] .tsf-receipt { opacity: 1; transform: none; }
+.ts-frame[data-stage="3"] .tsf-stamp,
 .ts-frame[data-stage="4"] .tsf-stamp { opacity: 1; transform: rotate(-4deg) scale(1); }
+
+/* act 1 — the rules etch themselves into the glass, line by line */
+.tsf-rules {
+  display: flex; flex-direction: column; gap: 6px; margin: 14px 0 4px;
+  font-size: 10px; letter-spacing: 1.8px; color: var(--muted);
+}
+.tsf-rules span {
+  clip-path: inset(0 100% 0 0); opacity: 0.2;
+  transition: clip-path 0.7s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.7s;
+  border-left: 2px solid color-mix(in srgb, var(--text) 25%, transparent);
+  padding-left: 8px;
+}
+.ts-frame[data-stage="1"] .tsf-rules span,
+.ts-frame[data-stage="2"] .tsf-rules span,
+.ts-frame[data-stage="3"] .tsf-rules span { clip-path: inset(0 0 0 0); opacity: 1; }
+.ts-frame[data-stage="1"] .tsf-rules span:nth-child(2) { transition-delay: 0.15s; }
+.ts-frame[data-stage="1"] .tsf-rules span:nth-child(3) { transition-delay: 0.3s; }
+
+/* act 2 — the refused attempt, and the glaze sweeping over the frame */
+.tsf-attempt {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding: 8px 12px; border-radius: 10px; font-size: 12px;
+  border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent-hi); opacity: 0; transform: translateY(6px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.tsf-attempt .dim { color: var(--faint); font-size: 10.5px; }
+.ts-frame[data-stage="2"] .tsf-attempt { opacity: 1; transform: none; }
+.tsf-glaze {
+  position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(105deg,
+    color-mix(in srgb, var(--card-solid) 0%, transparent) 30%,
+    color-mix(in srgb, var(--text) 7%, transparent) 46%,
+    color-mix(in srgb, var(--card-solid) 55%, transparent) 60%,
+    color-mix(in srgb, var(--card-solid) 35%, transparent) 100%);
+  backdrop-filter: blur(0px);
+  transform: translateX(-101%);
+  transition: transform 0.7s cubic-bezier(0.45, 0, 0.55, 1);
+}
+.ts-frame[data-stage="2"] .tsf-glaze { transform: translateX(0); backdrop-filter: blur(1.5px); }
+.ts-frame[data-stage="3"] .tsf-glaze { transform: translateX(101%); }
 
 .ts-steps { display: flex; flex-direction: column; gap: 5vh; }
 .ts-step { opacity: 0; transform: translateY(24px); max-width: 24em; }
