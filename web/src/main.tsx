@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { registerSW } from "virtual:pwa-register";
-import "./v3/v3.css";
+import "./theme.css";
 import App from "./App";
 
 // Register the service worker from the landing too, so the site is
