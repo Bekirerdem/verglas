@@ -12,10 +12,20 @@ export function Problem() {
         <p className="p2-close serif">{t("r2_close")}</p>
       </div>
       <div className="p2-drift">
-        <div className="p2-card will-reveal">{t("r2_c1")}</div>
-        <div className="p2-card will-reveal">{t("r2_c2")}</div>
-        <div className="p2-card p2-file mono will-reveal">{t("r2_c3")}</div>
+        <div className="p2-card will-reveal">
+          <span className="p2-tag">{t("r2_t1")}</span>
+          {t("r2_c1")}
+        </div>
+        <div className="p2-card will-reveal">
+          <span className="p2-tag">{t("r2_t2")}</span>
+          {t("r2_c2")}
+        </div>
+        <div className="p2-card p2-file mono will-reveal">
+          <span className="p2-tag">{t("r2_t3")}</span>
+          {t("r2_c3")}
+        </div>
         <div className="p2-card p2-bot will-reveal">
+          <span className="p2-tag">{t("r2_t4")}</span>
           {t("r2_bot_h")} <b>{t("r2_bot_b")}</b>
         </div>
       </div>

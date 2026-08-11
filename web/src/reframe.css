@@ -31,13 +31,27 @@
   padding: 14vh 6vw 12vh;
 }
 .problem2 .ptag { margin-bottom: 3vh; }
+.problem2::before {
+  content: "01";
+  position: absolute; top: -0.08em; right: 2vw; z-index: 0;
+  font-family: var(--font-display); font-stretch: 64%; font-weight: 800;
+  font-size: clamp(160px, 24vw, 380px); line-height: 1;
+  color: color-mix(in srgb, var(--text) 4.5%, transparent);
+  pointer-events: none;
+}
+.p2-tag {
+  display: block; font-family: var(--font-mono); font-size: 9px;
+  letter-spacing: 2.2px; color: var(--accent-hi); margin-bottom: 8px;
+}
+.p2-lede, .p2-drift { position: relative; z-index: 1; }
 .p2-lede .p2-close {
   margin-top: 0;
   text-align: left;
-  font-size: clamp(26px, 2.9vw, 42px);
-  line-height: 1.22;
+  font-size: clamp(30px, 3.3vw, 48px);
+  line-height: 1.18;
   max-width: 13em;
 }
+.p2-close b { color: var(--accent-hi); font-style: normal; }
 .p2-panels { display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; align-items: stretch; }
 .p2-biz h2 {
   font-family: var(--font-serif);
@@ -475,8 +489,11 @@
 .hero-passport {
   position: absolute;
   right: max(5vw, calc(50% - 590px));
-  top: 19vh;
-  width: 258px;
+  top: 17vh;
+  width: 300px;
+  transform: perspective(900px) rotateY(-7deg) rotateX(2deg);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.6s;
+  box-shadow: 0 40px 90px -40px var(--shadow), 0 0 70px -20px color-mix(in srgb, var(--stamp-amber) 30%, transparent);
   display: block;
   text-decoration: none;
   color: inherit;
