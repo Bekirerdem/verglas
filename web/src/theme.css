@@ -109,6 +109,7 @@ a { color: inherit; }
   /* the stage: cold ice light from above, a crimson horizon breathing
      from below — the avax cinematic ground, drawn with our own light. */
   background:
+    linear-gradient(rgba(11, 10, 9, 0.52), rgba(11, 10, 9, 0.52)),
     radial-gradient(900px 520px at 80% 8%, rgba(127, 183, 216, 0.11), transparent 65%),
     radial-gradient(1300px 640px at 26% 104%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
     radial-gradient(1200px 600px at 72% 18%, var(--overlay-a), transparent 65%);

@@ -17,8 +17,8 @@ type Shard = {
 const COLS = 12;
 const ROWS = 7;
 const JITTER = 0.32; // of cell size
-const SCATTER = 26;
-const RADIUS = 300;
+const SCATTER = 40;
+const RADIUS = 560;
 
 /** Deterministic pseudo-random from an index — no Math.random so the pane
     shatters the same way on every visit. */
@@ -114,8 +114,8 @@ export function ShatterGlass() {
       for (const s of shards) {
         const d = Math.hypot(s.ox - mouse.x, s.oy - mouse.y);
         const target = reduced ? 1 : Math.max(0, 1 - d / RADIUS);
-        s.k += (target - s.k) * 0.07; // gentle settle, no bounce
-        const drift = reduced ? 0 : Math.sin(t * 0.7 + s.phase) * 1.6;
+        s.k += (target - s.k) * 0.11; // gentle settle, no bounce
+        const drift = reduced ? 0 : Math.sin(t * 0.7 + s.phase) * 2.6;
         const f = 1 - s.k;
         const mx = s.dx * f + drift * f;
         const my = s.dy * f + drift * f * 0.6;
@@ -129,9 +129,9 @@ export function ShatterGlass() {
         ctx.lineTo(s.bx, s.by);
         ctx.lineTo(s.cx, s.cy);
         ctx.closePath();
-        ctx.fillStyle = `rgba(207, 230, 245, ${0.012 + s.k * 0.028})`;
+        ctx.fillStyle = `rgba(207, 230, 245, ${0.006 + s.k * 0.05})`;
         ctx.fill();
-        ctx.strokeStyle = `rgba(207, 230, 245, ${0.07 + s.k * 0.3})`;
+        ctx.strokeStyle = `rgba(207, 230, 245, ${0.028 + s.k * 0.46})`;
         ctx.lineWidth = 1;
         ctx.stroke();
         ctx.restore();
