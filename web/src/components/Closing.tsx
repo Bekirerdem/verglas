@@ -7,7 +7,7 @@ export function Closing() {
   const { t } = useI18n();
   const cells = [
     { h: "r6_w1_h", p: "r6_w1_p", href: "/app/" },
-    { h: "r6_w2_h", p: "r6_w2_p", href: "/docs/" },
+    { h: "r6_w2_h", p: "r6_w2_p", href: "https://github.com/Bekirerdem/verglas/tree/master/mcp" },
     { h: "r6_w3_h", p: "r6_w3_p", href: "/docs/" },
     { h: "r6_w4_h", p: "r6_w4_p", href: "https://github.com/Bekirerdem/verglas" },
   ] as const;
