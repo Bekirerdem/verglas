@@ -15,7 +15,7 @@
 ![Tests](https://img.shields.io/badge/tests-92_forge_·_11_sdk-8B0D1A?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-3a3a3a?style=flat-square)
 
-**[verglas.xyz](https://verglas.xyz)** · **[Open the console →](https://verglas.xyz/app)** · **[Docs](https://verglas.xyz/docs)**
+**[verglas.xyz](https://verglas.xyz)** · **[Open the console →](https://verglas.xyz/app)** · **[Agent record](https://verglas.xyz/check/219)** · **[Docs](https://verglas.xyz/docs)**
 
 <img src="assets/hero.png" alt="Verglas — prove once, pass every gate" width="880" />
 
@@ -93,6 +93,29 @@ independent verification passed".
 *The audit page, on Fuji.* It shows the leg mainnet does not have yet: vault → ZK seal →
 **border gate on a second L1**. Cross-chain clearance is M3, deployed per L1 operator.
 
+## verglas-pay — the vault as an MCP tool
+
+Plug the vault into any LLM agent — Claude, GPT, anything that speaks MCP:
+
+```sh
+claude mcp add verglas -- npx tsx <repo>/mcp/index.ts
+```
+
+```
+> pay 6 USDC to 0x…A1
+REFUSED by the vault: PerTxLimitExceeded(6000000, 5000000) — the payment
+never left. Rules live in the contract, not in this tool.
+```
+
+Three tools: `verglas_status` (rules and budget), `verglas_pay` (simulate,
+then submit inside the rules — refusals come back by name), `verglas_check`
+(any agent's public record before you trust it). Keys stay on your machine;
+the contract does the refusing. Details in [`mcp/`](mcp/).
+
+Every agent also has a public record page for the counterparty:
+**[verglas.xyz/check/219](https://verglas.xyz/check/219)** — cleared or not,
+seal age, full stamp history, one view call behind it.
+
 ## Contracts
 
 | Contract | Chain | Role |
@@ -115,7 +138,8 @@ independent verification passed".
 | `circuits/` | Circom circuit #1 — policy compliance, N=64 spend window |
 | `keeper/` | Always-on service: oracle feed, proving, attestation, ICM carry |
 | `agent/` | Treasurer strategy + independent FX sources |
-| `sdk/` | `@verglas/sdk` — viem client, network registry, browser-safe proving |
+| `sdk/` | `@verglas/sdk` — viem client, `checkAgent`, network registry, browser-safe proving |
+| `mcp/` | verglas-pay — MCP server: status / pay / check for any LLM agent |
 | `web/` | Landing + console (Vite/React → verglas.xyz) |
 | `docs/` | VitePress documentation |
 | `test/` | Foundry test suite (92 tests) |
@@ -131,6 +155,10 @@ cd web && npm ci && npm run dev        # console + landing at :5173
 # keeper — one pass against a network, or a service loop
 cd keeper
 VERGLAS_NETWORK=avalanche npx tsx service.ts --once
+
+# verglas-pay — the vault as an MCP tool for your LLM agent
+cd mcp && npm i
+claude mcp add verglas -- npx tsx $PWD/index.ts
 ```
 
 Proving locally also needs `circom` 2.x and the pot17 ptau — see
