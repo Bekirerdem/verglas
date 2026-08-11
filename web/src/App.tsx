@@ -169,12 +169,12 @@ function Page() {
       const target = document.querySelector(a.getAttribute("href") || "");
       if (!target) return;
       e.preventDefault();
-      gsap.to(window, {
-        scrollTo: { y: target, autoKill: true },
-        duration: reduced ? 0 : 1,
-        ease: "power2.inOut",
-        overwrite: "auto",
-      });
+      // Plain JS smooth scroll, no plugin: the GSAP scrollTo route died
+      // silently on pinned targets. rect + scrollY is correct with pin
+      // spacers in the layout, and a one-shot native smooth scroll doesn't
+      // fight ScrollTrigger the way global CSS smooth-scrolling did.
+      const y = Math.max(0, target.getBoundingClientRect().top + window.scrollY - 76);
+      window.scrollTo({ top: y, behavior: reduced ? "auto" : "smooth" });
     };
     document.addEventListener("click", onClick);
     return () => document.removeEventListener("click", onClick);
