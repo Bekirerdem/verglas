@@ -1,4 +1,5 @@
 import { SHOWCASE_AGENT_ID } from "../lib/network";
+import { ShatterGlass } from "./ShatterGlass";
 import type { DashboardData, FreshClearance } from "../lib/data";
 import { remaining, SPAN_UNITS_TR } from "../lib/format";
 import { useI18n } from "../lib/i18n";
@@ -31,6 +32,7 @@ export function Hero({
 
   return (
     <header className="hero">
+      <ShatterGlass />
       <div className="topbar">
         <div className="brand">
           <img className="mark" src="/mark.png" alt="" aria-hidden="true" />
