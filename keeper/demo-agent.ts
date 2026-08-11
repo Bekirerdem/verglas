@@ -8,8 +8,9 @@ import { verglasAccountAbi, verglasHubAbi } from "@verglas/sdk";
 import { clients, D, NET } from "./lib.js";
 
 const TX_FEES = { maxFeePerGas: 30_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n } as const;
-/** Deliberately on no whitelist — the outsider the rules exist to stop. */
-const OUTSIDER = "0x00000000000000000000000000000000000000B2" as Address;
+/** Deliberately on no whitelist — the outsider the rules exist to stop.
+ *  (Not B2: vault #219's whitelist actually contains B2.) */
+const OUTSIDER = "0x00000000000000000000000000000000000000C3" as Address;
 
 const idArg = process.argv[2];
 if (!idArg || !/^\d+$/.test(idArg)) {
