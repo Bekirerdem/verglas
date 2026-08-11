@@ -9,9 +9,10 @@ gsap.registerPlugin(ScrollTrigger);
 
 const rate4 = (v: bigint) => (Number(v) / 1e8).toFixed(4);
 
-/** S3 — THE TREASURER AT WORK: the page's hero scene. Pinned; scroll scrubs
-    the console frame through a week: shock → trip → in-rule payment → seal.
-    The frame is a stylized mock of the real console, fed live numbers. */
+/** S3 — THE VAULT AT WORK: the page's hero scene, in three acts. Pinned;
+    scroll scrubs a stylized console frame fed live numbers: the rules are
+    etched into the glass, a breach freezes the scene mid-flight, the week
+    folds into one receipt and takes the stamp. */
 export function TreasurerScene({ treasurer }: { treasurer: TreasurerData | null }) {
   const { t } = useI18n();
   const root = useRef<HTMLElement>(null);
@@ -20,7 +21,7 @@ export function TreasurerScene({ treasurer }: { treasurer: TreasurerData | null 
     if (!root.current) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
-      root.current.querySelector(".ts-frame")?.setAttribute("data-stage", "4");
+      root.current.querySelector(".ts-frame")?.setAttribute("data-stage", "3");
       gsap.set(root.current.querySelectorAll(".ts-step"), { opacity: 1, y: 0 });
       return;
     }
@@ -31,7 +32,7 @@ export function TreasurerScene({ treasurer }: { treasurer: TreasurerData | null 
         scrollTrigger: {
           trigger: root.current,
           start: "top top",
-          end: "+=2400",
+          end: "+=2200",
           scrub: 0.5,
           pin: true,
           anticipatePin: 1,
@@ -51,7 +52,7 @@ export function TreasurerScene({ treasurer }: { treasurer: TreasurerData | null 
   const ref = treasurer ? rate4(treasurer.referenceRateUsdTry) : "47.05";
   const cap = treasurer ? usd(treasurer.dailyLimit) : "10.00";
 
-  const steps = [1, 2, 3, 4] as const;
+  const steps = [1, 2, 3] as const;
 
   return (
     <section className="tscene" id="scene" ref={root}>
@@ -68,7 +69,12 @@ export function TreasurerScene({ treasurer }: { treasurer: TreasurerData | null 
             <div className="tsf-head mono">
               <span>VAULT #220</span>
               <span className="tsf-chip ok">ACTIVE</span>
-              <span className="tsf-chip trip">TRIPPED</span>
+              <span className="tsf-chip trip">FROZEN</span>
+            </div>
+            <div className="tsf-rules mono" aria-hidden="true">
+              <span>{t("r3_rule1")} {cap}</span>
+              <span>{t("r3_rule2")}</span>
+              <span>{t("r3_rule3")}</span>
             </div>
             <div className="tsf-gauge">
               <div className="tsf-rates mono">
@@ -86,6 +92,10 @@ export function TreasurerScene({ treasurer }: { treasurer: TreasurerData | null 
                 <i />
               </div>
             </div>
+            <div className="tsf-attempt mono" aria-hidden="true">
+              <span>✘ 12.00 USDC</span>
+              <span className="dim">{t("r3_attempt")}</span>
+            </div>
             <div className="tsf-lever mono">
               <i className="tsf-track">
                 <b className="tsf-knob" />
@@ -94,12 +104,13 @@ export function TreasurerScene({ treasurer }: { treasurer: TreasurerData | null 
             </div>
             <div className="tsf-receipt mono">
               <span>−1.00 USDC</span>
-              <span className="dim">→ supplier · in-rule</span>
+              <span className="dim">{t("r3_receipt")}</span>
             </div>
             <div className="tsf-stamp" aria-hidden="true">
               <span>VG</span>
               <em>SEALED · 100</em>
             </div>
+            <div className="tsf-glaze" aria-hidden="true" />
           </div>
         </div>
 

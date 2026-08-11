@@ -6,11 +6,11 @@ import { DEPLOYMENT } from "../lib/network";
 
 gsap.registerPlugin(ScrollTrigger);
 
-/** S3b — THE PASSPORT: the moat, full-bleed. Pinned; scroll carries the
+/** S4 — THE RECORD: the moat, full-bleed. Pinned; scroll carries the
     sealed stamp from the C-Chain hub across the rail to the far-side gate,
-    which clears green on arrival. The one scene where "trust that travels"
-    is something the visitor physically moves. */
-export function Passport() {
+    which clears green on arrival — and the public record card settles in
+    beneath it: the same stamp, now something a counterparty can open. */
+export function Passport({ recordId }: { recordId: bigint }) {
   const { t } = useI18n();
   const root = useRef<HTMLElement>(null);
 
@@ -19,7 +19,7 @@ export function Passport() {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced) {
       root.current.querySelector(".pp-rail")?.setAttribute("data-arrived", "1");
-      gsap.set(root.current.querySelectorAll(".pp-reveal"), { opacity: 1, y: 0, filter: "blur(0px)" });
+      gsap.set(root.current.querySelectorAll(".pp-reveal, .pp-registry"), { opacity: 1, y: 0, filter: "blur(0px)" });
       gsap.set(root.current.querySelector(".pp-stamp"), { left: "calc(100% - 46px)" });
       return;
     }
@@ -58,8 +58,16 @@ export function Passport() {
         { left: "calc(100% - 46px)", ease: "none" },
       );
       tl.fromTo(".pp-sweep", { scaleX: 0 }, { scaleX: 1, ease: "none" }, 0);
-      tl.set(rail, { attr: { "data-arrived": "1" } }, 0.86);
-      tl.to({}, { duration: 0.14 }); // hold on the cleared gate
+      tl.set(rail, { attr: { "data-arrived": "1" } }, 0.76);
+      // The record card settles in as the stamp reaches the gate — early
+      // enough that a quick scroller still meets it before the unpin.
+      tl.fromTo(
+        ".pp-registry",
+        { opacity: 0, y: 14, filter: "blur(6px)" },
+        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.22 },
+        0.78,
+      );
+      tl.to({}, { duration: 0.3 }); // hold on the opened record
     }, root);
     return () => ctx.revert();
   }, []);
@@ -89,6 +97,15 @@ export function Passport() {
             </span>
           </div>
         </div>
+
+        <a className="pp-registry" href={`/check/${recordId.toString()}`}>
+          <span className="ppr-head mono">
+            <b>AGENT #{recordId.toString()}</b>
+            <i className="ppr-badge">VG · {t("rg_badge")}</i>
+          </span>
+          <span className="ppr-rows mono">{t("rg_rows")}</span>
+          <span className="ppr-cta mono">{t("s1_cta_registry")}</span>
+        </a>
 
         <p className="pp-kite serif pp-reveal">{t("r3p_kite")}</p>
         <p className="pp-hint mono pp-reveal">{t("r3p_hint")}</p>

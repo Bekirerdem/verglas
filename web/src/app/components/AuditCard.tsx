@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import type { Address, Hex } from "viem";
 import { latestStamp, migratableIdentities, type VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
-import { remaining, short, utcDate } from "../../lib/format";
+import { remaining, SPAN_UNITS_TR, short, utcDate } from "../../lib/format";
 import { useAudit } from "../lib/useAudit";
 import { DEPLOYMENT, txUrl } from "../../lib/network";
 
@@ -23,7 +23,7 @@ interface Props {
     proof ready, verification passed, crossing cleared. The chain shows up
     as one trust line, not as the interface. */
 export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh, onOpenAudit }: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { step, actErr, activate, renew, migrate } = useAudit(view, wallet, isOwner, run, onRefresh);
 
   const [migratable, setMigratable] = useState<bigint[]>([]);
@@ -83,7 +83,7 @@ export function AuditCard({ view, wallet, isOwner, busy, run, onRefresh, onOpenA
   const att = view.attestation;
   const lastStamp = latestStamp(view.stamps);
   const deadline = att && view.gateMaxAge > 0n ? att.issuedAt + view.gateMaxAge : null;
-  const left = deadline ? remaining(deadline) : "";
+  const left = deadline ? remaining(deadline, lang === "tr" ? SPAN_UNITS_TR : undefined) : "";
   const proofTx = view.carried[0]?.txHash ?? null;
 
   return (

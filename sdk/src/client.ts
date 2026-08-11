@@ -2,6 +2,7 @@ import {
   createPublicClient,
   encodeFunctionData,
   fallback,
+  getAbiItem,
   http,
   type Address,
   type Hex,
@@ -42,6 +43,24 @@ export interface Attestation {
   txCount: bigint;
   score: number;
   issuedAt: bigint;
+}
+
+export interface AgentStampRow {
+  score: number;
+  issuedAt: number;
+  requestHash: Hex;
+}
+
+/** The public record `checkAgent` returns — everything a counterparty needs
+ *  before accepting an agent's payment, in one call. */
+export interface AgentCheck {
+  agentId: bigint;
+  cleared: boolean;
+  /** Only when an account was passed: is the stamp bound to THAT vault? */
+  clearedFor: boolean | null;
+  attestation: Attestation | null;
+  /** Stamps delivered to the gate, newest first. */
+  history: AgentStampRow[];
 }
 
 export interface Groth16Calldata {
@@ -211,6 +230,71 @@ export class VerglasClient {
       functionName: "isCleared",
       args: [agentId],
     });
+  }
+
+  /**
+   * The counterparty's one-call lookup: clearance, the latest attestation,
+   * and the full stamp history behind it. Powers the public /check page and
+   * any "verify before you accept payment" integration.
+   */
+  async checkAgent(
+    agentId: bigint,
+    opts?: { account?: Address; gate?: Address; gateChain?: PublicClient; fromBlock?: bigint },
+  ): Promise<AgentCheck> {
+    const gateChain = opts?.gateChain ?? this.gateChain;
+    if (!gateChain) throw new Error("VerglasClient: no gate chain client configured");
+    const gate = this.#require(opts?.gate ?? this.addresses.gate, "gate");
+    const received = getAbiItem({ abi: verglasGateAbi, name: "AttestationReceived" });
+
+    // Gate-chain RPCs cap eth_getLogs ranges (Echo: 2048 blocks), so the
+    // scan walks the chain in capped windows, all requested concurrently —
+    // gate L1s are young enough that this stays a handful of calls.
+    const CHUNK = 2000n;
+    const scanStamps = async () => {
+      const head = await gateChain.getBlockNumber();
+      const start = opts?.fromBlock ?? 0n;
+      const ranges: { from: bigint; to: bigint }[] = [];
+      for (let from = start; from <= head; from += CHUNK) {
+        const to = from + CHUNK - 1n < head ? from + CHUNK - 1n : head;
+        ranges.push({ from, to });
+      }
+      const batches = await Promise.all(
+        ranges.map((r) =>
+          gateChain.getLogs({
+            address: gate,
+            event: received,
+            args: { agentId },
+            fromBlock: r.from,
+            toBlock: r.to,
+          }),
+        ),
+      );
+      return batches.flat();
+    };
+
+    const [cleared, clearedFor, attestation, logs] = await Promise.all([
+      this.isCleared(agentId, opts),
+      opts?.account
+        ? (gateChain.readContract({
+            address: gate,
+            abi: verglasGateAbi,
+            functionName: "isClearedFor",
+            args: [agentId, opts.account],
+          }) as Promise<boolean>)
+        : Promise.resolve(null),
+      this.getAttestation(agentId),
+      scanStamps(),
+    ]);
+
+    const history: AgentStampRow[] = logs
+      .map((l) => ({
+        score: Number(l.args.score ?? 0),
+        issuedAt: Number(l.args.issuedAt ?? 0),
+        requestHash: (l.args.requestHash ?? "0x") as Hex,
+      }))
+      .sort((a, b) => b.issuedAt - a.issuedAt);
+
+    return { agentId, cleared, clearedFor, attestation, history };
   }
 
   // ---- writes (require walletClient) ----

@@ -1,24 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isAddress, parseUnits, type Address } from "viem";
-import { fetchMyVaults, hubChain } from "../../lib/data";
+import { fetchBalances, fetchMyVaults, hubChain } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
-import { short } from "../../lib/format";
+import { short, usd } from "../../lib/format";
 import { ensureChain, sendCreateVault, sendUsdc } from "../lib/wallet";
 import { activateStampLine, setVaultName } from "../lib/activate";
 import { contacts, setContactName } from "../lib/contacts";
 import { NET } from "../../lib/network";
 
-/** A wallet error is only actionable if the user can read WHY. viem stacks are
-    long, so surface the line that carries the actual cause. */
-function reason(e: unknown): string {
-  if (!(e instanceof Error)) return String(e).slice(0, 160);
-  const lines = e.message
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean);
-  const detail = lines.find((l) => /details:|reason:|reverted|rejected|denied|insufficient|chain/i.test(l));
-  return (detail ?? lines[0] ?? e.message).slice(0, 200);
-}
+import { txErrorReason as reason } from "../lib/txError";
 
 /** Testnet only — Circle's faucet hands out test USDC. */
 const FAUCET = "https://faucet.circle.com/";
@@ -49,6 +39,7 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
   const [created, setCreated] = useState<Address | null>(null);
   const [fundAmt, setFundAmt] = useState("2");
   const [fundedTx, setFundedTx] = useState(false);
+  const [walletBal, setWalletBal] = useState<bigint | null>(null);
   const [actStep, setActStep] = useState<0 | 1 | 2 | 3>(0);
   const [actAgentId, setActAgentId] = useState<bigint | null>(null);
 
@@ -110,6 +101,26 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
     }
     setBusy(null);
   };
+
+  // The faucet drips into the WALLET, not the vault — so the funding step
+  // shows the wallet's own USDC filling up, refreshed while the user waits.
+  useEffect(() => {
+    if (!wallet || created === null) return;
+    let live = true;
+    const read = () =>
+      fetchBalances([wallet]).then(
+        (b) => {
+          if (live) setWalletBal(b[wallet.toLowerCase()] ?? 0n);
+        },
+        () => {},
+      );
+    read();
+    const id = setInterval(read, 12_000);
+    return () => {
+      live = false;
+      clearInterval(id);
+    };
+  }, [wallet, created]);
 
   const fund = async () => {
     if (!created || !wallet || busy) return;
@@ -262,6 +273,16 @@ export function CreateVaultWizard({ wallet, onConnect, onClose, onCreated }: Pro
 
             <span className="mono rail-tag">{t("w_fund")}</span>
             <p className="rail-hint">{t(NET.kind === "testnet" ? "w_fund_p_test" : "w_fund_p")}</p>
+            {NET.kind === "testnet" && (
+              <div className="wiz-addr wiz-wallet">
+                <span className="wiz-wallet-k">{t("w_wallet")}</span>
+                <span>{short(wallet, 8, 6)}</span>
+                <button className="btn-ghost" onClick={() => navigator.clipboard?.writeText(wallet)}>
+                  COPY
+                </button>
+                <span className="wiz-wallet-bal">{walletBal === null ? "…" : `${usd(walletBal)} USDC`}</span>
+              </div>
+            )}
             <div className="wiz-two">
               <label>
                 {t("w_amount")}

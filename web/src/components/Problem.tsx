@@ -1,23 +1,34 @@
 import { useI18n } from "../lib/i18n";
 
-/** S2 — THE PROBLEM, split in two: the business and the bot. */
+/** S2 — THE PROBLEM: payment instructions that never line up. Scraps of the
+    real workflow drift on the ice (ambient float, out of alignment on
+    purpose) — then one sentence names the gap. */
 export function Problem() {
   const { t } = useI18n();
   return (
     <section className="problem2" id="problem">
-      <p className="ptag will-reveal">{t("r2_tag")}</p>
-      <div className="p2-panels">
-        <div className="p2-biz will-reveal">
-          <h2>{t("r2_biz_h")}</h2>
-          <p>{t("r2_biz_p")}</p>
+      <div className="p2-lede will-reveal">
+        <p className="ptag">{t("r2_tag")}</p>
+        <p className="p2-close serif">{t("r2_close")}</p>
+      </div>
+      <div className="p2-drift">
+        <div className="p2-card will-reveal">
+          <span className="p2-tag">{t("r2_t1")}</span>
+          {t("r2_c1")}
         </div>
-        <div className="p2-bot will-reveal">
-          <h3>
-            {t("r2_bot_h")} <b>{t("r2_bot_b")}</b>
-          </h3>
+        <div className="p2-card will-reveal">
+          <span className="p2-tag">{t("r2_t2")}</span>
+          {t("r2_c2")}
+        </div>
+        <div className="p2-card p2-file mono will-reveal">
+          <span className="p2-tag">{t("r2_t3")}</span>
+          {t("r2_c3")}
+        </div>
+        <div className="p2-card p2-bot will-reveal">
+          <span className="p2-tag">{t("r2_t4")}</span>
+          {t("r2_bot_h")} <b>{t("r2_bot_b")}</b>
         </div>
       </div>
-      <p className="p2-close serif will-reveal">{t("r2_close")}</p>
     </section>
   );
 }

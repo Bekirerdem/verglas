@@ -1,32 +1,41 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import "./reframe.css";
-import { fetchDashboard, fetchTreasurer, type DashboardData, type TreasurerData } from "./lib/data";
+import {
+  fetchDashboard,
+  fetchFallbackClearance,
+  fetchTreasurer,
+  type DashboardData,
+  type FreshClearance,
+  type TreasurerData,
+} from "./lib/data";
 import { I18nProvider, useI18n } from "./lib/i18n";
 import { Hero } from "./components/Hero";
 import { Problem } from "./components/Problem";
 import { TreasurerScene } from "./components/TreasurerScene";
 import { Passport } from "./components/Passport";
-import { Motor } from "./components/Motor";
 import { LiveBand } from "./components/LiveBand";
+import { SHOWCASE_AGENT_ID } from "./lib/network";
 import { Closing } from "./components/Closing";
 import { FooterWall } from "./components/FooterWall";
 import { VerglasCanvas } from "./components/VerglasCanvas";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const REFRESH_MS = 45_000;
 
 function Page() {
   const { lang } = useI18n();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [fresh, setFresh] = useState<FreshClearance | null>(null);
   const [treasurer, setTreasurer] = useState<TreasurerData | null>(null);
   const [theme, setTheme] = useState<string>(() => {
     const saved = localStorage.getItem("verglas-theme");
     if (saved === "light" || saved === "dark") return saved;
-    // Paper canvas is the brand default; dark stays one toggle away.
-    return "light";
+    // Night ice is the brand ground (avax/business surface); light stays a toggle away.
+    return "dark";
   });
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +51,18 @@ function Page() {
       // the marketing page never surfaces an RPC error to a visitor.
       fetchDashboard().then(
         (d) => {
-          if (alive) setData(d);
+          if (!alive) return;
+          setData(d);
+          // Stale showcase stamp → read the keeper-fresh Fuji record so the
+          // hero badge never opens the page on a red light.
+          if (!d.cleared) {
+            fetchFallbackClearance().then(
+              (f) => {
+                if (alive) setFresh(f);
+              },
+              () => {},
+            );
+          }
         },
         () => {},
       );
@@ -76,13 +96,16 @@ function Page() {
         return;
       }
       const play = () => {
-        // Hero entrance — Premium/Krehel reveal token: opacity + y16 + blur6,
-        // decelerate (power3.out), 480ms, standard stagger 80ms (<400ms budget).
+        // Hero entrance — the glass-frost reveal: content settles out of a
+        // frosted pane (opacity + y16 + blur10), decelerate (power3.out),
+        // no overshoot (ice does not bounce). The canvas fires one glaze
+        // sweep as the page freezes into place.
         gsap.fromTo(
           ".hero-anim",
-          { opacity: 0, y: 16, filter: "blur(6px)" },
-          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.48, ease: "power3.out", stagger: 0.08, delay: 0.1 },
+          { opacity: 0, y: 16, filter: "blur(10px)" },
+          { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.52, ease: "power3.out", stagger: 0.08, delay: 0.1 },
         );
+        gsap.delayedCall(0.25, () => window.dispatchEvent(new Event("verglas-sweep")));
         // hero copy drifts up as you leave — counter-motion depth against the
         // fixed ice (ambient layer, ease:none for 1:1 scroll linkage)
         gsap.to(".hero-block", {
@@ -134,25 +157,46 @@ function Page() {
     gsap.set(".will-reveal, .pp-reveal", { opacity: 1, filter: "blur(0px)", clearProps: "transform" });
   }, [lang]);
 
+  // Anchor travel goes through GSAP: a native jump teleports past the
+  // pinned scenes' spacers (blank screen), and CSS smooth-scrolling
+  // fights ScrollTrigger's pins (the scroll jitter). Scrolling the whole
+  // way keeps every pin consistent.
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement).closest?.('a[href^="#"]') as HTMLAnchorElement | null;
+      if (!a) return;
+      const target = document.querySelector(a.getAttribute("href") || "");
+      if (!target) return;
+      e.preventDefault();
+      gsap.to(window, {
+        scrollTo: { y: target, autoKill: true },
+        duration: reduced ? 0 : 1,
+        ease: "power2.inOut",
+        overwrite: "auto",
+      });
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
+
   return (
     <div ref={rootRef}>
       <VerglasCanvas theme={theme} />
       <div className="grain" aria-hidden="true" />
+      <div className="colgrid" aria-hidden="true" />
       {/* The landing is a marketing page: a chain read failure must never
           surface a raw RPC error to a visitor. The live cells simply stay
           in their neutral state until the data lands. */}
 
-      <Hero data={data} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
+      <Hero data={data} fresh={fresh} theme={theme} onToggleTheme={() => setTheme(theme === "light" ? "dark" : "light")} />
       <main>
         <div className="room room-raised">
           <Problem />
         </div>
         <TreasurerScene treasurer={treasurer} />
-        <Passport />
-        <div className="room room-raised">
-          <Motor />
-        </div>
-        <LiveBand data={data} treasurer={treasurer} />
+        <LiveBand data={data} fresh={fresh} treasurer={treasurer} />
+        <Passport recordId={data?.cleared === false && fresh ? fresh.agentId : SHOWCASE_AGENT_ID} />
         <Closing />
       </main>
       <FooterWall />

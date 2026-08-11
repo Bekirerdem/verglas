@@ -85,6 +85,15 @@ a { color: inherit; }
 .verglas-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 .verglas-canvas canvas { width: 100% !important; height: 100% !important; display: block; }
 
+/* avax/business surface: six hairline columns running the whole page */
+.colgrid {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background: repeating-linear-gradient(90deg,
+    transparent 0, transparent calc(100% / 6 - 1px),
+    color-mix(in srgb, var(--text) 6%, transparent) calc(100% / 6 - 1px),
+    color-mix(in srgb, var(--text) 6%, transparent) calc(100% / 6));
+}
+
 .grain {
   position: fixed; inset: 0; pointer-events: none; z-index: 40; opacity: 0.04;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
@@ -96,21 +105,41 @@ a { color: inherit; }
   min-height: 100svh;
   display: flex; flex-direction: column; justify-content: flex-end;
   text-align: left;
-  padding: 120px 5vw 11vh;
-  background: radial-gradient(1200px 600px at 72% 18%, var(--overlay-a), transparent 65%);
+  padding: 120px 5vw 13vh;
+  /* the stage: cold ice light from above, a crimson horizon breathing
+     from below — the avax cinematic ground, drawn with our own light. */
+  background:
+    radial-gradient(900px 520px at 80% 8%, rgba(127, 183, 216, 0.11), transparent 65%),
+    radial-gradient(1300px 640px at 26% 104%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(1200px 600px at 72% 18%, var(--overlay-a), transparent 65%);
+}
+.hero::after {
+  content: "▼";
+  position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%);
+  font-size: 11px; color: var(--faint); letter-spacing: 2px;
+  animation: herohint 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) { .hero::after { animation: none; } }
+@keyframes herohint {
+  0%, 100% { transform: translateX(-50%) translateY(0); opacity: 0.5; }
+  50% { transform: translateX(-50%) translateY(7px); opacity: 1; }
 }
 
 .hero .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   display: flex; align-items: stretch;
-  background: var(--card);
+  /* --card is 60% transparent: page copy scrolling beneath bled through
+     and collided with the nav links. A near-solid ground keeps the bar
+     legible while the blur still hints at the ice underneath. */
+  background: rgba(14, 13, 11, 0.94);
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   border-bottom: 1px solid var(--edge);
 }
 .hero .brand {
   display: flex; align-items: center; gap: 12px; padding: 16px 4vw;
-  border-right: 1px solid var(--edge);
+  border-right: 1px solid rgba(240, 236, 227, 0.12);
+  color: #f0ece3;
 }
 .hero .brand .mark { width: 34px; height: 34px; object-fit: contain; }
 .hero .brand .logotype {
@@ -119,7 +148,7 @@ a { color: inherit; }
 }
 .hero .brand sup { font-family: var(--font-mono); font-size: 8px; letter-spacing: 2px; color: var(--accent-hi); margin-left: 6px; font-weight: 400; }
 .hero .navlinks { display: flex; align-items: center; gap: 32px; margin: 0 auto; padding: 0 3vw; }
-.hero .navlinks a { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2.4px; color: var(--muted); text-decoration: none; }
+.hero .navlinks a { font-family: var(--font-mono); font-size: 11px; letter-spacing: 2.4px; color: #b0a898; text-decoration: none; }
 .hero .navlinks a:hover { color: var(--accent-hi); }
 .hero .toggles { display: flex; align-items: center; gap: 10px; padding-right: 2vw; }
 .tgl {
@@ -315,11 +344,24 @@ a { color: inherit; }
 .scard .sfoot { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.2px; color: var(--accent-hi); margin-top: auto; }
 
 /* ================= S5 — LIVE RIGHT NOW ================= */
-.liveband { border-block: 1px solid var(--edge); background: var(--bg2); padding: 9vh 5vw; }
-.liveband .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; max-width: 1240px; margin: 0 auto 7vh; }
-.metric { border: 1px solid var(--edge); border-radius: 14px; background: var(--card); padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; }
+.liveband {
+  position: relative; overflow: hidden;
+  background: var(--accent); border-radius: 24px;
+  margin: 6vh 22px; padding: 12vh 6vw 9vh;
+}
+.lb-giant {
+  position: absolute; top: -0.14em; left: 2vw; pointer-events: none;
+  font-family: var(--font-display); font-stretch: 80%; font-weight: 800;
+  font-size: clamp(120px, 17vw, 250px); letter-spacing: -0.02em; line-height: 1;
+  color: color-mix(in srgb, #000 22%, var(--accent));
+}
+.liveband .ptag { position: relative; max-width: 1180px; margin: 0 auto 3.5vh; color: rgba(255, 255, 255, 0.8); }
+.liveband .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; max-width: 1180px; margin: 0 auto 4.5vh; }
+.metric { border: 1px solid var(--edge); border-radius: 14px; background: var(--card-solid); padding: 24px 26px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 16px 44px -28px var(--shadow); }
 .metric .ml { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.4px; color: var(--faint); }
-.metric .mv { font-family: var(--font-mono); font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 9px; }
+.metric .mv { font-family: var(--font-mono); font-size: 17px; color: var(--text); display: flex; align-items: center; gap: 9px; }
+.liveband .lb-cta { position: relative; display: table; margin: 0 auto; background: #171511; color: #f0ece3; border-radius: 8px; }
+.liveband .lb-cta:hover { background: #241f19; }
 .metric .mv.ok { color: var(--ok); }
 .metric .mv .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 2.4s ease-in-out infinite; }
 .liveband .diffs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 1240px; margin: 0 auto; }

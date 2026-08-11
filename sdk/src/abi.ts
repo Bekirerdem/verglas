@@ -21,6 +21,19 @@ export const verglasAccountAbi = parseAbi([
   "event Frozen()",
   "event Unfrozen()",
   "event BudgetIncreased(uint256 added, uint256 newBudget)",
+  // Declared so viem can decode reverts BY NAME — the console's error detail
+  // and the demo agent both read these instead of raw revert data.
+  "error NotOwner()",
+  "error NotAgent()",
+  "error AccountFrozen()",
+  "error NotInWhitelist(address to)",
+  "error PerTxLimitExceeded(uint256 amount, uint256 limit)",
+  "error BudgetExceeded(uint256 wouldBe, uint256 budget)",
+  "error BadWhitelistLength()",
+  "error ZeroAddress()",
+  "error ZeroAmount()",
+  "error LimitAboveField()",
+  "error TransferFailed()",
 ]);
 
 export const verglasFactoryAbi = parseAbi([

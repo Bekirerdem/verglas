@@ -74,6 +74,7 @@ contract VerglasHub {
     error BadPolicyBinding();
     error InvalidProof();
     error NoAttestation();
+    error RequestAgentMismatch();
 
     constructor(
         ValidationRegistry registry_,
@@ -124,6 +125,15 @@ contract VerglasHub {
     ) external {
         address account = accountOf[agentId];
         if (account == address(0)) revert NoBoundAccount();
+
+        // The registry resolves `requestHash` to the agentId the request was opened
+        // for, and stamps its response under THAT id — not the one passed here. So a
+        // proof verified against another agent's vault would answer a stranger's
+        // request: the vault's policy is public and the commitment chain folds only
+        // (to, amount), so anyone can reproduce a vault a foreign proof verifies
+        // against. Bind the two ends before writing anything.
+        (, uint256 requestAgentId,,,,) = registry.getValidationStatus(requestHash);
+        if (requestAgentId != agentId) revert RequestAgentMismatch();
 
         (uint256 provenCommitment, uint256 provenCount) =
             _verifyWindow(VerglasAccount(account), pA, pB, pC, publicSignals);

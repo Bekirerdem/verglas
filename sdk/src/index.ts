@@ -33,6 +33,8 @@ export {
   type VerglasAddresses,
   type AccountState,
   type Attestation,
+  type AgentCheck,
+  type AgentStampRow,
   type Groth16Calldata,
 } from "./client.js";
 // Proving is Node-only (snarkjs + local artifacts) and deliberately not

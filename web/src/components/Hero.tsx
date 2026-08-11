@@ -1,23 +1,33 @@
-import { SHOWCASE_AGENT_ID, gateUrl } from "../lib/network";
-import type { DashboardData } from "../lib/data";
-import { remaining } from "../lib/format";
+import { SHOWCASE_AGENT_ID } from "../lib/network";
+import type { DashboardData, FreshClearance } from "../lib/data";
+import { remaining, SPAN_UNITS_TR } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 
 export function Hero({
   data,
+  fresh,
   theme,
   onToggleTheme,
 }: {
   data: DashboardData | null;
+  fresh: FreshClearance | null;
   theme: string;
   onToggleTheme: () => void;
 }) {
   const { t, lang, setLang } = useI18n();
   // The page never waits for the chain: the clearance cell streams in when
-  // the read lands and stays neutral until then.
+  // the read lands and stays neutral until then. If the selected network's
+  // stamp has lapsed, the badge follows the fresh Fuji record instead of
+  // opening the page on a red light.
   const cleared = data?.cleared ?? null;
+  const useFallback = cleared === false && fresh !== null;
+  const shownId = useFallback ? fresh.agentId : SHOWCASE_AGENT_ID;
+  const shownCleared = useFallback ? true : cleared;
   const expires =
-    data?.attestation && data.gateMaxAge > 0n ? remaining(data.attestation.issuedAt + data.gateMaxAge) : "";
+    !useFallback && data?.attestation && data.gateMaxAge > 0n
+      ? remaining(data.attestation.issuedAt + data.gateMaxAge, lang === "tr" ? SPAN_UNITS_TR : undefined)
+      : "";
+  const checkHref = `/check/${shownId.toString()}`;
 
   return (
     <header className="hero">
@@ -29,9 +39,10 @@ export function Hero({
           </span>
         </div>
         <nav className="navlinks">
-          <a href="#scene">{t("nav_how")}</a>
-          <a href="#motor">{t("nav_product")}</a>
+          <a href="#problem">{t("nav_how")}</a>
+          <a href="#scene">{t("nav_product")}</a>
           <a href="#live">{t("nav_live")}</a>
+          <a href={checkHref}>{t("nav_registry")}</a>
           <a href="/docs/">{t("nav_docs")}</a>
           <a href="/app/">{t("nav_app")}</a>
         </nav>
@@ -43,12 +54,7 @@ export function Hero({
             {theme === "light" ? "◑" : "◐"}
           </button>
         </div>
-        <a
-          className="cta-pill"
-          href={gateUrl()}
-          target="_blank"
-          rel="noreferrer"
-        >
+        <a className="cta-pill" href="/app/">
           {t("nav_cta")}
         </a>
       </div>
@@ -71,36 +77,36 @@ export function Hero({
           <a className="cta-main" href="/app/">
             {t("s1_cta_demo")}
           </a>
-          <a className="cta-ghost" href="/docs/">
-            {t("s1_cta_docs")}
+          <a className="cta-ghost" href={checkHref}>
+            {t("s1_cta_registry")}
           </a>
         </div>
 
         <div className="clearance hero-anim" role="status">
           <span className="cell agent">
-            {t("hero_agent")} <b>#{SHOWCASE_AGENT_ID.toString()}</b>
+            {t("hero_agent")} <b>#{shownId.toString()}</b>
           </span>
-          <span className={`cell status ${cleared === null ? "" : cleared ? "ok" : "no"}`}>
+          <span className={`cell status ${shownCleared === null ? "" : shownCleared ? "ok" : "no"}`}>
             <span className="dot" />
-            {cleared === null ? "· · ·" : cleared ? t("hero_cleared") : t("hero_not_cleared")}
+            {shownCleared === null ? "· · ·" : shownCleared ? t("hero_cleared") : t("hero_not_cleared")}
           </span>
           <span className="cell until">
-            {cleared && expires ? `${t("hero_valid")} ${expires}` : t("hero_live")}
+            {shownCleared && expires ? `${t("hero_valid")} ${expires}` : t("hero_live")}
           </span>
         </div>
       </div>
 
-      {/* The passport artifact — the moat, previewed. Replaces the orphan
-          amber score chip: the same seal, now anchored to the hero as the
-          thing the whole page is about. */}
-      <aside className="hero-passport hero-anim" aria-hidden="true" data-ice-glow>
+      {/* The passport artifact — the page's one recurring character. Born
+          here, stamped in the product scene, carried across in the registry
+          scene; clicking it opens the same agent's public record. */}
+      <a className="hero-passport hero-anim" href={checkHref} data-ice-glow>
         <div className="hp-head">
           <span className="hp-agent">
-            {t("hero_agent")} #{SHOWCASE_AGENT_ID.toString()}
+            {t("hero_agent")} #{shownId.toString()}
           </span>
-          <span className={`hp-status ${cleared ? "ok" : ""}`}>
+          <span className={`hp-status ${shownCleared ? "ok" : ""}`}>
             <span className="dot" />
-            {cleared === null ? "· · ·" : cleared ? t("hero_cleared") : t("hero_not_cleared")}
+            {shownCleared === null ? "· · ·" : shownCleared ? t("hero_cleared") : t("hero_not_cleared")}
           </span>
         </div>
         <div className="hp-seal">
@@ -109,9 +115,9 @@ export function Hero({
         </div>
         <div className="hp-foot">
           <span>{t("hp_sealed")}</span>
-          <span>{cleared && expires ? expires : t("hero_live")}</span>
+          <span>{shownCleared && expires ? expires : t("hero_live")}</span>
         </div>
-      </aside>
+      </a>
     </header>
   );
 }

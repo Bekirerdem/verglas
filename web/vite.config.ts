@@ -59,6 +59,7 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         app: fileURLToPath(new URL('./app/index.html', import.meta.url)),
+        check: fileURLToPath(new URL('./check/index.html', import.meta.url)),
       },
     },
   },
