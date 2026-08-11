@@ -23,6 +23,7 @@ export function LiveBand({
   const shownId = useFallback ? fresh.agentId : SHOWCASE_AGENT_ID;
   return (
     <section className="liveband" id="live">
+      <span className="lb-giant" aria-hidden="true">{t("s5_giant")}</span>
       <p className="ptag will-reveal">{t("s5_tag")}</p>
       <div className="metrics will-reveal">
         <div className="metric">

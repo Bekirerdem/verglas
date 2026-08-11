@@ -9,7 +9,11 @@
       document.documentElement.dataset.theme =
         localStorage.getItem("verglas-theme") === "dark" ? "dark" : "light";
     </script>
-    <meta name="theme-color" content="#f5f2ed" />
+    <script>
+      document.documentElement.dataset.theme =
+        localStorage.getItem("verglas-theme") === "light" ? "light" : "dark";
+    </script>
+    <meta name="theme-color" content="#0e0d0b" />
     <title>Verglas — agent trust that travels</title>
     <meta name="description" content="Prove an AI agent's policy compliance once on Avalanche C-Chain; the attestation travels over ICM and clears gates on every L1." />
 

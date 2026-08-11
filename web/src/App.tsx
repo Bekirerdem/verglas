@@ -34,8 +34,8 @@ function Page() {
   const [theme, setTheme] = useState<string>(() => {
     const saved = localStorage.getItem("verglas-theme");
     if (saved === "light" || saved === "dark") return saved;
-    // Paper canvas is the brand default; dark stays one toggle away.
-    return "light";
+    // Night ice is the brand ground (avax/business surface); light stays a toggle away.
+    return "dark";
   });
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -184,6 +184,7 @@ function Page() {
     <div ref={rootRef}>
       <VerglasCanvas theme={theme} />
       <div className="grain" aria-hidden="true" />
+      <div className="colgrid" aria-hidden="true" />
       {/* The landing is a marketing page: a chain read failure must never
           surface a raw RPC error to a visitor. The live cells simply stay
           in their neutral state until the data lands. */}
