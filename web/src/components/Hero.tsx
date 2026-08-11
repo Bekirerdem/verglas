@@ -1,6 +1,6 @@
 import { SHOWCASE_AGENT_ID } from "../lib/network";
 import type { DashboardData, FreshClearance } from "../lib/data";
-import { remaining } from "../lib/format";
+import { remaining, SPAN_UNITS_TR } from "../lib/format";
 import { useI18n } from "../lib/i18n";
 
 export function Hero({
@@ -25,7 +25,7 @@ export function Hero({
   const shownCleared = useFallback ? true : cleared;
   const expires =
     !useFallback && data?.attestation && data.gateMaxAge > 0n
-      ? remaining(data.attestation.issuedAt + data.gateMaxAge)
+      ? remaining(data.attestation.issuedAt + data.gateMaxAge, lang === "tr" ? SPAN_UNITS_TR : undefined)
       : "";
   const checkHref = `/check/${shownId.toString()}`;
 

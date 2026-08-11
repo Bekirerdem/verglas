@@ -1,7 +1,7 @@
 import type { Address, Hex } from "viem";
 import { latestStamp, type VaultView } from "../../lib/data";
 import { useI18n } from "../../lib/i18n";
-import { remaining, short, utcDate } from "../../lib/format";
+import { remaining, SPAN_UNITS_TR, short, utcDate } from "../../lib/format";
 import { useAudit } from "../lib/useAudit";
 import { DEPLOYMENT, txUrl } from "../../lib/network";
 
@@ -20,7 +20,7 @@ interface Props {
     proof actually proves, the passport's journey across chains (vault →
     stamp → gate), and the full shelf of ZK seals. */
 export function AuditPage({ view, wallet, isOwner, busy, run, onRefresh }: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const { step, actErr, activate, renew } = useAudit(view, wallet, isOwner, run, onRefresh);
 
   if (view.agentId === null) {
@@ -43,7 +43,7 @@ export function AuditPage({ view, wallet, isOwner, busy, run, onRefresh }: Props
   const att = view.attestation;
   const lastStamp = latestStamp(view.stamps);
   const deadline = att && view.gateMaxAge > 0n ? att.issuedAt + view.gateMaxAge : null;
-  const left = deadline ? remaining(deadline) : "";
+  const left = deadline ? remaining(deadline, lang === "tr" ? SPAN_UNITS_TR : undefined) : "";
   const now = BigInt(Math.floor(Date.now() / 1000));
   const validPct =
     deadline && att && view.gateMaxAge > 0n && deadline > now

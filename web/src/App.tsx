@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import "./reframe.css";
 import {
   fetchDashboard,
@@ -21,7 +22,7 @@ import { Closing } from "./components/Closing";
 import { FooterWall } from "./components/FooterWall";
 import { VerglasCanvas } from "./components/VerglasCanvas";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
 
 const REFRESH_MS = 45_000;
 
@@ -155,6 +156,29 @@ function Page() {
   useEffect(() => {
     gsap.set(".will-reveal, .pp-reveal", { opacity: 1, filter: "blur(0px)", clearProps: "transform" });
   }, [lang]);
+
+  // Anchor travel goes through GSAP: a native jump teleports past the
+  // pinned scenes' spacers (blank screen), and CSS smooth-scrolling
+  // fights ScrollTrigger's pins (the scroll jitter). Scrolling the whole
+  // way keeps every pin consistent.
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const onClick = (e: MouseEvent) => {
+      const a = (e.target as HTMLElement).closest?.('a[href^="#"]') as HTMLAnchorElement | null;
+      if (!a) return;
+      const target = document.querySelector(a.getAttribute("href") || "");
+      if (!target) return;
+      e.preventDefault();
+      gsap.to(window, {
+        scrollTo: { y: target, autoKill: true },
+        duration: reduced ? 0 : 1,
+        ease: "power2.inOut",
+        overwrite: "auto",
+      });
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, []);
 
   return (
     <div ref={rootRef}>

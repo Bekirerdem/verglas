@@ -103,7 +103,10 @@ a { color: inherit; }
 .hero .topbar {
   position: fixed; top: 0; left: 0; right: 0; z-index: 50;
   display: flex; align-items: stretch;
-  background: var(--card);
+  /* --card is 60% transparent: page copy scrolling beneath bled through
+     and collided with the nav links. A near-solid ground keeps the bar
+     legible while the blur still hints at the ice underneath. */
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
   border-bottom: 1px solid var(--edge);
@@ -315,11 +318,13 @@ a { color: inherit; }
 .scard .sfoot { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.2px; color: var(--accent-hi); margin-top: auto; }
 
 /* ================= S5 — LIVE RIGHT NOW ================= */
-.liveband { border-block: 1px solid var(--edge); background: var(--bg2); padding: 9vh 5vw; }
-.liveband .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; max-width: 1240px; margin: 0 auto 7vh; }
-.metric { border: 1px solid var(--edge); border-radius: 14px; background: var(--card); padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; }
+.liveband { border-block: 1px solid var(--edge); background: var(--bg2); padding: 8vh 6vw; }
+.liveband .ptag { max-width: 1180px; margin: 0 auto 3.5vh; }
+.liveband .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; max-width: 1180px; margin: 0 auto 4.5vh; }
+.metric { border: 1px solid var(--edge); border-radius: 14px; background: var(--card-solid); padding: 24px 26px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 16px 44px -28px var(--shadow); }
 .metric .ml { font-family: var(--font-mono); font-size: 10px; letter-spacing: 2.4px; color: var(--faint); }
-.metric .mv { font-family: var(--font-mono); font-size: 14px; color: var(--text); display: flex; align-items: center; gap: 9px; }
+.metric .mv { font-family: var(--font-mono); font-size: 17px; color: var(--text); display: flex; align-items: center; gap: 9px; }
+.liveband .lb-cta { display: table; margin: 0 auto; }
 .metric .mv.ok { color: var(--ok); }
 .metric .mv .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; animation: pulse 2.4s ease-in-out infinite; }
 .liveband .diffs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 1240px; margin: 0 auto; }

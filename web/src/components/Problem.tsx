@@ -7,7 +7,10 @@ export function Problem() {
   const { t } = useI18n();
   return (
     <section className="problem2" id="problem">
-      <p className="ptag will-reveal">{t("r2_tag")}</p>
+      <div className="p2-lede will-reveal">
+        <p className="ptag">{t("r2_tag")}</p>
+        <p className="p2-close serif">{t("r2_close")}</p>
+      </div>
       <div className="p2-drift">
         <div className="p2-card will-reveal">{t("r2_c1")}</div>
         <div className="p2-card will-reveal">{t("r2_c2")}</div>
@@ -16,7 +19,6 @@ export function Problem() {
           {t("r2_bot_h")} <b>{t("r2_bot_b")}</b>
         </div>
       </div>
-      <p className="p2-close serif will-reveal">{t("r2_close")}</p>
     </section>
   );
 }

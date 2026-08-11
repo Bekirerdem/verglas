@@ -17,8 +17,27 @@
 }
 
 /* ---------------- S2 · problem split ---------------- */
-.problem2 { padding: 18vh 5vw 14vh; position: relative; }
-.problem2 .ptag { margin-bottom: 4vh; }
+/* 01 — a spine, not a float: the sentence carries the section on the
+   left, the workflow scraps drift on the right (marketing asymmetry). */
+.problem2 {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  gap: 5vw;
+  align-items: center;
+  max-width: 1320px;
+  margin: 0 auto;
+  min-height: 62vh;
+  padding: 14vh 6vw 12vh;
+}
+.problem2 .ptag { margin-bottom: 3vh; }
+.p2-lede .p2-close {
+  margin-top: 0;
+  text-align: left;
+  font-size: clamp(26px, 2.9vw, 42px);
+  line-height: 1.22;
+  max-width: 13em;
+}
 .p2-panels { display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; align-items: stretch; }
 .p2-biz h2 {
   font-family: var(--font-serif);
@@ -44,12 +63,12 @@
 
 /* the drift field — instructions that never line up, on purpose */
 .p2-drift {
-  position: relative; display: flex; flex-wrap: wrap; gap: 26px;
-  justify-content: center; align-items: flex-start; padding: 4vh 0 2vh;
+  position: relative; display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px 20px; align-items: start; padding: 2vh 0;
 }
 .p2-card {
   border: 1px solid var(--edge); border-radius: 14px; background: var(--card-solid);
-  padding: 16px 20px; font-size: 15px; color: var(--muted); max-width: 300px;
+  padding: 18px 22px; font-size: 15px; color: var(--muted);
   box-shadow: 0 14px 40px -22px var(--shadow);
 }
 .p2-card.p2-file { font-size: 13px; color: var(--faint); text-decoration: line-through 1px color-mix(in srgb, var(--accent) 40%, transparent); }
@@ -75,10 +94,12 @@
 .ts-inner {
   min-height: 100svh;
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 4vw;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 5vw;
   align-items: center;
-  padding: 12vh 5vw 8vh;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 10vh 6vw 8vh;
 }
 .ts-left .ptag { margin-bottom: 2.5vh; }
 .ts-intro { font-size: clamp(18px, 1.7vw, 24px); color: var(--muted); max-width: 30em; margin-bottom: 4vh; }
@@ -239,6 +260,16 @@
 }
 .ts-frame[data-stage="2"] .tsf-glaze { transform: translateX(0); backdrop-filter: blur(1.5px); }
 .ts-frame[data-stage="3"] .tsf-glaze { transform: translateX(101%); }
+/* Light glass is milk, not ice, at the dark theme's mix — thin it so the
+   FROZEN chip and the refused payment stay readable through the glaze. */
+:root[data-theme="light"] .tsf-glaze {
+  background: linear-gradient(105deg,
+    transparent 30%,
+    color-mix(in srgb, var(--text) 3.5%, transparent) 46%,
+    color-mix(in srgb, var(--card-solid) 26%, transparent) 60%,
+    color-mix(in srgb, var(--card-solid) 14%, transparent) 100%);
+}
+:root[data-theme="light"] .ts-frame[data-stage="2"] .tsf-glaze { backdrop-filter: blur(0.8px); }
 
 .ts-steps { display: flex; flex-direction: column; gap: 5vh; }
 .ts-step { opacity: 0; transform: translateY(24px); max-width: 24em; }
@@ -437,18 +468,14 @@
 }
 
 /* ---------------- hero passport artifact (replaces the orphan score chip) ---------------- */
-/* Anchor jumps must travel THROUGH the pinned scenes, not teleport past
-   their spacers — smooth scrolling keeps every ScrollTrigger consistent. */
-html { scroll-behavior: smooth; }
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
-}
+/* Anchor travel is handled by GSAP ScrollToPlugin (see App.tsx) — CSS
+   smooth-scrolling fights ScrollTrigger's pins and reads as jitter. */
 
 .hero-passport {
   position: absolute;
   right: max(5vw, calc(50% - 590px));
   top: 19vh;
-  width: 232px;
+  width: 258px;
   display: block;
   text-decoration: none;
   color: inherit;
@@ -467,7 +494,7 @@ html { scroll-behavior: smooth; }
 }
 .hp-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .hp-agent { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 1.4px; color: var(--muted); }
-.hp-status { font-family: var(--font-mono); font-size: 9px; letter-spacing: 1.2px; color: var(--faint); display: flex; align-items: center; gap: 6px; }
+.hp-status { font-family: var(--font-mono); font-size: 8.5px; letter-spacing: 1px; color: var(--faint); display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 .hp-status.ok { color: var(--ok); }
 .hp-status .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .hp-seal {

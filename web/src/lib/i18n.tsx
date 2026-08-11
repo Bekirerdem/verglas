@@ -8,7 +8,7 @@ const en = {
   nav_live: "LIVE",
   nav_docs: "DOCS",
   nav_app: "CONSOLE",
-  nav_cta: "LIVE GATE →",
+  nav_cta: "CONSOLE →",
 
   s1_kicker: "BUILT ON AVALANCHE · LIVE ON FUJI",
   s1_h1a: "A wallet holds.",
@@ -346,7 +346,7 @@ const en = {
   rg_badge: "CLEARED",
   rg_rows: "stamp history · reputation curve · brake events",
 
-  r6_biz_h: "Set up your treasurer",
+  r6_biz_h: "Set up your vault",
   r6_biz_p: "Vault + rules + brake. Start in the console.",
   r6_biz_cta: "OPEN THE CONSOLE →",
   r6_dev_h: "Put a gate on your border",
@@ -580,7 +580,7 @@ const tr: typeof en = {
   nav_live: "CANLI",
   nav_docs: "DOCS",
   nav_app: "KONSOL",
-  nav_cta: "CANLI KAPI →",
+  nav_cta: "KONSOL →",
 
   s1_kicker: "AVALANCHE ÜZERİNDE · FUJI'DE CANLI",
   s1_h1a: "Cüzdan tutar.",
@@ -918,7 +918,7 @@ const tr: typeof en = {
   rg_badge: "ONAYLI",
   rg_rows: "damga geçmişi · itibar eğrisi · fren kayıtları",
 
-  r6_biz_h: "Haznedarını kur",
+  r6_biz_h: "Kasanı kur",
   r6_biz_p: "Kasa + kurallar + fren. Konsoldan başla.",
   r6_biz_cta: "KONSOLU AÇ →",
   r6_dev_h: "Sınırına kapı kur",

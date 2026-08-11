@@ -58,16 +58,16 @@ export function Passport({ recordId }: { recordId: bigint }) {
         { left: "calc(100% - 46px)", ease: "none" },
       );
       tl.fromTo(".pp-sweep", { scaleX: 0 }, { scaleX: 1, ease: "none" }, 0);
-      tl.set(rail, { attr: { "data-arrived": "1" } }, 0.86);
-      // The record card settles in once the stamp has crossed — same
-      // frost-settle token as everything else, no bounce.
+      tl.set(rail, { attr: { "data-arrived": "1" } }, 0.76);
+      // The record card settles in as the stamp reaches the gate — early
+      // enough that a quick scroller still meets it before the unpin.
       tl.fromTo(
         ".pp-registry",
         { opacity: 0, y: 14, filter: "blur(6px)" },
-        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.2 },
-        0.9,
+        { opacity: 1, y: 0, filter: "blur(0px)", duration: 0.22 },
+        0.78,
       );
-      tl.to({}, { duration: 0.18 }); // hold on the opened record
+      tl.to({}, { duration: 0.3 }); // hold on the opened record
     }, root);
     return () => ctx.revert();
   }, []);
