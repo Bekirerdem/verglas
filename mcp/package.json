@@ -1,6 +1,6 @@
 {
   "name": "verglas-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "verglas-pay — give any LLM agent a spending envelope it cannot exceed",
   "license": "MIT",
   "type": "module",
@@ -33,18 +33,17 @@
   "scripts": {
     "start": "tsx index.ts",
     "smoke": "tsx smoke.ts",
-    "build": "esbuild index.ts --bundle --platform=node --format=esm --outfile=dist/index.js \"--banner:js=#!/usr/bin/env node\" --external:viem --external:zod --external:x402 --external:x402-fetch --external:@modelcontextprotocol/sdk",
+    "build": "node build.mjs",
     "prepublishOnly": "npm run build"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
+    "@verglas/sdk": "file:../sdk",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
     "viem": "^2.55.1",
     "x402-fetch": "^1.2.0",
     "zod": "^3.24.0"
-  },
-  "devDependencies": {
-    "@verglas/sdk": "file:../sdk",
-    "esbuild": "^0.25.0",
-    "tsx": "^4.19.0"
   }
 }
