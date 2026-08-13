@@ -87,12 +87,16 @@ export const FUJI_DEPLOYMENT = {
   agentId: 219n,
   /** C-Chain block of the deployment — the earliest block worth scanning for events. */
   deployBlock: 0x3666514n,
-  /** VerglasFactory (2026-07-30, refillable-budget vaults) — the console's
+  /** VerglasFactory (2026-08-13, dailyLimit vaults) — the console's
    *  "create your vault" door. */
-  factory: "0x54Ea4db6Ba394B5853BB2271c8C1838549c7aE2B",
+  factory: "0x2efB8F4654D192531fB350bA2915a55c9Bd690e0",
   /** Earlier factories whose vaults must stay visible in "my vaults" —
-   *  their VerglasAccounts have an immutable budget (no refuel). */
-  legacyFactories: ["0x770e72fcedadf61940e6e70630664f50ad8eac7b"],
+   *  0x770e… vaults have an immutable budget (no refuel), 0x54Ea… vaults
+   *  refuel but know no daily cap. */
+  legacyFactories: [
+    "0x770e72fcedadf61940e6e70630664f50ad8eac7b",
+    "0x54Ea4db6Ba394B5853BB2271c8C1838549c7aE2B",
+  ],
   /** VerglasDispenser (2026-07-19) — workshop USDC tap, 2 USDC / 24h. */
   dispenser: "0x29C0Dd6DEf26BaC92FDB19DD338089A9396F0EDb",
 } as const;
@@ -222,8 +226,9 @@ export const NETWORKS: Record<VerglasNetwork["key"], VerglasNetwork> = {
       identityRegistry: IDENTITY_REGISTRY_MAINNET,
       verifier: "0xa24972871B987cC7feD401Ea8e46F6D85F88a24C",
       usdc: USDC_MAINNET,
-      factory: "0xc07ef259Eb88742e00113d9F460F5D2081078960",
-      legacyFactories: [],
+      // 2026-08-13: dailyLimit factory; the 2026-07-30 original moves to legacy.
+      factory: "0x7eC0c53fC6C865c1865aef6c744f5b9B1b7CD758",
+      legacyFactories: ["0xc07ef259Eb88742e00113d9F460F5D2081078960"],
       deployBlock: 0x575ac8dn,
       // The first mainnet vault, shown to visitors so the console has
       // something real on it before they connect a wallet: agent #1783, two

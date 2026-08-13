@@ -10,7 +10,8 @@ Verglas runs on two networks. Everything below is real and verifiable on-chain â
 | ValidationRegistry (Verglas) | `0x332fc886dd6ab933c89a1149e7D938a6B4214a01` |
 | Groth16Verifier | `0xa24972871B987cC7feD401Ea8e46F6D85F88a24C` |
 | VerglasOracle | `0x31900CA6bBd05ac2516feB6798f6aeB86FD41239` |
-| VerglasFactory | `0xc07ef259Eb88742e00113d9F460F5D2081078960` |
+| VerglasFactory (daily-limit vaults) | `0x7eC0c53fC6C865c1865aef6c744f5b9B1b7CD758` |
+| VerglasFactory (legacy, pre daily-limit) | `0xc07ef259Eb88742e00113d9F460F5D2081078960` |
 | ERC-8004 Identity Registry (canonical) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` |
 | USDC (Circle official) | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` |
 
@@ -34,7 +35,9 @@ interface-compatible with ERC-8004.
 | VerglasAccount (demo vault) | `0x8Ede2dB4a519B260944EE58125d6ecfA33CfaE72` |
 | VerglasAccount (treasury vault) | `0xec9fb95C029980B80F63FfA27c20b98f586c564c` |
 | VerglasTreasurer | `0xf9098c210C5918F7dE01aA7E96b997C819Fb4614` |
-| VerglasFactory (refillable-budget vaults) | `0x54Ea4db6Ba394B5853BB2271c8C1838549c7aE2B` |
+| VerglasFactory (daily-limit vaults) | `0x2efB8F4654D192531fB350bA2915a55c9Bd690e0` |
+| VerglasFactory (legacy, refillable-budget) | `0x54Ea4db6Ba394B5853BB2271c8C1838549c7aE2B` |
+| VerglasAccount (x402 float vault, agent #223) | `0x2a410bC662cAE7f445c3B7B7277248B446ac1357` |
 
 ## Canonical infrastructure we build on
 

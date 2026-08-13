@@ -86,11 +86,24 @@ export async function vaultStatus(agentId: bigint): Promise<string> {
       pub.readContract({ ...vault, functionName: "whitelist", args: [BigInt(i)] }),
     ),
   );
+  // Vaults born before the 2026-08-13 factory don't have the daily-cap
+  // family; a missing getter just means "no daily rule to show".
+  let dailyLine: string | null = null;
+  try {
+    const [daily, todaySpent] = await Promise.all([
+      pub.readContract({ ...vault, functionName: "dailyLimit" }),
+      pub.readContract({ ...vault, functionName: "dailySpentNow" }),
+    ]);
+    if (daily > 0n) dailyLine = `  daily limit: ${fmt(todaySpent)} spent of ${fmt(daily)} this window`;
+  } catch {
+    /* pre-dailyLimit vault */
+  }
   const mine = agent === signer.address;
   return [
     `vault ${vault.address} on ${NET.label} (agent #${agentId})`,
     `  agent key: ${agent}${mine ? " — this key, payments allowed" : " — NOT this key, read-only"}`,
     `  per-payment limit: ${fmt(perTx)}`,
+    ...(dailyLine ? [dailyLine] : []),
     `  budget: ${fmt(spent)} spent of ${fmt(budget)} (${fmt(budget - spent)} left)`,
     `  frozen: ${frozen}`,
     `  whitelist (${whitelist.length}): ${whitelist.join(", ")}`,

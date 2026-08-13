@@ -287,3 +287,18 @@ Fuji C-Chain (`0x7fc93d85c6d62c5b2ac0b519c87010ea5294012d1e407030d6acd0021cac10d
 - `carryAttestation` must be sent via `cast send` (not inside a forge
   script): Foundry's local EVM cannot execute the Warp precompile
   (`0x02000...05`) that Teleporter writes messages to.
+
+## 2026-08-13 — daily-limit factories + x402 surface
+
+| Contract | Network | Address |
+| --- | --- | --- |
+| VerglasFactory (daily-limit `createVault(agent, token, perTx, dailyLimit, budget, wl)`) | Fuji | `0x2efB8F4654D192531fB350bA2915a55c9Bd690e0` |
+| VerglasFactory (daily-limit) | Mainnet | `0x7eC0c53fC6C865c1865aef6c744f5b9B1b7CD758` |
+| VerglasAccount — x402 float vault, agent #223, whitelist=[agent EOA] | Fuji | `0x2a410bC662cAE7f445c3B7B7277248B446ac1357` |
+| x402 demo seller (Cloudflare Worker, self-settled) | — | verglas-x402-demo.l3ekirerdem.workers.dev |
+
+- `dailyLimit` is a rolling 24h public counter (0 = none) — enforced on-chain
+  like the total budget, outside the circuit; `DailyLimitExceeded(wouldBe, limit)`
+  proven live on Fuji (vault `0xE0570cb0…6606`, 0.2+0.1 passed at the 0.3 cap,
+  0.05 more refused).
+- Previous factories moved to `legacyFactories` in the SDK (vaults stay visible).

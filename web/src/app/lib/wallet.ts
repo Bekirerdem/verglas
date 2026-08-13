@@ -153,6 +153,9 @@ export function sendWithdraw(account: Address, from: Address, to: Address, amoun
 export interface CreateVaultInput {
   agent: Address;
   perTxLimit: bigint;
+  /** Rolling 24h cap, 0n = none. The wizard doesn't surface it yet (console
+   *  refresh phase); vaults born from the console run uncapped like before. */
+  dailyLimit?: bigint;
   totalBudget: bigint;
   whitelist: Address[];
 }
@@ -162,7 +165,14 @@ export function sendCreateVault(from: Address, input: CreateVaultInput): Promise
     address: DEPLOYMENT.factory,
     abi: verglasFactoryAbi,
     functionName: "createVault",
-    args: [input.agent, DEPLOYMENT.usdc, input.perTxLimit, input.totalBudget, input.whitelist],
+    args: [
+      input.agent,
+      DEPLOYMENT.usdc,
+      input.perTxLimit,
+      input.dailyLimit ?? 0n,
+      input.totalBudget,
+      input.whitelist,
+    ],
     account: from,
     chain: CHAIN,
   });

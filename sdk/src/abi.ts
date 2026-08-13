@@ -5,6 +5,11 @@ export const verglasAccountAbi = parseAbi([
   "function agent() view returns (address)",
   "function token() view returns (address)",
   "function perTxLimit() view returns (uint256)",
+  // dailyLimit family exists only on vaults born from the 2026-08-13 factory
+  // onward — read it behind a try/catch when the vault's age is unknown.
+  "function dailyLimit() view returns (uint256)",
+  "function dailySpentNow() view returns (uint256)",
+  "function spentToday() view returns (uint256)",
   "function totalBudget() view returns (uint256)",
   "function commitment() view returns (uint256)",
   "function txCount() view returns (uint256)",
@@ -28,6 +33,7 @@ export const verglasAccountAbi = parseAbi([
   "error AccountFrozen()",
   "error NotInWhitelist(address to)",
   "error PerTxLimitExceeded(uint256 amount, uint256 limit)",
+  "error DailyLimitExceeded(uint256 wouldBe, uint256 limit)",
   "error BudgetExceeded(uint256 wouldBe, uint256 budget)",
   "error BadWhitelistLength()",
   "error ZeroAddress()",
@@ -37,6 +43,13 @@ export const verglasAccountAbi = parseAbi([
 ]);
 
 export const verglasFactoryAbi = parseAbi([
+  "function createVault(address agent, address token, uint256 perTxLimit, uint256 dailyLimit, uint256 totalBudget, address[] whitelist) returns (address account)",
+  "function vaultsOf(address owner) view returns (address[] vaults)",
+  "event VaultCreated(address indexed owner, address indexed account, address agent, address token)",
+]);
+
+/** The pre-dailyLimit factories (see legacyFactories) still speak this shape. */
+export const verglasLegacyFactoryAbi = parseAbi([
   "function createVault(address agent, address token, uint256 perTxLimit, uint256 totalBudget, address[] whitelist) returns (address account)",
   "function vaultsOf(address owner) view returns (address[] vaults)",
   "event VaultCreated(address indexed owner, address indexed account, address agent, address token)",
