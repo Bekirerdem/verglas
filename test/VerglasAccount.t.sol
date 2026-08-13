@@ -36,7 +36,7 @@ contract VerglasAccountTest is Test {
 
     function setUp() public {
         token = new MockToken();
-        account = new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET,_whitelist());
+        account = new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET, _whitelist());
         token.mint(address(account), FUNDING);
     }
 
@@ -144,14 +144,14 @@ contract VerglasAccountTest is Test {
     function test_RevertWhen_WhitelistEmptyOrTooLarge() public {
         address[] memory empty = new address[](0);
         vm.expectRevert(VerglasAccount.BadWhitelistLength.selector);
-        new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET,empty);
+        new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET, empty);
 
         address[] memory big = new address[](9);
         for (uint256 i = 0; i < 9; i++) {
             big[i] = address(uint160(i + 1));
         }
         vm.expectRevert(VerglasAccount.BadWhitelistLength.selector);
-        new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET,big);
+        new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET, big);
     }
 
     function test_ConstructorDeduplicatesWhitelist() public {
@@ -159,7 +159,7 @@ contract VerglasAccountTest is Test {
         dup[0] = dexA;
         dup[1] = dexA;
         dup[2] = dexB;
-        VerglasAccount acc = new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET,dup);
+        VerglasAccount acc = new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET, dup);
         assertEq(acc.whitelistLength(), 2);
     }
 

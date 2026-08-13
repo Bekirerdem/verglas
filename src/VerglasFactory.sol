@@ -26,8 +26,7 @@ contract VerglasFactory {
         uint256 totalBudget,
         address[] calldata whitelist
     ) external returns (address account) {
-        account =
-            address(new VerglasAccount(msg.sender, agent, token, perTxLimit, dailyLimit, totalBudget, whitelist));
+        account = address(new VerglasAccount(msg.sender, agent, token, perTxLimit, dailyLimit, totalBudget, whitelist));
         _vaultsOf[msg.sender].push(account);
         emit VaultCreated(msg.sender, account, agent, token);
     }

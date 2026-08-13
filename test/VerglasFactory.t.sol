@@ -41,7 +41,7 @@ contract VerglasFactoryTest is Test {
 
     function test_CreateVault_CallerBecomesOwner() public {
         vm.prank(alice);
-        address account = factory.createVault(agent, address(token), 200e6, 0, 500e6,_whitelist());
+        address account = factory.createVault(agent, address(token), 200e6, 0, 500e6, _whitelist());
 
         VerglasAccount vault = VerglasAccount(account);
         assertEq(vault.owner(), alice);
@@ -55,11 +55,11 @@ contract VerglasFactoryTest is Test {
 
     function test_CreateVault_RegistersPerOwner() public {
         vm.startPrank(alice);
-        address a1 = factory.createVault(agent, address(token), 1e6, 0, 2e6,_whitelist());
-        address a2 = factory.createVault(agent, address(token), 3e6, 0, 4e6,_whitelist());
+        address a1 = factory.createVault(agent, address(token), 1e6, 0, 2e6, _whitelist());
+        address a2 = factory.createVault(agent, address(token), 3e6, 0, 4e6, _whitelist());
         vm.stopPrank();
         vm.prank(bob);
-        address b1 = factory.createVault(agent, address(token), 5e6, 0, 6e6,_whitelist());
+        address b1 = factory.createVault(agent, address(token), 5e6, 0, 6e6, _whitelist());
 
         address[] memory aliceVaults = factory.vaultsOf(alice);
         assertEq(aliceVaults.length, 2);
@@ -74,12 +74,12 @@ contract VerglasFactoryTest is Test {
         vm.expectEmit(true, false, false, false, address(factory));
         emit VerglasFactory.VaultCreated(alice, address(0), agent, address(token));
         vm.prank(alice);
-        factory.createVault(agent, address(token), 200e6, 0, 500e6,_whitelist());
+        factory.createVault(agent, address(token), 200e6, 0, 500e6, _whitelist());
     }
 
     function test_CreateVault_VaultRulesEnforced() public {
         vm.prank(alice);
-        address account = factory.createVault(agent, address(token), 200e6, 0, 500e6,_whitelist());
+        address account = factory.createVault(agent, address(token), 200e6, 0, 500e6, _whitelist());
         VerglasAccount vault = VerglasAccount(account);
         token.mint(account, 1000e6);
 
@@ -106,6 +106,6 @@ contract VerglasFactoryTest is Test {
         address[] memory empty = new address[](0);
         vm.prank(alice);
         vm.expectRevert(VerglasAccount.BadWhitelistLength.selector);
-        factory.createVault(agent, address(token), 1e6, 0, 2e6,empty);
+        factory.createVault(agent, address(token), 1e6, 0, 2e6, empty);
     }
 }
