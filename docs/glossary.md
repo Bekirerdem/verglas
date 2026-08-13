@@ -25,7 +25,7 @@ Where the money sits and where the owner's rules are law.
 
 ### VerglasAccount — *the vault*
 
-A bounded spend account for one AI agent. The **owner** sets the rules in the constructor and they are welded shut: a payee **whitelist** (≤ 8 addresses), a **per-transaction limit**, a **total budget**, and an unconditional **freeze**. The agent's only door to the funds is `spend(to, amount)`, and every rule is checked there before a single token moves. The owner can `freeze()` at any moment and `withdraw()` even while frozen — funds are never locked away from their owner.
+A bounded spend account for one AI agent. The **owner** sets the rules in the constructor and they are welded shut: a payee **whitelist** (≤ 8 addresses), a **per-transaction limit**, a rolling 24h **daily cap** (0 = none), a **total budget**, and an unconditional **freeze**. The agent's only door to the funds is `spend(to, amount)`, and every rule is checked there before a single token moves. The owner can `freeze()` at any moment and `withdraw()` even while frozen — funds are never locked away from their owner.
 
 *In the metaphor:* the safe with the rules engraved on the inside of the door.
 

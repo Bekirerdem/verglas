@@ -21,7 +21,7 @@ Verglas is a hub-and-gate system: trust is **earned once** on the C-Chain and **
 ## The pieces
 
 ### VerglasAccount — the vault
-Immutable owner, agent, token, per-tx limit, and total budget; a payee whitelist fixed at construction (max 8 — it fits the circuit's public inputs). `spend()` is the agent's only door: whitelist, limit, and budget are enforced on-chain, and every spend folds into the commitment chain (`leaf = Poseidon(to, amount)`, `c = Poseidon(c_prev, leaf)`). The owner can `freeze()` at any moment and `withdraw()` at all times — frozen or not.
+Immutable owner, agent, token, per-tx limit, daily cap (rolling 24h, 0 = none), and total budget; a payee whitelist fixed at construction (max 8 — it fits the circuit's public inputs). `spend()` is the agent's only door: whitelist, limits, daily cap, and budget are enforced on-chain, and every spend folds into the commitment chain (`leaf = Poseidon(to, amount)`, `c = Poseidon(c_prev, leaf)`). The owner can `freeze()` at any moment and `withdraw()` at all times — frozen or not.
 
 ### VerglasHub — the prover's desk
 `bindAccount(agentId, account)` ties a canonical ERC-8004 identity to a vault (only the vault owner may bind). `submitProof` binds the proof to live state — initial/final commitment, tx-count delta, and the account's actual policy (limit + whitelist) must all match the public signals — then verifies the Groth16 proof on-chain and writes a `validationResponse` (score 100, tag `verglas:policy-compliance`) into the **canonical** ERC-8004 Validation Registry. The hub also keeps `latestAttestation` per agent, which is what travels.

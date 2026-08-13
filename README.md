@@ -64,9 +64,10 @@ Full ledger — including the Fuji testnet deployment and its cross-chain gate �
 </div>
 
 1. **Vault** — the owner deploys a `VerglasAccount` with hard rules: per-payment limit,
-   lifetime budget, payee whitelist, kill-switch. The agent spends inside them and cannot
-   renegotiate. Structure (whitelist, per-payment limit) is welded shut at birth because
-   every proof is bound to it; the budget is fuel and the owner can top it up.
+   rolling 24h daily cap, lifetime budget, payee whitelist, kill-switch. The agent spends
+   inside them and cannot renegotiate. Structure (whitelist, per-payment limit) is welded
+   shut at birth because every proof is bound to it; the budget is fuel the owner can top
+   up, and the daily cap rides the public counters — no circuit change needed.
 2. **Receipt** — every spend is folded into an on-chain Poseidon hash chain,
    `c = P(c_prev, P(to, amount))`. A hash *chain*, not a Merkle tree: the claim is
    completeness ("all of these"), which a membership proof cannot make.
@@ -95,11 +96,14 @@ independent verification passed".
 
 ## verglas-pay — the vault as an MCP tool
 
-Plug the vault into any LLM agent — Claude, GPT, anything that speaks MCP:
+Plug the vault into any LLM agent — Claude, GPT, anything that speaks MCP.
+One line from [npm](https://www.npmjs.com/package/verglas-mcp), nothing to clone:
 
 ```sh
-claude mcp add verglas -- npx tsx <repo>/mcp/index.ts
+claude mcp add verglas --env PRIVATE_KEY=0x… -- npx verglas-mcp
 ```
+
+(From this repo: `claude mcp add verglas -- npx tsx <repo>/mcp/index.ts`.)
 
 ```
 > pay 6 USDC to 0x…A1
@@ -142,10 +146,11 @@ seal age, full stamp history, one view call behind it.
 | `keeper/` | Always-on service: oracle feed, proving, attestation, ICM carry |
 | `agent/` | Treasurer strategy + independent FX sources |
 | `sdk/` | `@verglas/sdk` — viem client, `checkAgent`, network registry, browser-safe proving |
-| `mcp/` | verglas-pay — MCP server: status / pay / check for any LLM agent |
+| `mcp/` | verglas-pay — MCP server ([`verglas-mcp` on npm](https://www.npmjs.com/package/verglas-mcp)): status / pay / pay-x402 / check for any LLM agent |
+| `x402-demo/` | The smallest possible x402 seller (Cloudflare Worker) — a real counterparty for `verglas_pay_x402` |
 | `web/` | Landing + console (Vite/React → verglas.xyz) |
 | `docs/` | VitePress documentation |
-| `test/` | Foundry test suite (92 tests) |
+| `test/` | Foundry test suite (97 tests) |
 
 ## Quickstart
 

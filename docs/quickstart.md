@@ -22,7 +22,7 @@ cast send 0x29C0Dd6DEf26BaC92FDB19DD338089A9396F0EDb "claim()" \
 
 ## 3. Create the vault
 
-Press **Create your vault** in the console and walk the wizard: payee whitelist (up to 8) · per-transaction limit · total budget. Four signatures follow:
+Press **Create your vault** in the console and walk the wizard: payee whitelist (up to 8) · per-transaction limit · total budget. Four signatures follow (vaults can also carry a rolling 24h daily cap — today set through the SDK/factory call; the wizard field is on its way):
 
 1. deploy the vault,
 2. mint your agent's ERC-8004 identity (a real ERC-721),
