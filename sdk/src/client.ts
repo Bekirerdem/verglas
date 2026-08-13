@@ -26,6 +26,11 @@ export interface AccountState {
   agent: Address;
   token: Address;
   perTxLimit: bigint;
+  /** Rolling 24h cap; 0n = none. Also 0n on vaults born before the
+   *  2026-08-13 factories, which have no such rule at all. */
+  dailyLimit: bigint;
+  /** The current 24h window's consumption (0n once it expires / pre-daily vaults). */
+  dailySpentNow: bigint;
   totalBudget: bigint;
   totalSpent: bigint;
   txCount: bigint;
@@ -173,7 +178,27 @@ export class VerglasClient {
       Array.from({ length: Number(wlLen) }, (_, i) => read<Address>("whitelist", [BigInt(i)])),
     );
 
-    return { owner, agent, token, perTxLimit, totalBudget, totalSpent, txCount, commitment, frozen, whitelist };
+    // Pre-2026-08-13 vaults have no daily-cap family; read it as "no cap"
+    // instead of forcing every caller to know the vault's generation.
+    const [dailyLimit, dailySpentNow] = await Promise.all([
+      read<bigint>("dailyLimit").catch(() => 0n),
+      read<bigint>("dailySpentNow").catch(() => 0n),
+    ]);
+
+    return {
+      owner,
+      agent,
+      token,
+      perTxLimit,
+      dailyLimit,
+      dailySpentNow,
+      totalBudget,
+      totalSpent,
+      txCount,
+      commitment,
+      frozen,
+      whitelist,
+    };
   }
 
   /** Latest Hub attestation for an agent, or null if none was ever issued. */
