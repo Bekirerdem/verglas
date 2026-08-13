@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=BioRhyme:wght@800&family=IBM+Plex+Mono:wght@400;500;700&display=block" rel="stylesheet" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; background: #020202; overflow: hidden; }
+  .card { position: relative; width: 1200px; height: 630px; background: #020202; }
+
+  .panel {
+    position: absolute; left: 47px; top: 81px; width: 470px; height: 404px;
+    background: #000; border: 1px solid #131313;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .panel svg { width: 330px; height: 330px; }
+
+  .divider { position: absolute; left: 535px; top: 0; width: 1px; height: 630px; background: #230b0b; }
+
+  .right { position: absolute; left: 560px; top: 0; width: 580px; height: 630px; }
+
+  .logotype {
+    position: absolute; top: 148px; left: 0;
+    font-family: 'BioRhyme', serif; font-weight: 800; font-size: 88px;
+    color: #f0f5ff; letter-spacing: 1px; white-space: nowrap;
+  }
+  .logotype .dot { color: #e84142; }
+
+  .headline {
+    position: absolute; top: 288px; left: 0;
+    font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 29px;
+    color: #f0f5ff; line-height: 1.42;
+  }
+
+  .desc {
+    position: absolute; top: 386px; left: 0;
+    font-family: 'IBM Plex Mono', monospace; font-weight: 400; font-size: 26px;
+    color: #aebad2; line-height: 1.5; width: 580px;
+  }
+
+  .footer {
+    position: absolute; top: 528px; left: 0;
+    font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 16px;
+    letter-spacing: 3px; color: #5d6b85; white-space: nowrap;
+  }
+  .footer .avax { color: #e84142; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="panel">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+      <path d="M 83.66 60.12 L 27.37 60.13 L 26 61.27 L 80.55 155.19 L 82.35 157.73 L 83.32 158.1 L 84.31 157.73 L 87.98 151.15 L 89.35 149.74 L 141.22 61.33 L 139.96 60.12 Z M 284.11 60.18 L 165.08 60.14 L 163.87 60.66 L 95.2 176.2 L 95.04 178.78 L 100.72 189.06 L 162.19 293.91 L 166.86 300.45 L 244.93 301.29 L 262.22 300.87 L 263.99 300.01 L 315.23 213.52 L 332.35 183.46 L 337.16 176.25 L 344.23 163.33 L 344.23 162.21 L 343.38 161.44 L 224.67 161.44 L 223.75 162.36 L 223.66 209.83 L 224.17 210.84 L 225.19 211.33 L 254.58 211.75 L 255.51 212.36 L 255.51 213.12 L 233.23 250.02 L 197.79 250.87 L 196.33 250.12 L 154.47 178.41 L 155.5 175 L 183.07 128.93 L 187.71 120.1 L 193.39 111.37 L 194.72 110.95 L 374.52 110.51 L 376.67 109.01 L 403.7 62.44 L 403.94 61.21 L 403.14 60.22 Z M 456.88 60.14 L 429.01 60.16 L 426.4 61.25 L 258.57 346.13 L 256.6 348.55 L 254.77 348.08 L 239.74 321.83 L 238.55 320.83 L 236.48 320.22 L 180.61 320.22 L 179.24 321.36 L 179.5 322.78 L 205.37 367.5 L 255.59 451.88 L 256.72 451.88 L 259.17 448.62 L 260.34 445.8 L 274.68 422.14 L 314.17 353.91 L 420.87 173.23 L 433.53 150.64 L 472.49 85.32 L 486 61.48 L 485.78 60.59 L 484.74 60.12 Z" fill="#C11F2E" fill-rule="evenodd"/>
+    </svg>
+  </div>
+  <div class="divider"></div>
+  <div class="right">
+    <div class="logotype">VERGLAS<span class="dot">.</span></div>
+    <div class="headline">Your bot makes the payments.<br/>You keep the control.</div>
+    <div class="desc">A limit, an approved list, an instant freeze&nbsp;— rules enforced by a contract the bot cannot break.</div>
+    <div class="footer"><span class="avax">BUILT ON AVALANCHE</span> · LIVE ON C-CHAIN</div>
+  </div>
+</div>
+</body>
+</html>
