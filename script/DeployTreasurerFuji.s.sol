@@ -59,7 +59,7 @@ contract DeployTreasurerFuji is Script {
         wl[1] = address(0xB2);
         uint64 nonce = vm.getNonce(deployer);
         address predictedTreasurer = vm.computeCreateAddress(deployer, nonce + 1);
-        VerglasAccount account = new VerglasAccount(deployer, predictedTreasurer, USDC, PER_TX, BUDGET, wl);
+        VerglasAccount account = new VerglasAccount(deployer, predictedTreasurer, USDC, PER_TX, 0, BUDGET, wl);
         VerglasTreasurer treasurer = new VerglasTreasurer(
             account,
             deployer,

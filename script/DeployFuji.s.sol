@@ -60,7 +60,7 @@ contract DeployFuji is Script {
         address[] memory wl = new address[](2);
         wl[0] = address(0xA1);
         wl[1] = address(0xB2);
-        VerglasAccount account = new VerglasAccount(deployer, deployer, USDC, PER_TX, BUDGET, wl);
+        VerglasAccount account = new VerglasAccount(deployer, deployer, USDC, PER_TX, 0, BUDGET, wl);
         require(IERC20Like(USDC).transfer(address(account), FUNDING), "funding transfer failed");
 
         uint256 agentId = ICanonicalIdentity(IDENTITY_REGISTRY).register();

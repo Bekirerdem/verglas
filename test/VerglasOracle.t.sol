@@ -244,7 +244,7 @@ contract VerglasOracleTreasurerIntegrationTest is Test {
         address[] memory wl = new address[](1);
         wl[0] = dexA;
         address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        account = new VerglasAccount(owner, predicted, address(token), 5e6, 100e6, wl);
+        account = new VerglasAccount(owner, predicted, address(token), 5e6, 0, 100e6, wl);
         treasurer = new VerglasTreasurer(
             account,
             keeper, // the keeper key is also the payFX operator, as on Fuji

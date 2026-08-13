@@ -36,7 +36,7 @@ contract VerglasAccountTest is Test {
 
     function setUp() public {
         token = new MockToken();
-        account = new VerglasAccount(owner, agent, address(token), PER_TX, BUDGET, _whitelist());
+        account = new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET,_whitelist());
         token.mint(address(account), FUNDING);
     }
 
@@ -144,14 +144,14 @@ contract VerglasAccountTest is Test {
     function test_RevertWhen_WhitelistEmptyOrTooLarge() public {
         address[] memory empty = new address[](0);
         vm.expectRevert(VerglasAccount.BadWhitelistLength.selector);
-        new VerglasAccount(owner, agent, address(token), PER_TX, BUDGET, empty);
+        new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET,empty);
 
         address[] memory big = new address[](9);
         for (uint256 i = 0; i < 9; i++) {
             big[i] = address(uint160(i + 1));
         }
         vm.expectRevert(VerglasAccount.BadWhitelistLength.selector);
-        new VerglasAccount(owner, agent, address(token), PER_TX, BUDGET, big);
+        new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET,big);
     }
 
     function test_ConstructorDeduplicatesWhitelist() public {
@@ -159,7 +159,7 @@ contract VerglasAccountTest is Test {
         dup[0] = dexA;
         dup[1] = dexA;
         dup[2] = dexB;
-        VerglasAccount acc = new VerglasAccount(owner, agent, address(token), PER_TX, BUDGET, dup);
+        VerglasAccount acc = new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET,dup);
         assertEq(acc.whitelistLength(), 2);
     }
 
@@ -193,6 +193,52 @@ contract VerglasAccountTest is Test {
         vm.prank(owner);
         vm.expectRevert(VerglasAccount.ZeroAmount.selector);
         account.increaseBudget(0);
+    }
+
+    /// @notice The rolling 24h cap: cumulative inside the window, refused by
+    ///         name at the boundary, reset when the window expires.
+    uint256 internal constant DAILY = 300e6;
+
+    function _dailyAccount() internal returns (VerglasAccount acc) {
+        acc = new VerglasAccount(owner, agent, address(token), PER_TX, DAILY, BUDGET, _whitelist());
+        token.mint(address(acc), FUNDING);
+    }
+
+    function test_DailyLimitEnforcedCumulatively() public {
+        VerglasAccount acc = _dailyAccount();
+        vm.prank(agent);
+        acc.spend(dexA, 200e6);
+        vm.prank(agent);
+        acc.spend(dexB, 100e6); // exactly at the cap — allowed
+        assertEq(acc.spentToday(), 300e6);
+        assertEq(acc.dailySpentNow(), 300e6);
+
+        vm.prank(agent);
+        vm.expectRevert(abi.encodeWithSelector(VerglasAccount.DailyLimitExceeded.selector, 301e6, DAILY));
+        acc.spend(dexA, 1e6);
+    }
+
+    function test_DailyWindowRollsAfterADay() public {
+        VerglasAccount acc = _dailyAccount();
+        vm.prank(agent);
+        acc.spend(dexA, 200e6);
+        vm.prank(agent);
+        acc.spend(dexB, 100e6);
+
+        vm.warp(block.timestamp + 1 days);
+        assertEq(acc.dailySpentNow(), 0); // expired window reads as empty
+
+        vm.prank(agent);
+        acc.spend(dexA, 150e6); // a fresh window opens with this spend
+        assertEq(acc.spentToday(), 150e6);
+        assertEq(acc.totalSpent(), 450e6); // lifetime budget still cumulative
+    }
+
+    function test_ZeroDailyLimitMeansNoDailyCap() public {
+        _spend(dexA, 200e6);
+        _spend(dexB, 200e6); // 400e6 in one window, fine with dailyLimit 0
+        assertEq(account.dailySpentNow(), 0);
+        assertEq(account.spentToday(), 0); // counter never engages
     }
 
     function test_RevertWhen_TransferFails() public {

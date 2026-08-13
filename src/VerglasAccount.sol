@@ -39,6 +39,12 @@ contract VerglasAccount {
     IERC20 public immutable token;
     uint256 public immutable perTxLimit;
 
+    /// @notice Cumulative cap per rolling 24h window, 0 = no daily cap.
+    ///         Like the total budget this is enforced through public counters —
+    ///         instant, on-chain, outside the circuit — so it needs no change
+    ///         to the proof system. Fixed at birth like the per-tx limit.
+    uint256 public immutable dailyLimit;
+
     /// @notice The agent's lifetime spending allowance. Owner-increasable (fuel,
     ///         not structure — see the contract-level note); never decreasable,
     ///         the brake for "stop spending" is freeze().
@@ -53,6 +59,11 @@ contract VerglasAccount {
     uint256 public totalSpent;
     bool public frozen;
 
+    /// @dev The 24h window opens with the first spend after the previous
+    ///      window expires; it is not calendar-aligned.
+    uint256 public dayStart;
+    uint256 public spentToday;
+
     event Spend(address indexed to, uint256 amount, uint256 indexed txIndex, uint256 newCommitment);
     event Frozen();
     event Unfrozen();
@@ -64,6 +75,7 @@ contract VerglasAccount {
     error AccountFrozen();
     error NotInWhitelist(address to);
     error PerTxLimitExceeded(uint256 amount, uint256 limit);
+    error DailyLimitExceeded(uint256 wouldBe, uint256 limit);
     error BudgetExceeded(uint256 wouldBe, uint256 budget);
     error BadWhitelistLength();
     error ZeroAddress();
@@ -81,6 +93,7 @@ contract VerglasAccount {
         address agent_,
         address token_,
         uint256 perTxLimit_,
+        uint256 dailyLimit_,
         uint256 totalBudget_,
         address[] memory whitelist_
     ) {
@@ -96,7 +109,9 @@ contract VerglasAccount {
         agent = agent_;
         token = IERC20(token_);
         perTxLimit = perTxLimit_;
+        dailyLimit = dailyLimit_;
         totalBudget = totalBudget_;
+        dayStart = block.timestamp;
 
         for (uint256 i = 0; i < whitelist_.length; i++) {
             address dest = whitelist_[i];
@@ -114,6 +129,15 @@ contract VerglasAccount {
         if (frozen) revert AccountFrozen();
         if (!isWhitelisted[to]) revert NotInWhitelist(to);
         if (amount > perTxLimit) revert PerTxLimitExceeded(amount, perTxLimit);
+        if (dailyLimit != 0) {
+            if (block.timestamp >= dayStart + 1 days) {
+                dayStart = block.timestamp;
+                spentToday = 0;
+            }
+            uint256 newToday = spentToday + amount;
+            if (newToday > dailyLimit) revert DailyLimitExceeded(newToday, dailyLimit);
+            spentToday = newToday;
+        }
         uint256 newTotal = totalSpent + amount;
         if (newTotal > totalBudget) revert BudgetExceeded(newTotal, totalBudget);
 
@@ -155,5 +179,11 @@ contract VerglasAccount {
 
     function whitelistLength() external view returns (uint256) {
         return whitelist.length;
+    }
+
+    /// @notice What the current 24h window has consumed — 0 once it expires.
+    function dailySpentNow() external view returns (uint256) {
+        if (dailyLimit == 0 || block.timestamp >= dayStart + 1 days) return 0;
+        return spentToday;
     }
 }

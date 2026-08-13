@@ -94,7 +94,7 @@ contract VerglasHubTest is Test {
         address[] memory wl = new address[](2);
         wl[0] = dexA;
         wl[1] = dexB;
-        account = new VerglasAccount(owner, agent, address(token), PER_TX, BUDGET, wl);
+        account = new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET, wl);
         token.mint(address(account), 1000e6);
 
         identity.set(AGENT_ID, owner);
@@ -185,7 +185,7 @@ contract VerglasHubTest is Test {
         address attacker = makeAddr("attacker");
         address[] memory wl = new address[](1);
         wl[0] = dexA;
-        VerglasAccount attackerAccount = new VerglasAccount(attacker, agent, address(token), PER_TX, BUDGET, wl);
+        VerglasAccount attackerAccount = new VerglasAccount(attacker, agent, address(token), PER_TX, 0, BUDGET, wl);
 
         // attacker owns attackerAccount but NOT AGENT_ID (owner does).
         vm.prank(attacker);
@@ -201,7 +201,7 @@ contract VerglasHubTest is Test {
         address[] memory wl = new address[](1);
         wl[0] = dexA;
         VerglasAccount otherAccount =
-            new VerglasAccount(makeAddr("someoneElse"), agent, address(token), PER_TX, BUDGET, wl);
+            new VerglasAccount(makeAddr("someoneElse"), agent, address(token), PER_TX, 0, BUDGET, wl);
 
         vm.prank(owner); // owns AGENT_ID, but not otherAccount
         vm.expectRevert(VerglasHub.NotAccountOwner.selector);
@@ -221,7 +221,7 @@ contract VerglasHubTest is Test {
 
         address[] memory wl = new address[](1);
         wl[0] = dexA;
-        VerglasAccount freshVault = new VerglasAccount(owner, agent, address(token), PER_TX, BUDGET, wl);
+        VerglasAccount freshVault = new VerglasAccount(owner, agent, address(token), PER_TX, 0, BUDGET, wl);
 
         vm.expectEmit(address(hub));
         emit VerglasHub.AttestationInvalidated(AGENT_ID, address(account));
@@ -264,7 +264,7 @@ contract VerglasHubTest is Test {
         address[] memory wl = new address[](2);
         wl[0] = dexA;
         wl[1] = dexB;
-        VerglasAccount attackerAccount = new VerglasAccount(attacker, agent, address(token), PER_TX, BUDGET, wl);
+        VerglasAccount attackerAccount = new VerglasAccount(attacker, agent, address(token), PER_TX, 0, BUDGET, wl);
         token.mint(address(attackerAccount), 1000e6);
 
         identity.set(attackerAgentId, attacker);

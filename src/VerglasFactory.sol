@@ -15,16 +15,19 @@ contract VerglasFactory {
     /// @param agent      The only address allowed to spend (the bot / keeper).
     /// @param token      ERC-20 the vault holds (USDC on Fuji).
     /// @param perTxLimit Max amount of a single spend, token base units.
+    /// @param dailyLimit Cumulative cap per rolling 24h window, 0 = none.
     /// @param totalBudget Lifetime spend ceiling, token base units.
     /// @param whitelist  Allowed destinations (1..8, deduplicated by the vault).
     function createVault(
         address agent,
         address token,
         uint256 perTxLimit,
+        uint256 dailyLimit,
         uint256 totalBudget,
         address[] calldata whitelist
     ) external returns (address account) {
-        account = address(new VerglasAccount(msg.sender, agent, token, perTxLimit, totalBudget, whitelist));
+        account =
+            address(new VerglasAccount(msg.sender, agent, token, perTxLimit, dailyLimit, totalBudget, whitelist));
         _vaultsOf[msg.sender].push(account);
         emit VaultCreated(msg.sender, account, agent, token);
     }

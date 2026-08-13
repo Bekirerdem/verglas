@@ -71,7 +71,7 @@ contract VerglasTreasurerTest is Test {
         wl[0] = dexA;
         wl[1] = dexB;
         address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        account = new VerglasAccount(owner, predicted, address(token), PER_TX, BUDGET, wl);
+        account = new VerglasAccount(owner, predicted, address(token), PER_TX, 0, BUDGET, wl);
         treasurer = new VerglasTreasurer(
             account,
             operator,
@@ -329,7 +329,7 @@ contract VerglasTreasurerHubIntegrationTest is Test {
         wl[0] = dexA;
         wl[1] = dexB;
         address predicted = vm.computeCreateAddress(address(this), vm.getNonce(address(this)) + 1);
-        account = new VerglasAccount(owner, predicted, address(token), PER_TX, BUDGET, wl);
+        account = new VerglasAccount(owner, predicted, address(token), PER_TX, 0, BUDGET, wl);
         treasurer = new VerglasTreasurer(
             account,
             operator,
