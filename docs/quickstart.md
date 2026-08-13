@@ -33,7 +33,7 @@ Rules are **immutable by design** — changing them means deploying a fresh vaul
 
 ## 4. Spend, then let the keeper stamp
 
-Fund the vault and make at least one payment to a whitelisted payee. From there the keeper takes over: it proves the open window with a Groth16 proof, stamps **score 100** into the canonical ERC-8004 Validation Registry, and carries the attestation over ICM to the Echo gate — `isCleared(yourAgentId)` flips to `true` on the far side with no action from you.
+Fund the vault and make at least one payment to a whitelisted payee. From there the keeper takes over: it discovers every hub-bound agent on its schedule, proves the open window with a Groth16 proof, stamps **score 100** into the ERC-8004 Validation Registry (Fuji's reference deployment), and carries the attestation over ICM to the Echo gate — `isCleared(yourAgentId)` flips to `true` on the far side with no action from you.
 
 ## 5. The weekly rhythm
 

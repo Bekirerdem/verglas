@@ -19,7 +19,7 @@ An importer holds TRY and owes USD-denominated supplier invoices. Banks convert 
 2. applies the price update when one is attached (fee paid in the same call) — since the July 2026 Pyth cutover the live feed is the keeper-signed `VerglasOracle` shim, read through the same IPyth ABI, so an empty update works while the keeper keeps the shim fresh;
 3. reads `getPriceNoOlderThan(USD/TRY, 26h)` and normalizes the exponent;
 4. **FX circuit breaker:** if the live rate deviates from the owner's reference rate by more than `maxSlippageBps`, revert — a human looks again;
-5. **daily cap:** per-calendar-day spend accumulator (`block.timestamp / 1 days`, lazily reset) must stay under `dailyLimit`;
+5. **calendar-day cap:** per-calendar-day spend accumulator (`block.timestamp / 1 days`, lazily reset) must stay under the treasurer's `dailyLimit` policy — owner-adjustable, and not to be confused with the vault's own *rolling 24-hour cap*, which is immutable and window-based rather than calendar-aligned;
 6. delegates to `account.spend()` — whitelist, per-tx limit, budget, and the owner's freeze still rule.
 
 The vault's brake always wins: freezing the **account** silences the treasurer unconditionally (covered by the load-bearing composition test).

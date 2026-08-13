@@ -55,7 +55,7 @@ the same payments are visible in the vault's own events).
 - `publicSignals[2]` must equal the live tx-count delta;
 - `publicSignals[3..10]` and `[11]` must equal the account's actual whitelist and limit (no policy spoofing).
 
-Only then does the Groth16 verifier run (~287K gas). On success the checkpoint advances and the canonical ERC-8004 Validation Registry receives the stamp.
+Only then does the Groth16 verifier run (~287K gas). On success the checkpoint advances and the ERC-8004 Validation Registry receives the stamp (Fuji: the reference deployment; mainnet: the Verglas-run, reference-compatible one — see [Contracts](/contracts)).
 
 ## What is deliberately NOT in the circuit
 

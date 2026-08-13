@@ -130,7 +130,7 @@ seal age, full stamp history, one view call behind it.
 | `VerglasAccount` | any EVM L1 | Non-custodial rule-bound vault; immutable structure, refillable budget, kill-switch |
 | `VerglasFactory` | C-Chain | One-transaction vault deployment |
 | `VerglasHub` | C-Chain | Proof-gated attestation issuer; ICM carry origin |
-| `Groth16Verifier` | C-Chain | On-chain proof verification (~290k gas) |
+| `Groth16Verifier` | C-Chain | On-chain proof verification (~287k gas) |
 | `ValidationRegistry` | C-Chain | ERC-8004 Validation Registry (no chain has a canonical one yet) |
 | `VerglasOracle` | C-Chain | Keeper-signed IPyth-compatible price feed |
 | `VerglasTreasurer` | C-Chain | FX-aware treasury operator (daily cap + rate circuit breaker) |

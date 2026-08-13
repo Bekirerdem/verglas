@@ -10,6 +10,7 @@ Every name in Verglas belongs to one physical metaphor: money crossing a border.
   <div class="vg-layer"><b>1 · The Vault</b><span>Holds the money and enforces the owner's rules on every spend. <code>VerglasAccount</code>, <code>VerglasFactory</code>, <code>VerglasTreasurer</code>.</span></div>
   <div class="vg-layer"><b>2 · The Proof</b><span>Turns a window of spends into one zero-knowledge receipt. The Poseidon commitment, circuit #1, <code>Groth16Verifier</code>.</span></div>
   <div class="vg-layer"><b>3 · The Trust Rail</b><span>Carries the receipt as a passport other chains accept. <code>VerglasHub</code>, <code>ValidationRegistry</code>, the attestation, <code>VerglasGate</code>.</span></div>
+  <div class="vg-layer"><b>4 · The Buying Side</b><span>Lets the agent actually buy things — under the same rules. <code>verglas-pay</code> (MCP), the float, x402.</span></div>
 </div>
 
 ## Layer 1 — The Vault
@@ -25,17 +26,17 @@ Where the money sits and where the owner's rules are law.
 
 ### VerglasAccount — *the vault*
 
-A bounded spend account for one AI agent. The **owner** sets the rules in the constructor and they are welded shut: a payee **whitelist** (≤ 8 addresses), a **per-transaction limit**, a rolling 24h **daily cap** (0 = none), a **total budget**, and an unconditional **freeze**. The agent's only door to the funds is `spend(to, amount)`, and every rule is checked there before a single token moves. The owner can `freeze()` at any moment and `withdraw()` even while frozen — funds are never locked away from their owner.
+A bounded spend account for one AI agent. The **owner** sets the rules in the constructor: a payee **whitelist** (≤ 8 addresses), a **per-transaction limit** and a **rolling 24-hour cap** (0 = none) — all three welded shut at birth — plus a **total budget** (fuel, not structure: increase-only, the owner can top it up) and an unconditional **freeze**. The agent's only door to the funds is `spend(to, amount)`, and every rule is checked there before a single token moves. The owner can `freeze()` at any moment and `withdraw()` even while frozen — funds are never locked away from their owner.
 
 *In the metaphor:* the safe with the rules engraved on the inside of the door.
 
 ### VerglasFactory — *the vault maker*
 
-One call, `createVault(...)`, deploys a fresh `VerglasAccount` whose owner is the caller. The factory holds no funds, has no owner, and can never touch a vault after birth — it only remembers who created what, so the console can list "my vaults."
+One call, `createVault(agent, token, perTxLimit, dailyLimit, totalBudget, whitelist)`, deploys a fresh `VerglasAccount` whose owner is the caller. The factory holds no funds, has no owner, and can never touch a vault after birth — it only remembers who created what, so the console can list "my vaults." Three factory generations live side by side (immutable-budget → refillable-budget → daily-limit, 2026-08-13); the SDK's `legacyFactories` keeps older vaults visible, and vaults inherit whichever rule set their factory knew.
 
 ### VerglasTreasurer — *the treasury brain*
 
-The first real resident of a vault. The treasurer *is* an account's `agent`, so it adds two treasury-grade rules the vault itself does not know about — a **per-calendar-day cap** and an **FX circuit-breaker** checked against a live USD/TRY price (read through the `IPyth` interface, served by the VerglasOracle shim since the July 2026 Pyth cutover) — then delegates to `account.spend()`, where the whitelist, limit, budget and freeze still apply. Composition, not modification: `VerglasAccount` stays untouched, so the treasurer's vault inherits the weekly proof machinery unchanged. If the owner freezes the vault directly, the treasurer's payments stop no matter what — the vault's brake always wins.
+The first real resident of a vault. The treasurer *is* an account's `agent`, so it layers two treasury-grade rules on top — a **calendar-day cap** (owner-adjustable via `setPolicy`; distinct from the vault's own *rolling 24-hour cap*, which is immutable and not calendar-aligned) and an **FX circuit-breaker** checked against a live USD/TRY price (read through the `IPyth` interface, served by the VerglasOracle shim since the July 2026 Pyth cutover) — then delegates to `account.spend()`, where the whitelist, limits, budget and freeze still apply. Composition, not modification: `VerglasAccount` stays untouched, so the treasurer's vault inherits the weekly proof machinery unchanged. If the owner freezes the vault directly, the treasurer's payments stop no matter what — the vault's brake always wins.
 
 ### VerglasDispenser — *the tap*
 
@@ -82,7 +83,7 @@ The validator that cannot vouch for anyone by choice. A validation response is w
 
 ### ValidationRegistry — *the stamp book*
 
-Verglas's deployment of the **ERC-8004 Validation Registry**. Avalanche has canonical Identity and Reputation registries but no canonical Validation registry — Verglas deploys one, event-compatible with the reference implementation so ERC-8004 explorers index it as-is. The agent's owner requests validation from a chosen validator (the Hub); only that validator can respond. The Hub's score-100 response lands here.
+The **ERC-8004 Validation Registry** the attestation is stamped into. The honest, network-by-network picture: the Identity Registry is canonically deployed everywhere, but **no network has an authoritative Validation deployment yet** (that section of the spec is still in revision). On **Fuji** Verglas stamps into the reference deployment at the ERC-8004 vanity address (`0x8004Cb1B…`); on **mainnet** no reference deployment exists, so Verglas runs its own — event- and interface-compatible with the reference implementation, indexable by any 8004 explorer as-is. The agent's owner requests validation from a chosen validator (the Hub); only that validator can respond. The Hub's score-100 response lands here.
 
 ### Attestation — *the passport itself*
 
@@ -100,17 +101,40 @@ What an Avalanche L1 operator installs to accept Verglas trust. It receives carr
 
 The Hub's memory of how far an account has already been proven: `{ commitment, txCount }`. The next proof must start exactly where the last one ended, so windows tile perfectly with no gap and no overlap — you cannot re-prove old spends or skip new ones.
 
+## Layer 4 — The Buying Side
+
+How the vault's rules reach the thing the agent actually buys.
+
+| Name | Type | What it is |
+| --- | --- | --- |
+| `verglas-pay` | MCP server | The vault as tools for any LLM agent. |
+| The float | wallet balance | The agent's pocket money, refilled only through the vault. |
+| x402 | protocol | The HTTP 402 payment standard paid APIs speak. |
+
+### verglas-pay — *the vault in the agent's hands*
+
+The MCP server (`verglas-mcp` [on npm](https://www.npmjs.com/package/verglas-mcp)) that gives any LLM agent four tools: `verglas_status`, `verglas_pay`, `verglas_pay_x402`, `verglas_check`. It holds only the **agent key** — never the owner's — and it does no refusing of its own: it simulates, submits, and relays the contract's named refusal. Delete the server, write your own; the rules hold.
+
+### The float — *pocket money on a leash*
+
+Avalanche's USDC predates contract signatures (EIP-1271), so a vault cannot sign an x402 payment itself. Instead the agent's own wallet carries a small **float**, and the float is refilled *exclusively* through `vault.spend()` — so the budget, the per-payment limit, the rolling 24h cap and the freeze govern x402 buying at the refill step. The float never needs to hold more than the payment at hand; a leaked agent key is worth the float, not the treasury. The live float vault is agent **#223**: its whitelist holds exactly one address — the agent's own wallet.
+
+### x402 — *the checkout protocol*
+
+The HTTP 402 payment standard (now under Linux Foundation governance): a seller answers a request with a price, the buyer signs a USDC authorization, a facilitator settles it on-chain, the seller delivers. Verglas sits on the **buyer's** side of that handshake — see [x402 — Let Your Agent Buy Things](/x402).
+
 ## Identity & actors
 
 Who holds what, across the whole system.
 
 | Term | What it means |
 | --- | --- |
-| **agentId** | An ERC-8004 identity — a real ERC-721 token on Avalanche's canonical Identity Registry. Verglas runs agents **#219** (demo) and **#220** (treasurer). |
+| **agentId** | An ERC-8004 identity — a real ERC-721 token on the canonical Identity Registry. The live roster: mainnet **#1783** (showcase vault); Fuji **#219** (demo), **#220** (treasurer), **#222** (first user vault), **#223** (x402 float vault). |
 | **owner** | The human. Sets the vault's rules, holds the freeze and the exit. |
 | **agent** | The address allowed to spend — a bot, or the `VerglasTreasurer`. |
-| **operator** (keeper) | The rotatable key the treasurer allows to trigger FX payments. Rotating it never touches funds. |
-| **ERC-8004** | The open, chain-agnostic agent-trust standard (Identity + Reputation + Validation). Verglas fills the Validation gap on Avalanche. |
+| **operator** (keeper key) | The rotatable key the treasurer allows to trigger FX payments. Rotating it never touches funds. |
+| **the keeper** (service) | The scheduled GitHub Actions job that keeps the system fresh with no daemon: pushes the FX price into the oracle shim, discovers every hub-bound agent, proves open windows, stamps, and self-delivers attestations over ICM (signature aggregator — no public relayer serves the Echo leg). It holds only the rotatable keeper key, never the deployer's. |
+| **ERC-8004** | The open, chain-agnostic agent-trust standard (Identity + Reputation + Validation). Verglas is the first validator writing ZK-verified spend-compliance into the Validation side. |
 
 ## Supporting infrastructure
 
@@ -121,7 +145,8 @@ Canonical contracts and interfaces Verglas builds on rather than owns.
 | **ICM / Teleporter** | Avalanche's native Interchain Messaging — how a passport crosses from C-Chain to another L1. |
 | `ITeleporterMessenger` | Interface for *sending* an ICM message (used by the Hub's `carryAttestation`). |
 | `ITeleporterReceiver` | Interface for *receiving* one (implemented by `VerglasGate`). |
-| `IPyth` | The Pyth-compatible oracle interface the treasurer reads its live USD/TRY price through. Since the July 2026 Pyth cutover it is implemented by **VerglasOracle**, a keeper-signed shim fed from independent FX references. |
+| `VerglasOracle` | The keeper-signed price shim: independent FX readings (ECB via frankfurter + open.er-api) signed on-chain, served through the `IPyth` ABI so every consumer kept its interface after the July 2026 Pyth cutover. Capped at ±10% deviation per push; the keeper key is rotatable and never touches funds. |
+| `IPyth` | The Pyth-compatible oracle interface the treasurer reads its live USD/TRY price through — implemented by `VerglasOracle` since the cutover. |
 | **Poseidon / BN254** | The ZK-friendly hash and elliptic-curve field the commitment and circuit are built on. |
 
 Every contract lives in [`src/`](https://github.com/Bekirerdem/verglas) — Solidity 0.8.25, no proxies, no upgradability, custom errors, Foundry-tested. See [Contracts & Addresses](/contracts) for the live Fuji deployment.

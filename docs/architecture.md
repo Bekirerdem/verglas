@@ -14,7 +14,10 @@ Verglas is a hub-and-gate system: trust is **earned once** on the C-Chain and **
 │    carryAttestation → Teleporter   │  │
 │                                    │  │  canonical ERC-8004 registries
 │  VerglasTreasurer (V2, optional)   │  └─ Identity (ERC-721 agent ids)
-│    payFX → Pyth check → spend()    │     Validation (proof stamps)
+│    payFX → oracle check → spend()  │     Validation (proof stamps)
+│                                    │
+│  verglas-pay (MCP) · x402 float    │
+│    refills ride spend() too        │
 └────────────────────────────────────┘
 ```
 
@@ -30,10 +33,10 @@ Immutable owner, agent, token, per-tx limit, daily cap (rolling 24h, 0 = none), 
 Deployed on any destination L1 with three immutables: the Teleporter address, the hub's blockchain ID, and the hub address. It accepts attestation packets only from that exact hub over ICM, rejects stale packets, and exposes one view: `isCleared(agentId)` — true while the freshest attestation meets `minScore` within `maxAge` (7 days on the live deployment). No owner, no setters.
 
 ### VerglasTreasurer — the treasury brain (V2)
-A composition, not a modification: the treasurer **is** the vault's agent. It adds the two treasury rules the vault doesn't know about — a per-calendar-day spending cap and an FX circuit breaker checked against a live Pyth price — then delegates to `spend()`, where the vault's own rules still rule. If the owner freezes the vault, `payFX` stops no matter what state the treasurer is in. See [Verglas Treasurer](/treasurer).
+A composition, not a modification: the treasurer **is** the vault's agent. It layers two treasury rules on top — a **calendar-day cap** (owner-adjustable; distinct from the vault's own immutable rolling 24h cap) and an FX circuit breaker checked against the live USD/TRY feed (the keeper-signed `VerglasOracle` shim, read through the IPyth ABI) — then delegates to `spend()`, where the vault's own rules still rule. If the owner freezes the vault, `payFX` stops no matter what state the treasurer is in. See [Verglas Treasurer](/treasurer).
 
 ## Trust properties
 
 - **No upgradability anywhere.** Every address is immutable; nothing can be silently swapped. Redeploys are loud by design.
-- **The registry is not ours.** Stamps live in the canonical ERC-8004 Validation Registry (`0x8004Cb1B…`), indexable by any 8004 explorer. Verglas is the first ZK-verified validator writing real proofs into it.
+- **The registry speaks ERC-8004, per network.** On Fuji, stamps land in the reference Validation Registry deployment at the ERC-8004 vanity address (`0x8004Cb1B…`); mainnet has no reference Validation deployment yet, so there Verglas runs its own, event- and interface-compatible — either way indexable by any 8004 explorer. Verglas is the first ZK-verified validator writing real proofs into the Validation side of the standard.
 - **The gate never trusts a relayer.** Packets arrive over Avalanche's native ICM with validator-set signatures; the gate additionally pins the source chain and hub address.

@@ -15,14 +15,16 @@ Verglas runs on two networks. Everything below is real and verifiable on-chain �
 | ERC-8004 Identity Registry (canonical) | `0x8004A169FB4a3325136EB29fA0ceB6D2e539a432` |
 | USDC (Circle official) | `0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E` |
 
-::: info Why our own Validation Registry?
+::: info The Validation Registry, honestly
 Identity is the canonical ERC-8004 registry — already live on Avalanche mainnet,
 and note it sits at a **different address than on Fuji** (the reference
-deployment mines a separate vanity address per network). The Validation Registry
-is a Verglas deployment because **no chain has a canonical one**: the reference
+deployment mines a separate vanity address per network). Validation is messier:
+**no network has an authoritative Validation deployment** — the reference
 repository lists no Validation address for any network and that section of the
-spec is still under revision with the TEE community. Ours is event- and
-interface-compatible with ERC-8004.
+spec is still under revision with the TEE community. On **Fuji** we stamp into
+the reference deployment at the ERC-8004 vanity address; on **mainnet**, where
+none exists, we run our own — event- and interface-compatible with ERC-8004, so
+any 8004 explorer indexes it as-is.
 :::
 
 ## Fuji testnet (43113)
@@ -44,8 +46,24 @@ interface-compatible with ERC-8004.
 | Contract | Address |
 | --- | --- |
 | ERC-8004 Identity Registry (canonical) | `0x8004A818BFB912233c491871b3d84c89A494BD9e` |
-| ERC-8004 Validation Registry (canonical) | `0x8004Cb1BF31DAf7788923b405b754f57acEB4272` |
+| ERC-8004 Validation Registry (reference deployment) | `0x8004Cb1BF31DAf7788923b405b754f57acEB4272` |
 | USDC (Circle official, 6 decimals) | `0x5425890298aed601595a70AB815c96711a31Bc65` |
+
+## Echo L1 (173750) — the live border
+
+| Contract | Address |
+| --- | --- |
+| VerglasGate (`minScore` 100, `maxAge` 7 days) | `0xD09c7baE6A2eE0E1E1C9443EF2a2791d8a97dc36` |
+
+Blockchain ID (for `carryAttestation`): `0x1278d1be4b987e847be3465940eb5066c4604a7fbd6e086900823597d81af4c1`.
+
+## Off-chain surfaces
+
+| Surface | Where |
+| --- | --- |
+| verglas-pay MCP server | [`verglas-mcp` on npm](https://www.npmjs.com/package/verglas-mcp) — `npx verglas-mcp` |
+| x402 demo seller (0.01 USDC, Fuji) | `verglas-x402-demo.l3ekirerdem.workers.dev/frost-report` |
+| x402 settlement verify | [Ultravioleta facilitator](https://facilitator.ultravioletadao.xyz) (community-run, C-Chain + Fuji) |
 | TeleporterMessenger (every Avalanche EVM chain) | `0x253b2784c75e510dD0fF1da844684a1aC0aa5fcf` |
 
 USD/TRY feed id (Pyth's id, kept as the VerglasOracle storage key):

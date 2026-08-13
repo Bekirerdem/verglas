@@ -38,6 +38,7 @@ export default defineConfig({
         text: "Build",
         items: [
           { text: "Contracts & Addresses", link: "/contracts" },
+          { text: "verglas-pay (MCP)", link: "/mcp" },
           { text: "TypeScript SDK", link: "/sdk" },
           { text: "Verglas Treasurer", link: "/treasurer" },
           { text: "Run the Live Demo", link: "/demo" },

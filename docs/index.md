@@ -20,7 +20,7 @@ The core pipeline runs on **Avalanche C-Chain mainnet**; the cross-L1 crossing r
 
 | Piece | Status |
 | --- | --- |
-| Agent identity | Real ERC-721 ids on the canonical ERC-8004 Identity Registry — agent #1783 on mainnet, #219/#220/#222 on Fuji |
+| Agent identity | Real ERC-721 ids on the canonical ERC-8004 Identity Registry — agent #1783 on mainnet; #219 (demo), #220 (treasurer), #222 (first user vault), #223 (x402 float) on Fuji |
 | Vault + spends | Circle USDC, real transfers on both networks |
 | Proof | Groth16 verified on-chain (~287K gas), stamped into the ERC-8004 Validation Registry on mainnet and Fuji |
 | Border crossing | ICM carry from Fuji C-Chain to the Echo L1, `isCleared` returns `true` — the keeper aggregates the Warp signature and delivers the message itself, no relayer needed |
@@ -29,7 +29,8 @@ The core pipeline runs on **Avalanche C-Chain mainnet**; the cross-L1 crossing r
 
 Want your own vault instead of reading about ours? [Quickstart — ten minutes on Fuji](/quickstart). To reproduce the whole pipeline from a terminal, see [Run the Live Demo](/demo).
 
-## The two product surfaces
+## The three product surfaces
 
 - **The trust machine** — for L1 operators and agent developers: register, bind a vault, prove windows, and let any chain check clearance with one call. See [Architecture](/architecture).
-- **Verglas Treasurer** — the first resident of the vault: an autonomous corporate treasurer paying FX-timed supplier invoices inside owner-set daily caps and an oracle-checked FX circuit breaker. See [Verglas Treasurer](/treasurer).
+- **verglas-pay** — the vault in your agent's hands: an MCP server ([`verglas-mcp` on npm](https://www.npmjs.com/package/verglas-mcp)) that lets Claude or any LLM agent pay whitelisted recipients and buy from x402-gated APIs, with every refusal coming from the contract by name. See [verglas-pay](/mcp) and [x402](/x402).
+- **Verglas Treasurer** — the first resident of the vault: an autonomous corporate treasurer paying FX-timed supplier invoices inside an owner-adjustable calendar-day cap and an oracle-checked FX circuit breaker. See [Verglas Treasurer](/treasurer).
