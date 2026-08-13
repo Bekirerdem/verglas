@@ -1,21 +1,50 @@
 {
-  "name": "@verglas/mcp",
-  "private": true,
+  "name": "verglas-mcp",
   "version": "0.1.0",
-  "type": "module",
   "description": "verglas-pay — give any LLM agent a spending envelope it cannot exceed",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "verglas-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bekirerdem/verglas.git",
+    "directory": "mcp"
+  },
+  "homepage": "https://verglas.xyz/docs",
+  "keywords": [
+    "mcp",
+    "ai-agent",
+    "payments",
+    "spend-controls",
+    "avalanche",
+    "usdc",
+    "x402",
+    "erc-8004"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "tsx index.ts",
-    "smoke": "tsx smoke.ts"
+    "smoke": "tsx smoke.ts",
+    "build": "esbuild index.ts --bundle --platform=node --format=esm --outfile=dist/index.js \"--banner:js=#!/usr/bin/env node\" --external:viem --external:zod --external:x402 --external:x402-fetch --external:@modelcontextprotocol/sdk",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",
-    "@verglas/sdk": "file:../sdk",
     "viem": "^2.55.1",
     "x402-fetch": "^1.2.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@verglas/sdk": "file:../sdk",
+    "esbuild": "^0.25.0",
     "tsx": "^4.19.0"
   }
 }

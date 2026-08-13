@@ -28,13 +28,18 @@ const D = NET.deployment;
 const TX_FEES = { maxFeePerGas: 30_000_000_000n, maxPriorityFeePerGas: 1_000_000_000n } as const;
 
 function envKey(): `0x${string}` {
-  const raw =
-    process.env.PRIVATE_KEY?.trim() ||
-    readFileSync(join(ROOT, ".env"), "utf8")
+  let fromFile: string | undefined;
+  try {
+    // Repo convenience only — an installed package has no .env to fall back to.
+    fromFile = readFileSync(join(ROOT, ".env"), "utf8")
       .split(/\r?\n/)
       .find((l) => l.startsWith("PRIVATE_KEY="))
       ?.slice("PRIVATE_KEY=".length)
       .trim();
+  } catch {
+    /* no .env file */
+  }
+  const raw = process.env.PRIVATE_KEY?.trim() || fromFile;
   if (!raw) throw new Error("PRIVATE_KEY not set (env or repo .env)");
   return (raw.startsWith("0x") ? raw : `0x${raw}`) as `0x${string}`;
 }
