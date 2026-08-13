@@ -41,6 +41,7 @@ export default defineConfig({
           { text: "TypeScript SDK", link: "/sdk" },
           { text: "Verglas Treasurer", link: "/treasurer" },
           { text: "Run the Live Demo", link: "/demo" },
+          { text: "x402 — Agent Buying", link: "/x402" },
         ],
       },
     ],

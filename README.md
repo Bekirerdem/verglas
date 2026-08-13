@@ -107,10 +107,13 @@ REFUSED by the vault: PerTxLimitExceeded(6000000, 5000000) — the payment
 never left. Rules live in the contract, not in this tool.
 ```
 
-Three tools: `verglas_status` (rules and budget), `verglas_pay` (simulate,
-then submit inside the rules — refusals come back by name), `verglas_check`
+Four tools: `verglas_status` (rules and budget), `verglas_pay` (simulate,
+then submit inside the rules — refusals come back by name), `verglas_pay_x402`
+(buy from any x402-gated API — the payment float is refilled only through the
+vault, so a frozen or exhausted vault stops x402 buying too), `verglas_check`
 (any agent's public record before you trust it). Keys stay on your machine;
-the contract does the refusing. Details in [`mcp/`](mcp/).
+the contract does the refusing. Details in [`mcp/`](mcp/) and
+[docs/x402](https://verglas.xyz/docs/x402).
 
 Every agent also has a public record page for the counterparty:
 **[verglas.xyz/check/219](https://verglas.xyz/check/219)** — cleared or not,
