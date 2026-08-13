@@ -5,7 +5,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { checkAgent, DEFAULT_AGENT_ID, pay, vaultStatus } from "./core.js";
+import { checkAgent, DEFAULT_AGENT_ID, pay, payX402, vaultStatus, X402_AGENT_ID } from "./core.js";
 
 const server = new McpServer({ name: "verglas", version: "0.1.0" });
 
@@ -51,6 +51,34 @@ server.registerTool(
   async ({ to, usdc, agentId }) => {
     try {
       return text(await pay(asId(agentId), to, usdc));
+    } catch (e) {
+      return fail(e);
+    }
+  },
+);
+
+server.registerTool(
+  "verglas_pay_x402",
+  {
+    description:
+      "Pay a 402-gated (x402) API and return its response. The payment float lives in the agent's wallet and is refilled only through the Verglas vault, so the vault's rules — budget, per-payment limit, freeze — govern x402 spending too. A vault refusal comes back by name and stops the payment.",
+    inputSchema: {
+      url: z.string().url().describe("the paid endpoint to call"),
+      maxUsdc: z
+        .string()
+        .regex(/^\d+(\.\d+)?$/)
+        .optional()
+        .describe('per-call price cap in USDC, e.g. "0.05" (default "0.10")'),
+      agentId: z
+        .string()
+        .regex(/^\d+$/)
+        .optional()
+        .describe(`x402 float vault's agent id; defaults to ${X402_AGENT_ID}`),
+    },
+  },
+  async ({ url, maxUsdc, agentId }) => {
+    try {
+      return text(await payX402(agentId ? BigInt(agentId) : X402_AGENT_ID, url, maxUsdc ?? "0.10"));
     } catch (e) {
       return fail(e);
     }

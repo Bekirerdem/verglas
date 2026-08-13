@@ -15,6 +15,8 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { networkOf, verglasAccountAbi, verglasHubAbi, VerglasClient } from "@verglas/sdk";
+import { wrapFetchWithPayment, decodeXPaymentResponse } from "x402-fetch";
+import { ChainIdToNetwork } from "x402/types";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const NET = networkOf(process.env.VERGLAS_NETWORK ?? "fuji");
@@ -139,6 +141,85 @@ export async function pay(agentId: bigint, to: string, usdc: string): Promise<st
     `  tx: ${explorer(hash)}`,
     `  budget after: ${fmt(spent)} of ${fmt(budget)}`,
   ].join("\n");
+}
+
+/** The x402 float vault: its whitelist holds the agent key itself, so the only
+ *  thing it can ever fund is the agent's own signing wallet — and only inside
+ *  the vault's limits. Payments to the outside world then ride x402. */
+export const X402_AGENT_ID = BigInt(process.env.VERGLAS_X402_AGENT_ID ?? "223");
+
+const ERC20_BALANCE = [
+  {
+    type: "function",
+    name: "balanceOf",
+    stateMutability: "view",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+] as const;
+
+/** Pay a 402-gated URL. The float lives in the agent's own wallet and is
+ *  refilled exclusively through the vault — spend() enforces the rules, so a
+ *  frozen or exhausted vault stops x402 payments at the refill step, by name. */
+export async function payX402(agentId: bigint, url: string, maxUsdc: string): Promise<string> {
+  const cap = parseUnits(maxUsdc, 6);
+  const x402Network = ChainIdToNetwork[NET.chain.id];
+  if (!x402Network) throw new Error(`${NET.label} has no x402 network mapping`);
+
+  const probe = await fetch(url);
+  if (probe.status !== 402) {
+    const body = (await probe.text()).slice(0, 600);
+    return `no payment required (HTTP ${probe.status})\n${body}`;
+  }
+  const offer = (await probe.json()) as {
+    accepts?: Array<Record<string, string>>;
+    accepted?: Record<string, string>;
+  };
+  const reqs = offer.accepts ?? (offer.accepted ? [offer.accepted] : []);
+  const match = reqs.find((r) => r.scheme === "exact" && r.network === x402Network);
+  if (!match)
+    throw new Error(
+      `no exact/${x402Network} offer at ${url}; offered: ${reqs.map((r) => `${r.scheme}/${r.network}`).join(", ") || "none"}`,
+    );
+  if (getAddress(match.asset) !== getAddress(D.usdc))
+    return `REFUSED by this tool: seller wants token ${match.asset}, this vault only holds USDC.`;
+  const amount = BigInt(match.maxAmountRequired ?? match.amount ?? "0");
+  if (amount === 0n) throw new Error("offer carries no amount");
+  if (amount > cap) return `REFUSED by this tool: price ${fmt(amount)} is over the per-call cap ${fmt(cap)}.`;
+
+  // Float check — anything missing is pulled through the vault, where the
+  // rules live. A refusal here is the contract talking, not this tool.
+  const lines: string[] = [];
+  const float = (await pub.readContract({
+    address: D.usdc,
+    abi: ERC20_BALANCE,
+    functionName: "balanceOf",
+    args: [signer.address],
+  })) as bigint;
+  if (float < amount) {
+    const refill = await pay(agentId, signer.address, formatUnits(amount - float, 6));
+    if (refill.startsWith("REFUSED"))
+      return `x402 payment stopped at the vault refill step.\n${refill}`;
+    lines.push(`float refill through vault (agent #${agentId}):`, refill.replace(/^/gm, "  "));
+  }
+
+  const fetchWithPay = wrapFetchWithPayment(fetch, wallet, cap);
+  const res = await fetchWithPay(url);
+  const settleHeader = res.headers.get("x-payment-response");
+  const settle = settleHeader ? decodeXPaymentResponse(settleHeader) : null;
+  const body = (await res.text()).slice(0, 600);
+  if (!res.ok) {
+    // The header was sent, but without a settlement receipt nothing moved —
+    // don't call it paid.
+    lines.push(`payment offered but the seller did not deliver (HTTP ${res.status})`, `  response: ${body}`);
+    return lines.join("\n");
+  }
+  lines.push(
+    `PAID ${fmt(amount)} over x402 to ${match.payTo}`,
+    settle?.transaction ? `  settlement tx: ${explorer(settle.transaction)}` : "  settlement: receipt header missing",
+    `  response: ${body}`,
+  );
+  return lines.join("\n");
 }
 
 export async function checkAgent(agentId: bigint): Promise<string> {

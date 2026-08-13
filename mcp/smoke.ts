@@ -3,7 +3,7 @@
 // with --pay <usdc> — one real in-rule payment to the whitelist's first entry.
 import { createPublicClient, http } from "viem";
 import { networkOf, verglasAccountAbi, verglasHubAbi } from "@verglas/sdk";
-import { checkAgent, DEFAULT_AGENT_ID, pay, vaultStatus } from "./core.js";
+import { checkAgent, DEFAULT_AGENT_ID, pay, payX402, vaultStatus, X402_AGENT_ID } from "./core.js";
 
 const NET = networkOf(process.env.VERGLAS_NETWORK ?? "fuji");
 const payIdx = process.argv.indexOf("--pay");
@@ -38,4 +38,14 @@ if (payAmt) {
   console.log(await pay(DEFAULT_AGENT_ID, target, payAmt));
 } else {
   console.log("\n(no --pay flag: skipped the real payment)");
+}
+
+const x402Idx = process.argv.indexOf("--x402");
+if (x402Idx >= 0) {
+  const url = process.argv[x402Idx + 1];
+  if (!url) throw new Error("--x402 needs a URL");
+  console.log(`\n— x402: paid fetch of ${url} (float vault: agent #${X402_AGENT_ID}) —`);
+  console.log(await payX402(X402_AGENT_ID, url, "0.05"));
+} else {
+  console.log("(no --x402 flag: skipped the paid fetch)");
 }
