@@ -12,7 +12,7 @@
 ![Avalanche mainnet](https://img.shields.io/badge/Avalanche-C--Chain_mainnet-8B0D1A?style=flat-square)
 ![ERC-8004](https://img.shields.io/badge/ERC--8004-Validation_Registry-8B0D1A?style=flat-square)
 ![Groth16](https://img.shields.io/badge/ZK-Groth16_·_86k_constraints-8B0D1A?style=flat-square)
-![Tests](https://img.shields.io/badge/tests-92_forge_·_11_sdk-8B0D1A?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-97_forge_·_11_sdk-8B0D1A?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-3a3a3a?style=flat-square)
 
 **[verglas.xyz](https://verglas.xyz)** · **[Open the console →](https://verglas.xyz/app)** · **[Agent record](https://verglas.xyz/check/219)** · **[Docs](https://verglas.xyz/docs)**
@@ -31,7 +31,7 @@ non-custodial vault**, proves its spending obeyed the owner's policy with a **ze
 proof**, records the result as an **ERC-8004 validation attestation**, and carries that
 attestation across the federation over **ICM** — so trust earned once is honored everywhere.
 
-*Kite walls trust in. Verglas lets it travel.*
+*Spend limits are commodity. The proof is the product.*
 
 ## Live on Avalanche mainnet
 
@@ -44,7 +44,7 @@ proofs verified on-chain.
 | **Validation Registry** | [`0x332fc886…4a01`](https://snowtrace.io/address/0x332fc886dd6ab933c89a1149e7D938a6B4214a01) |
 | **Groth16 verifier** | [`0xa2497287…a24C`](https://snowtrace.io/address/0xa24972871B987cC7feD401Ea8e46F6D85F88a24C) |
 | **Oracle** | [`0x31900CA6…1239`](https://snowtrace.io/address/0x31900CA6bBd05ac2516feB6798f6aeB86FD41239) |
-| **Factory** | [`0xc07ef259…8960`](https://snowtrace.io/address/0xc07ef259Eb88742e00113d9F460F5D2081078960) |
+| **Factory** | [`0x7eC0c53f…D758`](https://snowtrace.io/address/0x7eC0c53fC6C865c1865aef6c744f5b9B1b7CD758) (daily-limit vaults, 2026-08-13; [previous generation](https://snowtrace.io/address/0xc07ef259Eb88742e00113d9F460F5D2081078960) stays readable) |
 | **Identity** | canonical ERC-8004 [`0x8004A169…a432`](https://snowtrace.io/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432) |
 
 Two vaults, two agents, six real payments, two proofs — every one of them checkable:
@@ -131,9 +131,9 @@ seal age, full stamp history, one view call behind it.
 | `VerglasFactory` | C-Chain | One-transaction vault deployment |
 | `VerglasHub` | C-Chain | Proof-gated attestation issuer; ICM carry origin |
 | `Groth16Verifier` | C-Chain | On-chain proof verification (~287k gas) |
-| `ValidationRegistry` | C-Chain | ERC-8004 Validation Registry (no chain has a canonical one yet) |
+| `ValidationRegistry` | C-Chain | ERC-8004 Validation Registry — ours on mainnet (none exists there), reference-compatible; Fuji stamps into the reference deployment |
 | `VerglasOracle` | C-Chain | Keeper-signed IPyth-compatible price feed |
-| `VerglasTreasurer` | C-Chain | FX-aware treasury operator (daily cap + rate circuit breaker) |
+| `VerglasTreasurer` | C-Chain | FX-aware treasury operator (calendar-day cap + rate circuit breaker) |
 | `VerglasGate` | any L1 | Three-check ICM receiver; `isCleared` / `isClearedFor` border control |
 | `VerglasDispenser` | testnet | Rate-limited test-USDC tap for workshops |
 
@@ -143,7 +143,7 @@ seal age, full stamp history, one view call behind it.
 |---|---|
 | `src/` | Solidity contracts (Foundry) |
 | `circuits/` | Circom circuit #1 — policy compliance, N=64 spend window |
-| `keeper/` | Always-on service: oracle feed, proving, attestation, ICM carry |
+| `keeper/` | Scheduled keeper (GitHub Actions, no daemon): oracle feed, proving, stamping, ICM self-delivery |
 | `agent/` | Treasurer strategy + independent FX sources |
 | `sdk/` | `@verglas/sdk` — viem client, `checkAgent`, network registry, browser-safe proving |
 | `mcp/` | verglas-pay — MCP server ([`verglas-mcp` on npm](https://www.npmjs.com/package/verglas-mcp)): status / pay / pay-x402 / check for any LLM agent |
@@ -156,7 +156,7 @@ seal age, full stamp history, one view call behind it.
 
 ```bash
 npm ci                      # poseidon-solidity
-forge test                  # 92 tests
+forge test                  # 97 tests (CI also runs forge fmt --check)
 
 cd web && npm ci && npm run dev        # console + landing at :5173
 
